@@ -11,7 +11,7 @@
         "${workspaceFolder}/mapa/visual.c",
         "${workspaceFolder}/mapa/demoMapa.c",
         "-o",
-        "${workspaceFolder}/build/Islas-en-guerra.exe",
+        "${workspaceFolder}/Islas en guerra.exe",
         "-IC:/raylib/w64devkit/x86_64-w64-mingw32/include",
         "-LC:/raylib/w64devkit/x86_64-w64-mingw32/lib",
         "-lraylib",

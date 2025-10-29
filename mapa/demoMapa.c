@@ -1,44 +1,61 @@
-#include "raylib.h"
+// demoMapa.c
+#include <stdio.h>
+#include <conio.h>
+#include <windows.h>
+#include <time.h>
 #include "mapa.h"
 
-// Definimos el tamaño de la ventana basado en el mapa
-const int screenWidth = COLUMNAS * TAM_CELDA;
-const int screenHeight = FILAS * TAM_CELDA;
+// Convertir códigos de tecla a nuestros comandos 'w','a','s','d','q'
+char capturarTecla() {
+    if (!_kbhit()) return 0;
+    int c = _getch();
+    if (c == 0 || c == 0xE0) {
+        // Tecla especial — leer el código siguiente
+        int c2 = _getch();
+        switch (c2) {
+            case 72: return 'w'; // Flecha arriba
+            case 80: return 's'; // Flecha abajo
+            case 75: return 'a'; // Flecha izquierda
+            case 77: return 'd'; // Flecha derecha
+            default: return 0;
+        }
+    } else {
+        // Tecla normal
+        if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a'; // tolower
+        return (char)c;
+    }
+}
 
-int main(void) {
-    InitWindow(screenWidth, screenHeight, "Islas en guerra - Demo Mapa");
-
+int main() {
     Mapa miMapa;
     inicializarMapa(&miMapa);
 
-    SetTargetFPS(60);
+    // Ajustar consola al tamaño del mapa
+    int ancho = COLUMNAS;
+    int alto = FILAS + 1; // +1 para la línea de ayuda
+    inicializarConsola(ancho, alto);
 
-    while (!WindowShouldClose()) {
-        // --- 1. Actualización (Update) ---
-        if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP))
-            moverJugador(&miMapa, 'w');
-        if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN))
-            moverJugador(&miMapa, 's');
-        if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT))
-            moverJugador(&miMapa, 'a');
-        if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT))
-            moverJugador(&miMapa, 'd');
+    clock_t inicio = clock();
+    double tiempo = 0.0;
+    const int msFrame = 1000 / 15; // ~15 FPS suficiente para consola
 
-        // --- 2. Dibujado (Draw) ---
-        BeginDrawing();
+    while (1) {
+        // Captura no bloqueante de tecla
+        char tecla = capturarTecla();
+        if (tecla) {
+            if (tecla == 'q') break;
+            if (tecla == 'w' || tecla == 'a' || tecla == 's' || tecla == 'd') {
+                moverJugador(&miMapa, tecla);
+            }
+        }
 
-        ClearBackground(BLACK); // Fondo negro
-        
-        // ¡Llamamos a nuestra nueva función de dibujado!
-        dibujarMapa(&miMapa);
+        tiempo = (double)(clock() - inicio) / CLOCKS_PER_SEC;
+        dibujarMapa(&miMapa, tiempo);
 
-        // Opcional: Dibujar FPS
-        DrawFPS(10, 10);
-
-        EndDrawing();
+        Sleep(msFrame);
     }
 
-    CloseWindow();
-
+    // Restaurar cursor visible antes de salir
+    restaurarCursorVisible();
     return 0;
 }

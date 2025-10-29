@@ -1,4 +1,2 @@
-/build/SDL2.dll
-/build/SDL2.lib
-
-SDL2.dll
+*.exe
+*.o
