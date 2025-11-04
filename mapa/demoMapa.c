@@ -6,7 +6,7 @@
 #include "mapa.h"
 
 int main() {
-    char mapa[SIZE][SIZE];
+    char mapa[FILAS][COLUMNAS];
     int px = 0, py = 0;
     int tecla;
     DWORD tInicio, tActual;
@@ -18,8 +18,8 @@ int main() {
 
     // Busca una posición inicial válida para el jugador en cualquier isla.
     do {
-        px = rand() % SIZE;
-        py = rand() % SIZE;
+        px = rand() % FILAS;
+        py = rand() % COLUMNAS;
     } while (mapa[px][py] != '.');
 
     mostrarMapa(mapa);
@@ -29,7 +29,7 @@ int main() {
     printf("P ");
     setColor(0, 15);
 
-    moverCursor(0, SIZE + 2);
+    moverCursor(0, FILAS + 2);
     printf("Usa W, A, S, D para moverte. ESC para salir.\n");
 
     tInicio = GetTickCount();
@@ -52,7 +52,7 @@ int main() {
         }
     }
 
-    moverCursor(0, SIZE + 3);
+    moverCursor(0, FILAS + 3);
     setColor(0, 15);
     printf("Gracias por jugar ISLAS EN GUERRA ⚔️\n");
     return 0;
