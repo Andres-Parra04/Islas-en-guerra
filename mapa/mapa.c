@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <conio.h>
+#include "../recursos/recursos.h" // Sube al directorio padre y entra a recursos/ 
 #include <stdbool.h>
 
 #define NUM_RECURSOS 15
@@ -202,41 +203,37 @@ void dibujarMarcoMapa() {
 /* =============================== */
 void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j;
+    int physical_x; // <-- Para clipping
     ocultarCursor();
-    // system("cls"); // Eliminado para evitar parpadeo
     dibujarMarcoMapa();
-    moverCursor(2, 1); // Posicionar cursor dentro del marco
-
+    
     for (i = 0; i < FILAS; i++) {
-        moverCursor(2, i + 1);
+        moverCursor(2, i + 1); // Posicionar cursor al inicio de la fila
+        
         for (j = 0; j < COLUMNAS; j++) {
+            
+            
+
             char c = mapa[offset_f + i][offset_c + j];
             if (c == '~') {
-                // Agua: Fondo Oscuro (Azul Oscuro 1), Texto Claro (Azul Claro 9)
                 setColor(COLOR_AGUA_BG, COLOR_AGUA_FG);
                 printf("~ ");
             } else if (c == '.') {
-                // Tierra: Fondo Oscuro (Verde Oscuro 2), Texto Brillante (Verde Brillante 10)
                 setColor(COLOR_TIERRA_BG, COLOR_TIERRA_FG);
                 printf(". ");
             } else if (c == '$') {
-                // Oro: Fondo Tierra, Texto Oro
                 setColor(COLOR_TIERRA_BG, COLOR_ORO);
                 printf("$ ");
             } else if (c == 'C') {
-                // Comida: Fondo Tierra, Texto Rojo Brillante
                 setColor(COLOR_TIERRA_BG, COLOR_COMIDA);
                 printf("C ");
             } else if (c == 'R') {
-                // Piedra: Fondo Tierra, Texto Blanco Brillante
                 setColor(COLOR_TIERRA_BG, COLOR_PIEDRA);
                 printf("R ");
             } else if (c == 'M') {
-                // Madera: Fondo Tierra, Texto Amarillo Brillante
                 setColor(COLOR_TIERRA_BG, COLOR_MADERA);
                 printf("M ");
             } else if (c == 'E') {
-                // Enemigo: Fondo Rojo Brillante (12), Texto Rojo Oscuro (4)
                 setColor(12, COLOR_ENEMIGO);
                 printf("E ");
             } else {
@@ -247,11 +244,14 @@ void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
     }
     setColor(0, 15);
 }
-
 /* =============================== */
 /* Mover jugador                  */
 /* =============================== */
-void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
+/* =============================== */
+/* Mover jugador                  */
+/* =============================== */
+// ¡¡Firma de la función modificada!!
+int moverJugador(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     int nx = *x;
     int ny = *y;
     char destino;
@@ -259,6 +259,7 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     int i;
     char actual;
     int offset_changed = 0;
+    int recurso_recolectado = 0;
 
     if (direccion >= 'a' && direccion <= 'z')
         direccion -= 32;
@@ -267,14 +268,14 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     else if (direccion == 'S') nx++;
     else if (direccion == 'A') ny--;
     else if (direccion == 'D') ny++;
-    else return;
+    else return 0;
 
     if (nx < 0 || nx >= MAPA_F || ny < 0 || ny >= MAPA_C) {
         moverCursor(0, FILAS + 2);
         setColor(0, 14);
         printf("No puedes salir del mapa!          ");
         setColor(0, 15);
-        return;
+        return 0;
     }
 
     destino = mapa[nx][ny];
@@ -285,31 +286,41 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         setColor(0, 14);
         printf("No puedes nadar!                   ");
         setColor(0, 15);
-        return;
+        return 0;
     }
 
+    // --- LÓGICA DE RECOLECCIÓN DE RECURSOS ---
     if (destino == '$') {
-        sprintf(msg, "Has encontrado oro!");
+        sprintf(msg, "Has encontrado 10 de oro!");
+        j->Oro += 10; 
+        recurso_recolectado = 1;
         mapa[nx][ny] = '.';
     } else if (destino == 'E') {
         sprintf(msg, "Has encontrado un enemigo!");
         mapa[nx][ny] = '.';
     } else if (destino == 'M') {
-        sprintf(msg, "Has encontrado madera!");
+        sprintf(msg, "Has encontrado 15 de madera!");
+        j->Madera += 15; 
+        recurso_recolectado = 1;
         mapa[nx][ny] = '.';
     } else if (destino == 'R') {
-        sprintf(msg, "Has encontrado piedra!");
+        sprintf(msg, "Has encontrado 15 de piedra!");
+        j->Piedra += 15; 
+        recurso_recolectado = 1;
         mapa[nx][ny] = '.';
     } else if (destino == 'C') {
-        sprintf(msg, "Has encontrado comida!");
+        sprintf(msg, "Has encontrado 20 de comida!");
+        j->Comida += 20; 
+        recurso_recolectado = 1;
         mapa[nx][ny] = '.';
     }
+    // ---------------------------------------------
 
     // Calcular nuevo offset para centrar la vista en el jugador
     int new_offset_f = offset_f;
     int new_offset_c = offset_c;
     new_offset_f = nx - FILAS / 2;
-    new_offset_c = ny - COLUMNAS / 2;
+    new_offset_c = ny - COLUMNAS / 2; // COLUMNAS es 41, así que esto funciona
     if (new_offset_f < 0) new_offset_f = 0;
     if (new_offset_f > MAPA_F - FILAS) new_offset_f = MAPA_F - FILAS;
     if (new_offset_c < 0) new_offset_c = 0;
@@ -321,10 +332,9 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         offset_changed = 1;
     }
 
-    // Solo redibujamos la celda anterior si NO hubo cambio de offset.
-    // Si hubo cambio de offset, la llamada a mostrarMapa(mapa) se encargara de esto.
     if (!offset_changed) {
-        // Redibujar la celda anterior del jugador
+        // Borrar 'P' de la posición anterior
+        // Ya no necesitamos la comprobación 'if (old_physical_x < STATS_X)'
         moverCursor((short)((*y - offset_c) * 2 + 2), (short)(*x - offset_f + 1));
         actual = mapa[*x][*y];
         if (actual == '~') {
@@ -351,16 +361,17 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     *x = nx;
     *y = ny;
 
-    // Si el offset cambio, redibujar todo el mapa
     if (offset_changed) {
         mostrarMapa(mapa);
     }
 
-    // Dibujar el jugador en la nueva posicion (siempre despues de cualquier redibujado)
+    // Dibujar 'P' en la nueva posición
+    // Ya no necesitamos la comprobación 'if (new_physical_x < STATS_X)'
     moverCursor((short)((ny - offset_c) * 2 + 2), (short)(nx - offset_f + 1));
-    setColor(0, 10); // Jugador: Fondo Negro (0), Texto Verde Brillante (10)
+    setColor(0, 10);
     printf("P ");
     setColor(0, 15);
+
 
     moverCursor(0, FILAS + 2);
     for (i = 0; i < 60; i++) printf(" ");
@@ -371,8 +382,9 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         printf("%s", msg);
         setColor(0, 15);
     }
-}
 
+    return recurso_recolectado;
+}
 /* =============================== */
 /* Animar agua con flujo (~ y ' ') */
 /* =============================== */
@@ -381,11 +393,17 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
     static int frame = 0;
     frame++;
 
+    // El bucle 'j < COLUMNAS' ahora se detiene automáticamente antes del panel (en j = 40),
+    // porque COLUMNAS se definió como 41 en mapa.h.
     for (i = 0; i < FILAS; i++) {
-        for (j = 0; j < COLUMNAS; j++) {
+        for (j = 0; j < COLUMNAS; j++) { 
+            
+            // Ya no necesitamos la variable 'physical_x' ni la comprobación 'if'.
+
+            // Solo dibujamos si es agua
             if (mapa[offset_f + i][offset_c + j] == '~') {
+
                 moverCursor((j * 2) + 2, i + 1);
-                // Usa los nuevos colores de Agua
                 if ((i + j + frame) % 3 == 0) {
                     setColor(COLOR_AGUA_BG, COLOR_AGUA_FG); printf("~ ");
                 } else {
@@ -395,4 +413,6 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
         }
     }
     setColor(0, 15);
+    moverCursor(0, FILAS + 3); 
 }
+

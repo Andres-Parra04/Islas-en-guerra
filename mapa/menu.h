@@ -60,7 +60,7 @@ void setColor(int fondo, int texto);
 /**
  * @brief Dibuja un fondo de mapa estilizado con colores y caracteres ASCII.
  */
-void dibujarFondoMapa();
+void dibujarFondo();
 
 /**
  * @brief Muestra la pantalla de Instrucciones del juego.
