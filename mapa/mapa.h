@@ -17,9 +17,7 @@ void inicializarMapa(char mapa[MAPA_F][MAPA_C]);
 void mostrarMapa(char mapa[MAPA_F][MAPA_C]);
 void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion);
 void animarAgua(char mapa[MAPA_F][MAPA_C]);
-void ocultarCursor();
-void moverCursor(short x, short y);
-void setColor(int fondo, int texto);
-void mostrarMenu();
+
+
 
 #endif
