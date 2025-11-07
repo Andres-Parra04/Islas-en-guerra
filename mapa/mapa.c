@@ -11,22 +11,32 @@
 #define NUM_MADERA 10
 #define NUM_PIEDRA 10
 
-#define COLOR_MADERA 14 // Amarillo (Foreground)
-#define COLOR_PIEDRA 8  // Gris (Foreground)
-#define COLOR_COMIDA 10 // Verde Brillante (Foreground)
-#define COLOR_TIERRA_BG 6 // Amarillo/Marrón (Background de la tierra)
+// Nuevos Esquemas de Color (Texto brillante sobre fondo oscuro/tierra)
+#define COLOR_AGUA_BG 1		// Azul Oscuro para el fondo del agua (~)
+#define COLOR_AGUA_FG 9		// Azul Claro para el simbolo del agua (~)
+
+#define COLOR_TIERRA_BG 2	// Verde Oscuro para el fondo de la tierra (.)
+#define COLOR_TIERRA_FG 10	// Verde Brillante para el simbolo de la tierra (.)
+
+#define COLOR_MADERA 14		// Amarillo Brillante (Texto 'M' sobre tierra BG)
+#define COLOR_PIEDRA 15		// Blanco Brillante (Texto 'R' sobre tierra BG)
+#define COLOR_COMIDA 14		// Rojo Brillante (Texto 'C' sobre tierra BG)
+
+#define COLOR_ORO 14		// Amarillo/Marron (Texto '$' sobre tierra BG)
+#define COLOR_ENEMIGO 4		// Rojo Oscuro (Texto 'E' sobre fondo Rojo Brillante)
 
 // Variables globales para el offset de la vista (scrolling)
 int offset_f = 0;
 int offset_c = 0;
 
 /* =============================== */
-/* Utilidades de consola           */
+/* Utilidades de consola          */
 /* =============================== */
-
+/* Se asume que setColor(int fondo, int texto) y otras utilidades
+   como moverCursor y ocultarCursor estan definidas en menu.h/otro. */
 
 /* =============================== */
-/* Generador de islas fijas        */
+/* Generador de islas fijas       */
 /* =============================== */
 void crearIsla(char mapa[MAPA_F][MAPA_C], int cx, int cy, int rx, int ry) {
     int i, j;
@@ -77,7 +87,7 @@ void crearPuente(char mapa[MAPA_F][MAPA_C], int x1, int y1, int x2, int y2) {
 }
 
 /* =============================== */
-/* Inicializar mapa                */
+/* Inicializar mapa               */
 /* =============================== */
 void inicializarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j, placed, rx, ry, ex, ey;
@@ -91,11 +101,11 @@ void inicializarMapa(char mapa[MAPA_F][MAPA_C]) {
     }
 
     // Crear 5 islas: 4 en esquinas y 1 central ajustada para no cortarse
-    crearIsla(mapa, 12, 12, 10, 8);  // Esquina superior izquierda
-    crearIsla(mapa, 85, 12, 10, 8);  // Esquina superior derecha
-    crearIsla(mapa, 12, 85, 10, 8);  // Esquina inferior izquierda
-    crearIsla(mapa, 85, 85, 10, 8);  // Esquina inferior derecha
-    crearIsla(mapa, 40, 50, 10, 8);  // Isla central ajustada (no se corta)
+    crearIsla(mapa, 12, 12, 10, 8);	// Esquina superior izquierda
+    crearIsla(mapa, 85, 12, 10, 8);	// Esquina superior derecha
+    crearIsla(mapa, 12, 85, 10, 8);	// Esquina inferior izquierda
+    crearIsla(mapa, 85, 85, 10, 8);	// Esquina inferior derecha
+    crearIsla(mapa, 40, 50, 10, 8);	// Isla central ajustada (no se corta)
 
     // Crear puentes ortogonales para conectar las islas (sin diagonales)
     crearPuente(mapa, 12, 12, 85, 12); // Puente horizontal superior (fila 12)
@@ -156,13 +166,13 @@ void inicializarMapa(char mapa[MAPA_F][MAPA_C]) {
 }
 
 /* =============================== */
-/* Dibujar marco del mapa          */
+/* Dibujar marco del mapa         */
 /* =============================== */
 void dibujarMarcoMapa() {
     int i;
     setColor(0, 8); // Color gris oscuro para el marco
 
-    // Esquinas y líneas horizontales
+    // Esquinas y lineas horizontales
     moverCursor(0, 0);
     printf("%c", 201); // ╔
     for (i = 1; i < COLUMNAS * 2 + 2; i++) { // Ajustado el ancho
@@ -177,19 +187,18 @@ void dibujarMarcoMapa() {
     }
     printf("%c", 188); // ╝
 
-    // Líneas verticales
+    // Lineas verticales
     for (i = 1; i < FILAS + 1; i++) {
         moverCursor(0, i);
         printf("%c", 186); // ║
-        moverCursor(COLUMNAS * 2 + 2, i); // Ajustada la posición
+        moverCursor(COLUMNAS * 2 + 2, i); // Ajustada la posicion
         printf("%c", 186); // ║
     }
     setColor(0, 15); // Restaurar color por defecto
 }
 
-
 /* =============================== */
-/* Mostrar mapa                    */
+/* Mostrar mapa                   */
 /* =============================== */
 void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j;
@@ -203,25 +212,32 @@ void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
         for (j = 0; j < COLUMNAS; j++) {
             char c = mapa[offset_f + i][offset_c + j];
             if (c == '~') {
-                setColor(1, 9);
+                // Agua: Fondo Oscuro (Azul Oscuro 1), Texto Claro (Azul Claro 9)
+                setColor(COLOR_AGUA_BG, COLOR_AGUA_FG);
                 printf("~ ");
             } else if (c == '.') {
-                setColor(2, 6);
+                // Tierra: Fondo Oscuro (Verde Oscuro 2), Texto Brillante (Verde Brillante 10)
+                setColor(COLOR_TIERRA_BG, COLOR_TIERRA_FG);
                 printf(". ");
             } else if (c == '$') {
-                setColor(2, 14);
+                // Oro: Fondo Tierra, Texto Oro
+                setColor(COLOR_TIERRA_BG, COLOR_ORO);
                 printf("$ ");
             } else if (c == 'C') {
-                setColor(COLOR_COMIDA, COLOR_TIERRA_BG);
+                // Comida: Fondo Tierra, Texto Rojo Brillante
+                setColor(COLOR_TIERRA_BG, COLOR_COMIDA);
                 printf("C ");
-            }else if (c == 'R') {
-                setColor(COLOR_PIEDRA, COLOR_TIERRA_BG);
+            } else if (c == 'R') {
+                // Piedra: Fondo Tierra, Texto Blanco Brillante
+                setColor(COLOR_TIERRA_BG, COLOR_PIEDRA);
                 printf("R ");
-            }else if (c == 'M') {
-                setColor(COLOR_MADERA, COLOR_TIERRA_BG);
+            } else if (c == 'M') {
+                // Madera: Fondo Tierra, Texto Amarillo Brillante
+                setColor(COLOR_TIERRA_BG, COLOR_MADERA);
                 printf("M ");
-            }else if (c == 'E') {
-                setColor(4, 12);
+            } else if (c == 'E') {
+                // Enemigo: Fondo Rojo Brillante (12), Texto Rojo Oscuro (4)
+                setColor(12, COLOR_ENEMIGO);
                 printf("E ");
             } else {
                 setColor(0, 15);
@@ -233,7 +249,7 @@ void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
 }
 
 /* =============================== */
-/* Mover jugador                   */
+/* Mover jugador                  */
 /* =============================== */
 void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     int nx = *x;
@@ -304,21 +320,30 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         offset_c = new_offset_c;
         offset_changed = 1;
     }
-    
+
     // Solo redibujamos la celda anterior si NO hubo cambio de offset.
-    // Si hubo cambio de offset, la llamada a mostrarMapa(mapa) se encargará de esto.
+    // Si hubo cambio de offset, la llamada a mostrarMapa(mapa) se encargara de esto.
     if (!offset_changed) {
         // Redibujar la celda anterior del jugador
         moverCursor((short)((*y - offset_c) * 2 + 2), (short)(*x - offset_f + 1));
         actual = mapa[*x][*y];
-        if (actual == '~') setColor(1, 9);
-        else if (actual == '.') setColor(2, 6);
-        else if (actual == '$') setColor(2, 14);
-        else if (actual == 'E') setColor(4, 12);
-        else if (actual == 'M') setColor(COLOR_MADERA, COLOR_TIERRA_BG);
-        else if (actual == 'R') setColor(COLOR_PIEDRA, COLOR_TIERRA_BG);
-        else if (actual == 'C') setColor(COLOR_COMIDA, COLOR_TIERRA_BG);
-        else setColor(0, 15);
+        if (actual == '~') {
+            setColor(COLOR_AGUA_BG, COLOR_AGUA_FG);
+        } else if (actual == '.') {
+            setColor(COLOR_TIERRA_BG, COLOR_TIERRA_FG);
+        } else if (actual == '$') {
+            setColor(COLOR_TIERRA_BG, COLOR_ORO);
+        } else if (actual == 'E') {
+            setColor(12, COLOR_ENEMIGO);
+        } else if (actual == 'M') {
+            setColor(COLOR_TIERRA_BG, COLOR_MADERA);
+        } else if (actual == 'R') {
+            setColor(COLOR_TIERRA_BG, COLOR_PIEDRA);
+        } else if (actual == 'C') {
+            setColor(COLOR_TIERRA_BG, COLOR_COMIDA);
+        } else {
+            setColor(0, 15);
+        }
         printf("%c ", actual);
     }
 
@@ -326,14 +351,14 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     *x = nx;
     *y = ny;
 
-    // Si el offset cambió, redibujar todo el mapa
+    // Si el offset cambio, redibujar todo el mapa
     if (offset_changed) {
         mostrarMapa(mapa);
     }
 
-    // Dibujar el jugador en la nueva posición (siempre después de cualquier redibujado)
+    // Dibujar el jugador en la nueva posicion (siempre despues de cualquier redibujado)
     moverCursor((short)((ny - offset_c) * 2 + 2), (short)(nx - offset_f + 1));
-    setColor(0, 10);
+    setColor(0, 10); // Jugador: Fondo Negro (0), Texto Verde Brillante (10)
     printf("P ");
     setColor(0, 15);
 
@@ -360,15 +385,14 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
         for (j = 0; j < COLUMNAS; j++) {
             if (mapa[offset_f + i][offset_c + j] == '~') {
                 moverCursor((j * 2) + 2, i + 1);
+                // Usa los nuevos colores de Agua
                 if ((i + j + frame) % 3 == 0) {
-                    setColor(1, 9); printf("~ ");
+                    setColor(COLOR_AGUA_BG, COLOR_AGUA_FG); printf("~ ");
                 } else {
-                    setColor(1, 9); printf("  ");
+                    setColor(COLOR_AGUA_BG, COLOR_AGUA_FG); printf("  ");
                 }
             }
         }
     }
     setColor(0, 15);
 }
-
-
