@@ -1,4 +1,5 @@
 #include "mapa.h"
+#include "menu.h"
 #include <stdlib.h>
 #include <time.h>
 #include <conio.h>
@@ -14,26 +15,7 @@ int offset_c = 0;
 /* =============================== */
 /* Utilidades de consola           */
 /* =============================== */
-void ocultarCursor() {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO cursorInfo;
-    GetConsoleCursorInfo(hOut, &cursorInfo);
-    cursorInfo.bVisible = FALSE;
-    SetConsoleCursorInfo(hOut, &cursorInfo);
-}
 
-void moverCursor(short x, short y) {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD pos;
-    pos.X = x;
-    pos.Y = y;
-    SetConsoleCursorPosition(hOut, pos);
-}
-
-void setColor(int fondo, int texto) {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hOut, fondo * 16 + texto);
-}
 
 /* =============================== */
 /* Generador de islas fijas        */
@@ -139,14 +121,50 @@ void inicializarMapa(char mapa[MAPA_F][MAPA_C]) {
 }
 
 /* =============================== */
+/* Dibujar marco del mapa          */
+/* =============================== */
+void dibujarMarcoMapa() {
+    int i;
+    setColor(0, 8); // Color gris oscuro para el marco
+
+    // Esquinas y líneas horizontales
+    moverCursor(0, 0);
+    printf("%c", 201); // ╔
+    for (i = 1; i < COLUMNAS * 2 + 2; i++) { // Ajustado el ancho
+        printf("%c", 205); // ═
+    }
+    printf("%c", 187); // ╗
+
+    moverCursor(0, FILAS + 1);
+    printf("%c", 200); // ╚
+    for (i = 1; i < COLUMNAS * 2 + 2; i++) { // Ajustado el ancho
+        printf("%c", 205); // ═
+    }
+    printf("%c", 188); // ╝
+
+    // Líneas verticales
+    for (i = 1; i < FILAS + 1; i++) {
+        moverCursor(0, i);
+        printf("%c", 186); // ║
+        moverCursor(COLUMNAS * 2 + 2, i); // Ajustada la posición
+        printf("%c", 186); // ║
+    }
+    setColor(0, 15); // Restaurar color por defecto
+}
+
+
+/* =============================== */
 /* Mostrar mapa                    */
 /* =============================== */
 void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j;
     ocultarCursor();
-    moverCursor(0, 0);
+    // system("cls"); // Eliminado para evitar parpadeo
+    dibujarMarcoMapa();
+    moverCursor(2, 1); // Posicionar cursor dentro del marco
 
     for (i = 0; i < FILAS; i++) {
+        moverCursor(2, i + 1);
         for (j = 0; j < COLUMNAS; j++) {
             char c = mapa[offset_f + i][offset_c + j];
             if (c == '~') {
@@ -166,7 +184,6 @@ void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
                 printf("%c ", c);
             }
         }
-        printf("\n");
     }
     setColor(0, 15);
 }
@@ -193,7 +210,7 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     else return;
 
     if (nx < 0 || nx >= MAPA_F || ny < 0 || ny >= MAPA_C) {
-        moverCursor(0, FILAS + 1);
+        moverCursor(0, FILAS + 2);
         setColor(0, 14);
         printf("No puedes salir del mapa!          ");
         setColor(0, 15);
@@ -204,7 +221,7 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
     msg[0] = '\0';
 
     if (destino == '~') {
-        moverCursor(0, FILAS + 1);
+        moverCursor(0, FILAS + 2);
         setColor(0, 14);
         printf("No puedes nadar!                   ");
         setColor(0, 15);
@@ -218,6 +235,16 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         sprintf(msg, "Has encontrado un enemigo!");
         mapa[nx][ny] = '.';
     }
+
+    // Redibujar la celda anterior del jugador
+    moverCursor((short)((*y - offset_c) * 2 + 2), (short)(*x - offset_f + 1));
+    actual = mapa[*x][*y];
+    if (actual == '~') setColor(1, 9);
+    else if (actual == '.') setColor(2, 6);
+    else if (actual == '$') setColor(2, 14);
+    else if (actual == 'E') setColor(4, 12);
+    else setColor(0, 15);
+    printf("%c ", actual);
 
     // Calcular nuevo offset para centrar la vista en el jugador
     int new_offset_f = offset_f;
@@ -235,38 +262,23 @@ void moverJugador(char mapa[MAPA_F][MAPA_C], int *x, int *y, char direccion) {
         offset_changed = 1;
     }
 
-    // Redibujar la celda anterior del jugador
-    moverCursor((short)(*y * 2 - offset_c * 2), (short)(*x - offset_f));
-    actual = mapa[*x][*y];
-    if (actual == '~') setColor(1, 9);
-    else if (actual == '.') setColor(2, 6);
-    else if (actual == '$') setColor(2, 14);
-    else if (actual == 'E') setColor(4, 12);
-    else setColor(0, 15);
-    printf("%c ", actual);
-
-    // Dibujar el jugador en la nueva posición
-    moverCursor((short)(ny * 2 - offset_c * 2), (short)(nx - offset_f));
-    setColor(0, 10);
-    printf("P ");
-    setColor(0, 15);
-
     *x = nx;
     *y = ny;
 
     // Si el offset cambió, redibujar todo el mapa
     if (offset_changed) {
         mostrarMapa(mapa);
-        // Redibujar el jugador después de mostrar el mapa
-        moverCursor((short)(ny * 2 - offset_c * 2), (short)(nx - offset_f));
-        setColor(0, 10);
-        printf("P ");
-        setColor(0, 15);
     }
 
-    moverCursor(0, FILAS + 1);
+    // Dibujar el jugador en la nueva posición (siempre después de cualquier redibujado)
+    moverCursor((short)((ny - offset_c) * 2 + 2), (short)(nx - offset_f + 1));
+    setColor(0, 10);
+    printf("P ");
+    setColor(0, 15);
+
+    moverCursor(0, FILAS + 2);
     for (i = 0; i < 60; i++) printf(" ");
-    moverCursor(0, FILAS + 1);
+    moverCursor(0, FILAS + 2);
 
     if (msg[0] != '\0') {
         setColor(0, 11);
@@ -286,7 +298,7 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
     for (i = 0; i < FILAS; i++) {
         for (j = 0; j < COLUMNAS; j++) {
             if (mapa[offset_f + i][offset_c + j] == '~') {
-                moverCursor(j * 2, i);
+                moverCursor((j * 2) + 2, i + 1);
                 if ((i + j + frame) % 3 == 0) {
                     setColor(1, 9); printf("~ ");
                 } else {
@@ -298,33 +310,4 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
     setColor(0, 15);
 }
 
-/* =============================== */
-/* Menú inicial                    */
-/* =============================== */
-void mostrarMenu() {
-    int i;
-    ocultarCursor();
-    system("cls");
-
-    printf("\n\n\n\n");
-    printf("                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    printf("                      ISLAS  EN  GUERRA  \n");
-    printf("                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
-
-    setColor(0, 14);
-    printf("                 Presiona [ENTER] para comenzar\n\n");
-    setColor(0, 8);
-    printf("                  Desarrollado en C - 100%% CMD Edition\n\n");
-
-    
-
-    setColor(0, 15);
-    
-
-    while (1) {
-        if (_kbhit() && _getch() == 13) break;
-    }
-
-    system("cls");
-}
 

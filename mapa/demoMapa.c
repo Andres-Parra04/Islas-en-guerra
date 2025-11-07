@@ -4,6 +4,7 @@
 #include <time.h>
 #include <windows.h>
 #include "mapa.h"
+#include "menu.h"
 
 int main() {
     char mapa[MAPA_F][MAPA_C];
