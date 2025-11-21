@@ -342,32 +342,3 @@ void mostrarMenu() {
         }
     }
 }
-// /**
-//  * @brief Función principal del programa.
-//  */
-// int main() {
-//     // Establecer la ventana de la consola si es necesario (ej. para forzar 80x25)
-//     // Se comenta ya que podría interferir en algunos entornos.
-//     /*
-//     char command[50];
-//     sprintf(command, "mode con: cols=%d lines=%d", ANCHO_CONSOLA, ALTO_CONSOLA);
-//     system(command);
-//     */
-
-//     mostrarMenu();
-
-//     // Simulación del inicio del juego
-//     setColor(COLOR_NEGRO, COLOR_BLANCO);
-//     moverCursor(ANCHO_CONSOLA / 2 - 15, ALTO_CONSOLA / 2);
-//     printf("JUEGO INICIADO! (Presiona ESC para salir)");
-
-//     // Espera hasta que el usuario presione ESC
-//     while (_getch() != TECLA_ESC) {
-//         // Bucle de juego
-//     }
-
-//     // Limpieza final
-//     system("cls");
-//     setColor(COLOR_NEGRO, COLOR_BLANCO);
-//     return 0;
-// }

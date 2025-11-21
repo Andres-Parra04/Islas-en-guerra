@@ -21,8 +21,8 @@
 
 #define PANEL_WIDTH 18  // Ancho necesario para el texto del panel
 #define PANEL_HEIGHT 6  // Alto necesario (Título + 4 recursos + 1 espacio)
-#define MAPA_F 50  // Filas del mapa virtual
-#define MAPA_C 100 // Columnas del mapa virtual
+#define MAPA_F 60  // Filas del mapa virtual
+#define MAPA_C 150 // Columnas del mapa virtual
 
 // Coordenadas de inicio del panel (Columna 85, Fila 1)
 #define STATS_X 85

@@ -42,8 +42,8 @@ int offset_c = 0;
 void crearIsla(char mapa[MAPA_F][MAPA_C], int cx, int cy, int rx, int ry) {
     int i, j;
     int dx, dy, dist, deformacion, nx, ny;
-    int maxX = rx + 2;
-    int maxY = ry + 2;
+    int maxX = rx + 4;
+    int maxY = ry + 4;
 
     for (i = -maxY; i <= maxY; i++) {
         for (j = -maxX; j <= maxX; j++) {
@@ -203,7 +203,7 @@ void dibujarMarcoMapa() {
 /* =============================== */
 void mostrarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j;
-    int physical_x; // <-- Para clipping
+     // <-- Para clipping
     ocultarCursor();
     dibujarMarcoMapa();
     
