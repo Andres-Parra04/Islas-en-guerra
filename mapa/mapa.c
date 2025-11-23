@@ -79,9 +79,6 @@ void crearPuente(char mapa[MAPA_F][MAPA_C], int x1, int y1, int x2, int y2) {
 /* =============================== */
 /* Inicializar Mapa (Esquinas)    */
 /* =============================== */
-/* =============================== */
-/* Inicializar Mapa (Esquinas)    */
-/* =============================== */
 int esPuente(int x, int y) {
     // Puentes horizontales
     if (x == 25 && y >= 35 && y <= 265) return 1;  // Superior
@@ -95,6 +92,7 @@ int esPuente(int x, int y) {
     
     return 0; // No es puente
 }
+
 void inicializarMapa(char mapa[MAPA_F][MAPA_C]) {
     int i, j, placed, rx, ry, ex, ey;
     srand((unsigned int)time(NULL));
@@ -212,9 +210,6 @@ void dibujarMarcoMapa() {
 /* =============================== */
 /* Mostrar Mapa (Doble Buffer)    */
 /* =============================== */
-/* =============================== */
-/* Mostrar Mapa (Doble Buffer)    */
-/* =============================== */
 void mostrarMapa(char mapa[MAPA_F][MAPA_C], int px, int py) {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     int bufferWidth = COLUMNAS * 2;
@@ -269,9 +264,6 @@ void mostrarMapa(char mapa[MAPA_F][MAPA_C], int px, int py) {
     setColor(0, 15);
 }
 
-/* =============================== */
-/* Mover Jugador                  */
-/* =============================== */
 /* =============================== */
 /* Mover Jugador (MEJORADO)       */
 /* =============================== */
@@ -486,9 +478,6 @@ setColor(0, 15);
 /* =============================== */
 /* Animar Agua                    */
 /* =============================== */
-/* =============================== */
-/* Animar Agua                    */
-/* =============================== */
 void animarAgua(char mapa[MAPA_F][MAPA_C]) {
     int i, j;
     static int frame = 0;
@@ -532,6 +521,7 @@ void animarAgua(char mapa[MAPA_F][MAPA_C]) {
 /* =============================== */
 // Verifica si hay un recurso especifico (A, F, E, M) en las 8 casillas adyacentes
 // Devuelve 1 si lo encuentra, y guarda su posicion en rx, ry
+
 int hayRecursoAdyacente(char mapa[MAPA_F][MAPA_C], int px, int py, char recurso, int *rx, int *ry) {
     int i;
     // Verificar las 8 direcciones alrededor del jugador
@@ -1126,9 +1116,7 @@ void resetearCachePanelEnMapa() {
     // Simplemente llamamos a forzarRedibujoPanelEnMapa la próxima vez
     // Esta función resetea las variables estáticas dentro de dibujarPanelEnMapa
 }
-/* =============================== */
-/* Forzar Redibujo del Panel      */
-/* =============================== */
+
 /* =============================== */
 /* Forzar Redibujo del Panel      */
 /* =============================== */
