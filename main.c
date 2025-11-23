@@ -5,9 +5,29 @@
 #include <windows.h>
 #include "mapa/mapa.h"
 #include "mapa/menu.h"
+#include <signal.h>
 #include "recursos/recursos.h"
 
 int main() {
+
+    // Ignorar Ctrl+C (Interrumpir)
+    signal(SIGINT, SIG_IGN); 
+    
+    // Ignorar Ctrl+Break (Comun en Windows)
+    #if defined(SIGBREAK)
+        signal(SIGBREAK, SIG_IGN);
+    #endif
+
+    // Ignorar Ctrl+Z (Suspender - POSIX).
+    #if defined(SIGTSTP)
+        signal(SIGTSTP, SIG_IGN); 
+    #endif
+    
+    // Ignorar Ctrl+\ (Salir/Quitar - POSIX)
+    #if defined(SIGQUIT)
+        signal(SIGQUIT, SIG_IGN);
+    #endif
+
     char mapa[MAPA_F][MAPA_C];
     int px = 0, py = 0;
     int tecla;
