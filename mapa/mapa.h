@@ -26,5 +26,11 @@ void dibujarPanelStats(CHAR_INFO *buffer, struct Jugador j);
 void dibujarPanelEnMapa(struct Jugador j);
 void forzarRedibujoPanelEnMapa(struct Jugador j);  // ✅ AÑADIR ESTA LÍNEA
 void limpiarMensajes();
-
+void inicializarSistemaMinas(void);
+void registrarMina(int fila, int columna);
+void actualizarMinas(void);
+void recogerDeMina(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py);
+void animarRecoleccionMina(int x, int y);
+void mostrarEstadoMina(int x, int y, int piedra, int oro);
+void actualizarMinas(void);
 #endif
