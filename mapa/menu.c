@@ -74,6 +74,7 @@ static const char *OPCIONES_MENU[] = { "Iniciar partida", "Cargar partida", "Ins
 static const int OPCIONES_TOTAL = 4;
 static bool gMostrandoInstrucciones = false;
 static HWND gMenuHwnd = NULL;
+static int gMenuAccion = 0; // 0 = nueva partida, 1 = cargar partida
 
 // --- Prototipos necesarios ---
 void mostrarInstrucciones();
@@ -324,11 +325,12 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                     if (!gMostrandoInstrucciones) {
                         if (gSeleccion == 0) {
                             // Iniciar partida: cerrar ventana y volver al juego
+                            gMenuAccion = 0;
                             PostMessage(hwnd, WM_CLOSE, 0, 0);
                         } else if (gSeleccion == 1) {
-                            // Cargar partida (pendiente de implementar)
-                            MessageBoxA(hwnd, "La carga de partidas se implementara proximamente.", "Cargar partida", MB_OK | MB_ICONINFORMATION);
-                            InvalidateRect(hwnd, NULL, FALSE);
+                            // Cargar partida
+                            gMenuAccion = 1;
+                            PostMessage(hwnd, WM_CLOSE, 0, 0);
                         } else if (gSeleccion == 2) {
                             mostrarInstrucciones();
                         } else if (gSeleccion == 3) {
@@ -384,6 +386,10 @@ void mostrarInstrucciones() {
     // Cambiar a vista de instrucciones y refrescar
     gMostrandoInstrucciones = true;
     if (gMenuHwnd) InvalidateRect(gMenuHwnd, NULL, TRUE);
+}
+
+int menuObtenerAccion() {
+    return gMenuAccion;
 }
 
 void mostrarMenu() {

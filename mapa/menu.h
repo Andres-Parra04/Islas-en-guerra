@@ -73,4 +73,8 @@ void mostrarInstrucciones();
  */
 void mostrarMenu();
 
+// Indica la acción seleccionada en el menú principal tras cerrar la ventana.
+// 0 = Nueva partida, 1 = Cargar partida
+int menuObtenerAccion();
+
 #endif // MENU_H

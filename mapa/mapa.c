@@ -1194,3 +1194,198 @@ void forzarRedibujoPanelEnMapa(struct Jugador j) {
     
     setColor(0, 15);
 }
+
+/* =============================== */
+/* Guardar Partida                 */
+/* =============================== */
+int guardarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py) {
+    FILE *f = fopen(ruta, "wb");
+    if (!f) {
+        moverCursor(0, FILAS + 3);
+        setColor(0, 12);
+        printf("No se pudo abrir archivo de guardado: %s", ruta);
+        setColor(0, 15);
+        return 0;
+    }
+
+    // Cabecera sencilla
+    const char magic[8] = { 'I','E','G','S','V','1','\0','\0' };
+    fwrite(magic, 1, sizeof(magic), f);
+
+    // Datos del jugador
+    fwrite(j->Nombre, 1, sizeof(j->Nombre), f);
+    fwrite(&j->Comida, sizeof(int), 1, f);
+    fwrite(&j->Oro, sizeof(int), 1, f);
+    fwrite(&j->Madera, sizeof(int), 1, f);
+    fwrite(&j->Piedra, sizeof(int), 1, f);
+    fwrite(&j->CantidadEspadas, sizeof(int), 1, f);
+    fwrite(&j->CantidadArqueros, sizeof(int), 1, f);
+    fwrite(&j->CantidadPicas, sizeof(int), 1, f);
+    fwrite(&j->CantidadCaballeria, sizeof(int), 1, f);
+    fwrite(&j->NumeroTropas, sizeof(int), 1, f);
+    fwrite(&j->Capacidad, sizeof(int), 1, f);
+
+    // Posición y cámara
+    fwrite(&px, sizeof(int), 1, f);
+    fwrite(&py, sizeof(int), 1, f);
+    fwrite(&offset_f, sizeof(int), 1, f);
+    fwrite(&offset_c, sizeof(int), 1, f);
+
+    // Mapa completo
+    fwrite(mapa, sizeof(char), MAPA_F * MAPA_C, f);
+
+    fclose(f);
+
+    moverCursor(0, FILAS + 3);
+    setColor(0, 10);
+    printf("Partida guardada en %s", ruta);
+    setColor(0, 15);
+    return 1;
+}
+
+/* =============================== */
+/* Cargar Partida                  */
+/* =============================== */
+int cargarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C], int *px, int *py) {
+    FILE *f = fopen(ruta, "rb");
+    if (!f) {
+        moverCursor(0, FILAS + 3);
+        setColor(0, 12);
+        printf("No se encontro archivo de guardado: %s", ruta);
+        setColor(0, 15);
+        return 0;
+    }
+
+    char magic[8];
+    if (fread(magic, 1, sizeof(magic), f) != sizeof(magic) || strncmp(magic, "IEGSV1", 6) != 0) {
+        fclose(f);
+        moverCursor(0, FILAS + 3);
+        setColor(0, 12);
+        printf("Guardado invalido o version incompatible.");
+        setColor(0, 15);
+        return 0;
+    }
+
+    // Leer datos del jugador
+    fread(j->Nombre, 1, sizeof(j->Nombre), f);
+    fread(&j->Comida, sizeof(int), 1, f);
+    fread(&j->Oro, sizeof(int), 1, f);
+    fread(&j->Madera, sizeof(int), 1, f);
+    fread(&j->Piedra, sizeof(int), 1, f);
+    fread(&j->CantidadEspadas, sizeof(int), 1, f);
+    fread(&j->CantidadArqueros, sizeof(int), 1, f);
+    fread(&j->CantidadPicas, sizeof(int), 1, f);
+    fread(&j->CantidadCaballeria, sizeof(int), 1, f);
+    fread(&j->NumeroTropas, sizeof(int), 1, f);
+    fread(&j->Capacidad, sizeof(int), 1, f);
+    j->Ejercito = NULL; // No se guardan punteros en el archivo
+
+    // Posicion y camara
+    fread(px, sizeof(int), 1, f);
+    fread(py, sizeof(int), 1, f);
+    fread(&offset_f, sizeof(int), 1, f);
+    fread(&offset_c, sizeof(int), 1, f);
+
+    // Mapa completo
+    fread(mapa, sizeof(char), MAPA_F * MAPA_C, f);
+
+    fclose(f);
+
+    moverCursor(0, FILAS + 3);
+    setColor(0, 10);
+    printf("Partida cargada desde %s", ruta);
+    setColor(0, 15);
+    return 1;
+}
+
+/* =============================== */
+/* Menú de Opciones (ESC)         */
+/* =============================== */
+int mostrarMenuOpciones(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py) {
+    int seleccion = 0; // 0=Guardar partida, 1=Salir
+    int tecla;
+    int actualizado = 1;
+
+    while (1) {
+        if (actualizado) {
+            system("cls");
+            setColor(0, 15);
+            printf("\n");
+            printf("  ================================================================================\n");
+            printf("  ||                               OPCIONES                                     ||\n");
+            printf("  ================================================================================\n\n");
+
+            printf("  Selecciona una opcion y presiona ENTER. ESC para volver.\n\n");
+
+            // Opciones
+            setColor(seleccion == 0 ? 2 : 0, 15);
+            printf("  %sGuardar partida\n", seleccion == 0 ? ">> " : "   ");
+            setColor(seleccion == 1 ? 2 : 0, 15);
+            printf("  %sSalir\n", seleccion == 1 ? ">> " : "   ");
+            setColor(0, 15);
+
+            actualizado = 0;
+        }
+
+        if (_kbhit()) {
+            tecla = _getch();
+            if (tecla == 27) {
+                // Volver al juego sin acción
+                break;
+            }
+
+            if (tecla == 'w' || tecla == 'W' || tecla == 72 /*Flecha arriba*/ ) {
+                seleccion = (seleccion - 1 + 2) % 2;
+                actualizado = 1;
+            } else if (tecla == 's' || tecla == 'S' || tecla == 80 /*Flecha abajo*/ ) {
+                seleccion = (seleccion + 1) % 2;
+                actualizado = 1;
+            } else if (tecla == 13) {
+                if (seleccion == 0) {
+                    // Guardar partida
+                    guardarPartida("saved_games\\save1.dat", j, mapa, px, py);
+                    Sleep(800);
+                    break; // Volver al juego
+                } else if (seleccion == 1) {
+                    // Salir del juego
+                    return 1; // Señal para que el caller termine
+                }
+            }
+
+            if (tecla == 224 || tecla == 0) {
+                _getch(); // Consumir segundo byte de teclas extendidas
+            }
+        }
+
+        Sleep(30);
+    }
+
+    // Restaurar pantalla del juego
+    system("cls");
+    // Redibujar marco
+    setColor(0, 8);
+    moverCursor(0, 0);
+    printf("%c", 201);
+    for (int i = 1; i < COLUMNAS * 2 + 2; i++) printf("%c", 205);
+    printf("%c", 187);
+
+    moverCursor(0, FILAS + 1);
+    printf("%c", 200);
+    for (int i = 1; i < COLUMNAS * 2 + 2; i++) printf("%c", 205);
+    printf("%c", 188);
+
+    for (int i = 1; i < FILAS + 1; i++) {
+        moverCursor(0, i); printf("%c", 186);
+        moverCursor(COLUMNAS * 2 + 2, i); printf("%c", 186);
+    }
+    setColor(0, 15);
+
+    mostrarMapa(mapa, px, py);
+    forzarRedibujoPanelEnMapa(*j);
+    moverCursor(0, FILAS + 2);
+    setColor(0, 15);
+    printf("Usa WASD para moverte. ENTER para interactuar. ESC para opciones.");
+    ocultarCursor();
+
+    return 0; // continuar jugando
+}
