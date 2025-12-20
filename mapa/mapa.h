@@ -31,5 +31,6 @@ void limpiarMensajes();
 int mostrarMenuOpciones(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py);
 int guardarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py);
 int cargarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C], int *px, int *py);
+int seleccionarYcargarPartida(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int *px, int *py);
 
 #endif

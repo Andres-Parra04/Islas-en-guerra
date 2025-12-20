@@ -38,9 +38,9 @@ int main() {
     
     int accion = menuObtenerAccion();
     if (accion == 1) {
-        // Cargar partida
-        if (!cargarPartida("saved_games\\save1.dat", &jugador1, mapa, &px, &py)) {
-            // Fallback: iniciar nueva partida si falla la carga
+        // Cargar partida: mostrar selector
+        if (!seleccionarYcargarPartida(&jugador1, mapa, &px, &py)) {
+            // Fallback: iniciar nueva partida si cancela o falla la carga
             IniciacionRecursos(&jugador1, "Jugador 1");
             inicializarMapa(mapa);
             srand((unsigned int)time(NULL));

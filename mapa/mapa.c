@@ -5,6 +5,7 @@
 #include <conio.h>
 #include "../recursos/recursos.h"  // ✓ CORRECTO - mismo directorio 
 #include <stdbool.h>
+#include <ctype.h>
 
 // --- CONFIGURACIÓN DE GENERACIÓN ---
 #define NUM_RECURSOS 60
@@ -1199,6 +1200,8 @@ void forzarRedibujoPanelEnMapa(struct Jugador j) {
 /* Guardar Partida                 */
 /* =============================== */
 int guardarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py) {
+    // Asegurar carpeta de guardados
+    CreateDirectoryA("saved_games", NULL);
     FILE *f = fopen(ruta, "wb");
     if (!f) {
         moverCursor(0, FILAS + 3);
@@ -1299,10 +1302,93 @@ int cargarPartida(const char *ruta, struct Jugador *j, char mapa[MAPA_F][MAPA_C]
 }
 
 /* =============================== */
+/* Selector de Cargas              */
+/* =============================== */
+int seleccionarYcargarPartida(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int *px, int *py) {
+    WIN32_FIND_DATAA fdata;
+    HANDLE hFind;
+    char *files[128];
+    int count = 0;
+    int i;
+
+    // Buscar archivos .dat en la carpeta saved_games
+    hFind = FindFirstFileA("saved_games\\*.dat", &fdata);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (!(fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                size_t n = strlen(fdata.cFileName);
+                char *name = (char*)malloc(n + 1);
+                if (name) {
+                    memcpy(name, fdata.cFileName, n + 1);
+                    if (count < 128) files[count++] = name; else free(name);
+                }
+            }
+        } while (FindNextFileA(hFind, &fdata));
+        FindClose(hFind);
+    }
+
+    if (count == 0) {
+        system("cls");
+        setColor(0, 15);
+        printf("\nNo se encontraron partidas guardadas en 'saved_games'.\n");
+        printf("Presiona cualquier tecla para continuar...\n");
+        _getch();
+        return 0;
+    }
+
+    int sel = 0;
+    int tecla;
+    int actualizado = 1;
+
+    while (1) {
+        if (actualizado) {
+            system("cls");
+            setColor(0, 15);
+            printf("\n");
+            printf("  ================================================================================\n");
+            printf("  ||                           CARGAR PARTIDA                                   ||\n");
+            printf("  ================================================================================\n\n");
+            printf("  Selecciona una partida y presiona ENTER. ESC para comenzar un juego nuevo.\n\n");
+
+            for (i = 0; i < count; i++) {
+                if (i == sel) setColor(2, 15); else setColor(0, 15);
+                printf("  %s%s\n", i == sel ? ">> " : "   ", files[i]);
+            }
+            setColor(0, 15);
+            actualizado = 0;
+        }
+
+        if (_kbhit()) {
+            tecla = _getch();
+            if (tecla == 27) { // ESC
+                // Liberar memoria
+                for (i = 0; i < count; i++) free(files[i]);
+                return 0;
+            }
+            if (tecla == 'w' || tecla == 'W' || tecla == 72) {
+                sel = (sel - 1 + count) % count;
+                actualizado = 1;
+            } else if (tecla == 's' || tecla == 'S' || tecla == 80) {
+                sel = (sel + 1) % count;
+                actualizado = 1;
+            } else if (tecla == 13) {
+                char ruta[256];
+                snprintf(ruta, sizeof(ruta), "saved_games\\%s", files[sel]);
+                int ok = cargarPartida(ruta, j, mapa, px, py);
+                for (i = 0; i < count; i++) free(files[i]);
+                return ok;
+            }
+            if (tecla == 0 || tecla == 224) _getch();
+        }
+        Sleep(30);
+    }
+}
+
+/* =============================== */
 /* Menú de Opciones (ESC)         */
 /* =============================== */
 int mostrarMenuOpciones(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, int py) {
-    int seleccion = 0; // 0=Guardar partida, 1=Salir
+    int seleccion = 0; // 0=Guardar partida, 1=Cargar partida, 2=Salir
     int tecla;
     int actualizado = 1;
 
@@ -1321,7 +1407,9 @@ int mostrarMenuOpciones(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, in
             setColor(seleccion == 0 ? 2 : 0, 15);
             printf("  %sGuardar partida\n", seleccion == 0 ? ">> " : "   ");
             setColor(seleccion == 1 ? 2 : 0, 15);
-            printf("  %sSalir\n", seleccion == 1 ? ">> " : "   ");
+            printf("  %sCargar partida\n", seleccion == 1 ? ">> " : "   ");
+            setColor(seleccion == 2 ? 2 : 0, 15);
+            printf("  %sSalir\n", seleccion == 2 ? ">> " : "   ");
             setColor(0, 15);
 
             actualizado = 0;
@@ -1335,18 +1423,81 @@ int mostrarMenuOpciones(struct Jugador *j, char mapa[MAPA_F][MAPA_C], int px, in
             }
 
             if (tecla == 'w' || tecla == 'W' || tecla == 72 /*Flecha arriba*/ ) {
-                seleccion = (seleccion - 1 + 2) % 2;
+                seleccion = (seleccion - 1 + 3) % 3;
                 actualizado = 1;
             } else if (tecla == 's' || tecla == 'S' || tecla == 80 /*Flecha abajo*/ ) {
-                seleccion = (seleccion + 1) % 2;
+                seleccion = (seleccion + 1) % 3;
                 actualizado = 1;
             } else if (tecla == 13) {
                 if (seleccion == 0) {
-                    // Guardar partida
-                    guardarPartida("saved_games\\save1.dat", j, mapa, px, py);
-                    Sleep(800);
-                    break; // Volver al juego
+                    // Guardar partida: solicitar nombre
+                    char nombre[64] = {0};
+                    int len = 0;
+                    int t;
+                    while (1) {
+                        system("cls");
+                        setColor(0, 15);
+                        printf("\n");
+                        printf("  ================================================================================\n");
+                        printf("  ||                             GUARDAR PARTIDA                                ||\n");
+                        printf("  ================================================================================\n\n");
+                        printf("  Ingresa el nombre de la partida (letras, numeros, '-' y '_')\n");
+                        printf("  ESC para cancelar. ENTER para guardar.\n\n");
+                        setColor(0, 11);
+                        printf("  Nombre: %s\n", nombre);
+                        setColor(0, 15);
+
+                        t = _getch();
+                        if (t == 27) { // ESC
+                            break; // Cancelar y volver al juego
+                        } else if (t == 13) { // ENTER
+                            if (len > 0) {
+                                char ruta[256];
+                                snprintf(ruta, sizeof(ruta), "saved_games\\%s.dat", nombre);
+                                // Validar conflicto
+                                DWORD attrs = GetFileAttributesA(ruta);
+                                if (attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+                                    // Confirmar overwrite
+                                    setColor(0, 14);
+                                    printf("\n  El archivo ya existe. ¿Deseas sobrescribir? (Y/N)\n");
+                                    setColor(0, 15);
+                                    int c = _getch();
+                                    if (c == 'y' || c == 'Y') {
+                                        guardarPartida(ruta, j, mapa, px, py);
+                                        Sleep(900);
+                                        break;
+                                    } else {
+                                        // Volver al ingreso del nombre
+                                        continue;
+                                    }
+                                } else {
+                                    guardarPartida(ruta, j, mapa, px, py);
+                                    Sleep(900);
+                                    break;
+                                }
+                            }
+                            break;
+                        } else if (t == 8) { // BACKSPACE
+                            if (len > 0) { nombre[--len] = '\0'; }
+                        } else if (t == 0 || t == 224) {
+                            // Ignorar teclas extendidas
+                            _getch();
+                        } else {
+                            if (len < (int)sizeof(nombre) - 1) {
+                                if (isalnum(t) || t == '-' || t == '_') {
+                                    nombre[len++] = (char)t;
+                                    nombre[len] = '\0';
+                                }
+                            }
+                        }
+                    }
+                    break; // Volver al juego tras guardar o cancelar
                 } else if (seleccion == 1) {
+                    // Cargar partida (selector)
+                    seleccionarYcargarPartida(j, mapa, &px, &py);
+                    Sleep(500);
+                    break; // Volver al juego
+                } else if (seleccion == 2) {
                     // Salir del juego
                     return 1; // Señal para que el caller termine
                 }
