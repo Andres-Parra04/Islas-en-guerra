@@ -1,94 +1,151 @@
 #include <windows.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "mapa/menu.h"
+#include <windowsx.h>
 #include "mapa/mapa.h"
+#include "mapa/menu.h"
+#include <stdbool.h>
 
-// Variables para el control del mapa
-// Se inicializa con zoom 2.5f para que la imagen se vea de cerca y cubra la pantalla 
-Camara camara = {0, 0, 2.5f}; 
-bool enJuego = false;
-POINT mouseAnterior;
+// --- CONFIGURACIÓN DE LÍMITES Y CONSTANTES ---
+#define ZOOM_MAXIMO 6.0f  // Limite para evitar que los píxeles se vean demasiado mal
+#define MAPA_SIZE 1024    // Dimensiones fijas del mapa .bmp
+
+Camara camara = {0, 0, 1.0f};
 bool arrastrando = false;
+POINT mouseUltimo;
 
-void configurarPantallaCompleta() {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD coord;
-    // Forzar pantalla completa nativa o maximizar ventana [cite: 10]
-    if (!SetConsoleDisplayMode(hConsole, CONSOLE_FULLSCREEN_MODE, &coord)) {
-        ShowWindow(GetConsoleWindow(), SW_MAXIMIZE);
+// --- MOTOR DE VALIDACIÓN DE CÁMARA (Anti-Bordes Negros y Anti-Pixelación) ---
+void corregirLimitesCamara(RECT rect) {
+    int anchoV = rect.right - rect.left;
+    int altoV = rect.bottom - rect.top;
+    
+    // 1. Zoom Mínimo: Basado en el tamaño actual de la ventana
+    // Calculamos qué escala cubre el ancho y cuál el alto
+    float scaleX = (float)anchoV / (float)MAPA_SIZE;
+    float scaleY = (float)altoV / (float)MAPA_SIZE;
+    
+    // Elegimos el mayor para que el mapa "desborde" y no deje ver fondo negro
+    float zMinimo = (scaleX > scaleY) ? scaleX : scaleY;
+
+    if (camara.zoom < zMinimo) camara.zoom = zMinimo;
+
+    // 2. Zoom Máximo: Bloqueo de pixelación
+    if (camara.zoom > ZOOM_MAXIMO) camara.zoom = ZOOM_MAXIMO;
+
+    // 3. Clamp de Posición: No permitir que la vista salga del mapa de 1024x1024
+    int maxW = MAPA_SIZE - (int)(anchoV / camara.zoom);
+    int maxH = MAPA_SIZE - (int)(altoV / camara.zoom);
+
+    if (camara.x < 0) camara.x = 0;
+    if (camara.y < 0) camara.y = 0;
+    if (camara.x > maxW) camara.x = maxW;
+    if (camara.y > maxH) camara.y = maxH;
+}
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static RECT rect;
+
+    switch (uMsg) {
+        case WM_SIZE: {
+            // Se activa al maximizar o cambiar el tamaño de la ventana
+            GetClientRect(hwnd, &rect);
+            corregirLimitesCamara(rect);
+            InvalidateRect(hwnd, NULL, FALSE);
+            return 0;
+        }
+        case WM_MOUSEWHEEL: {
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+            ScreenToClient(hwnd, &pt);
+            
+            float zoomViejo = camara.zoom;
+            camara.zoom *= (delta > 0) ? 1.1f : 0.9f;
+
+            // Aplicar corrección de límites antes de re-centrar
+            corregirLimitesCamara(rect);
+
+            // Ajuste matemático para que el zoom siga al mouse:
+            // MundoX = CamaraX + (MouseX / Zoom)
+            camara.x = (int)((camara.x + (pt.x / zoomViejo)) - (pt.x / camara.zoom));
+            camara.y = (int)((camara.y + (pt.y / zoomViejo)) - (pt.y / camara.zoom));
+            
+            corregirLimitesCamara(rect); // Verificación final
+            InvalidateRect(hwnd, NULL, FALSE);
+            return 0;
+        }
+        case WM_MOUSEMOVE:
+            if (arrastrando) {
+                int curX = GET_X_LPARAM(lParam);
+                int curY = GET_Y_LPARAM(lParam);
+                
+                // Desplazamiento relativo al zoom actual
+                camara.x -= (int)((curX - mouseUltimo.x) / camara.zoom);
+                camara.y -= (int)((curY - mouseUltimo.y) / camara.zoom);
+                
+                corregirLimitesCamara(rect);
+
+                mouseUltimo.x = curX;
+                mouseUltimo.y = curY;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            return 0;
+        case WM_LBUTTONDOWN:
+            arrastrando = true;
+            mouseUltimo.x = GET_X_LPARAM(lParam);
+            mouseUltimo.y = GET_Y_LPARAM(lParam);
+            SetCapture(hwnd);
+            return 0;
+        case WM_LBUTTONUP:
+            arrastrando = false;
+            ReleaseCapture();
+            return 0;
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            // El dibujo utiliza doble buffer para evitar parpadeos
+            dibujarMundo(hdc, rect, camara); 
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
     }
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int main() {
-    configurarPantallaCompleta();
+    // 1. Mostrar Menú Principal GDI
+    mostrarMenu(); 
     
-    HWND hwnd = GetConsoleWindow();
-    HDC hdc = GetDC(hwnd);
-    RECT rectPantalla;
-    GetClientRect(hwnd, &rectPantalla);
+    // Si la acción es salir (o el usuario cerró el menú), terminar
+    if (menuObtenerAccion() == 3) return 0;
 
-    // Carga de la imagen BMP de 1024x1024 [cite: 11]
-    cargarRecursosGraficos(); 
+    // 2. Ocultar consola y preparar ventana de juego
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    bool ejecutando = true;
-    while (ejecutando) {
-        if (enJuego) {
-    // 1. Detectar si el botón izquierdo está presionado
-    if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
-        POINT mouseActual;
-        GetCursorPos(&mouseActual); // Obtener posición real del mouse
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = "ClaseGuerraIslas";
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    RegisterClass(&wc);
 
-        if (!arrastrando) {
-            // Primer clic: guardar posición inicial
-            mouseAnterior = mouseActual;
-            arrastrando = true;
-        } else {
-            // Calcular desplazamiento (Delta)
-            int dx = mouseActual.x - mouseAnterior.x;
-            int dy = mouseActual.y - mouseAnterior.y;
+    // 3. Crear ventana con bordes estándar (Maximizar, Minimizar, Cerrar)
+    HWND hwnd = CreateWindowEx(0, wc.lpszClassName, "Islas en Guerra - Motor GDI", 
+        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720, NULL, NULL, wc.hInstance, NULL);
 
-            // Mover la cámara en sentido opuesto al mouse (Drag natural)
-            // Ajustamos por el zoom para que el arrastre sea preciso
-            camara.x -= (int)(dx / camara.zoom);
-            camara.y -= (int)(dy / camara.zoom);
+    cargarRecursosGraficos();
 
-            mouseAnterior = mouseActual; // Actualizar para el siguiente frame
-        }
-    } else {
-        arrastrando = false; // Soltó el clic
+    // 4. Iniciar maximizada para cubrir el escritorio pero permitir acceso a la barra de tareas
+    ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+    UpdateWindow(hwnd);
+
+    // 5. Bucle de mensajes de alta prioridad
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
-    // 2. Validar límites para no salirse del mapa de 1024x1024 [cite: 120]
-    if (camara.x < 0) camara.x = 0;
-    if (camara.y < 0) camara.y = 0;
-    if (camara.x > 1024 - (rectPantalla.right / camara.zoom)) 
-        camara.x = 1024 - (rectPantalla.right / camara.zoom);
-    if (camara.y > 1024 - (rectPantalla.bottom / camara.zoom))
-        camara.y = 1024 - (rectPantalla.bottom / camara.zoom);
-
-    // 3. Dibujar frame suave
-    dibujarMundo(hdc, rectPantalla, camara);
-} else {
-            // Mostrar menú principal
-            mostrarMenu();
-            int accion = menuObtenerAccion();
-            if (accion == 0) {
-                // Nueva partida
-                enJuego = true;
-            } else if (accion == 1) {
-                // Cargar partida (no implementado)
-                ejecutando = false; // Salir por ahora
-            } else {
-                // Salir
-                ejecutando = false;
-            }
-        }
-        
-        // Pequena pausa para no saturar el procesador
-        Sleep(10); 
-    }
-
-    ReleaseDC(hwnd, hdc);
     return 0;
 }

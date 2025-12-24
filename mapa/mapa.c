@@ -1,67 +1,55 @@
-// mapa.c - Integración de BMP
-#include <windows.h>
-#include <stdio.h>
 #include "mapa.h"
-
+#include <stdio.h>
 
 #define rutaImagenMapa "..//assets//mapa_islas_guerra.bmp"
-
 static HBITMAP hMapaBmp = NULL;
 
 void cargarRecursosGraficos() {
-    // Cargamos el mapa que generamos de 1024x1024
     hMapaBmp = (HBITMAP)LoadImageA(NULL, rutaImagenMapa, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if (!hMapaBmp) {
-        printf("Error: No se encontro el archivo 'mapa_islas_guerra.bmp'\n");
+        // Fallback: Intentar ruta local si falla la relativa
+        hMapaBmp = (HBITMAP)LoadImageA(NULL, "mapa_islas_guerra.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     }
 }
 
-// mapa.c - Versión de Pantalla Completa
 void dibujarMundo(HDC hdc, RECT rect, Camara cam) {
     if (!hMapaBmp) return;
 
-    // 1. Crear el Buffer de Memoria (Pantalla invisible)
+    int anchoPantalla = rect.right - rect.left;
+    int altoPantalla = rect.bottom - rect.top;
+
+    // --- BLINDAJE CONTRA PARPADEO (Back-Buffering) ---
     HDC hdcBuffer = CreateCompatibleDC(hdc);
-    HBITMAP hbmBuffer = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
+    HBITMAP hbmBuffer = CreateCompatibleBitmap(hdc, anchoPantalla, altoPantalla);
     HBITMAP hOldBuffer = (HBITMAP)SelectObject(hdcBuffer, hbmBuffer);
 
-    // 2. Preparar el mapa original
     HDC hdcMapa = CreateCompatibleDC(hdc);
     HBITMAP hOldMapa = (HBITMAP)SelectObject(hdcMapa, hMapaBmp);
 
-    // 3. Limpiar el buffer (Evita lineas negras residuales)
-    BitBlt(hdcBuffer, 0, 0, rect.right, rect.bottom, NULL, 0, 0, BLACKNESS);
+    // 1. Limpiar buffer (Fondo negro)
+    FillRect(hdcBuffer, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
-    // 4. Calcular el area visible (Zoom)
-    int anchoVista = (int)(rect.right / cam.zoom);
-    int altoVista = (int)(rect.bottom / cam.zoom);
+    // 2. Lógica de Proyección de Zoom
+    // Calculamos cuánto del mapa original cabe en la pantalla según el zoom
+    int anchoMundoVisible = (int)(anchoPantalla / cam.zoom);
+    int altoMundoVisible = (int)(altoPantalla / cam.zoom);
 
-    // 5. Dibujar del mapa al Buffer
-    SetStretchBltMode(hdcBuffer, COLORONCOLOR); // Suavizado de pixeles
+    // 3. Renderizado Atómico
+    // 3. Renderizado Atómico
+    SetStretchBltMode(hdcBuffer, HALFTONE); 
     StretchBlt(
-        hdcBuffer, 0, 0, rect.right, rect.bottom, 
-        hdcMapa, cam.x, cam.y, anchoVista, altoVista, 
-        SRCCOPY
+        hdcBuffer, 0, 0, anchoPantalla, altoPantalla, 
+        hdcMapa, cam.x, cam.y, anchoMundoVisible, altoMundoVisible, 
+        SRCCOPY // <--- Asegúrate que tenga doble 'C'
     );
 
-    // 6. VOLCADO FINAL: Copia todo el buffer de una sola vez a la pantalla
-    // Esto es lo que elimina el parpadeo
-    BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcBuffer, 0, 0, SRCCOPY);
+    // 4. Volcado final
+    BitBlt(hdc, 0, 0, anchoPantalla, altoPantalla, hdcBuffer, 0, 0, SRCCOPY); // <--- Aquí también
 
-    // 7. Limpieza de memoria (Vital para que el PC no se ponga lento)
-    SelectObject(hdcBuffer, hOldBuffer);
+    // --- LIMPIEZA DE MEMORIA GDI ---
     SelectObject(hdcMapa, hOldMapa);
-    DeleteObject(hbmBuffer);
+    SelectObject(hdcBuffer, hOldBuffer);
     DeleteDC(hdcMapa);
     DeleteDC(hdcBuffer);
-}
-void explorarMapaGrafico(Camara *cam, int dx, int dy) {
-    // [cite: 120] Uso de punteros para modificar el mapa/cámara dinámicamente
-    cam->x += dx;
-    cam->y += dy;
-
-    // Validación de límites (Tarea específica del Rol 1) [cite: 120, 174]
-    if (cam->x < 0) cam->x = 0;
-    if (cam->y < 0) cam->y = 0;
-    if (cam->x > 1024 - 400) cam->x = 1024 - 400; // 400 es un margen de seguridad
+    DeleteObject(hbmBuffer);
 }
