@@ -6,7 +6,7 @@
 
 // --- CONFIGURACIÓN DE LÍMITES Y CONSTANTES ---
 #define ZOOM_MAXIMO 6.0f  // Limite para evitar que los píxeles se vean demasiado mal
-#define MAPA_SIZE 1024    // Dimensiones fijas del mapa .bmp
+#define MAPA_SIZE 2048    // Dimensiones fijas del mapa .bmp
 
 Camara camara = {0, 0, 1.0f};
 bool arrastrando = false;
@@ -120,7 +120,7 @@ int main() {
     if (menuObtenerAccion() == 3) return 0;
 
     // 2. Ocultar consola y preparar ventana de juego
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    // ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
