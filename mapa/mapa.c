@@ -26,6 +26,13 @@
 #define obrero_left  "../assets/obrero/obrero_left.bmp"
 #define obrero_right "../assets/obrero/obrero_right.bmp"
 
+static HBITMAP hObreroBmp[4] = {NULL}; // Front, Back, Left, Right
+
+// Definiciones para obrerro fallback
+#define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
+#define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
+#define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
+#define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
 
 static HBITMAP hMapaBmp = NULL;
 static HBITMAP hArboles[4] = {NULL};
@@ -96,6 +103,65 @@ void mapaLiberarCollisionMap(void) {
     gCollisionMap = NULL;
 }
 
+// ============================================================================
+// DETECCIÓN DE AGUA Y RECONSTRUCCIÓN DE COLISIONES
+// ============================================================================
+// Valores en collisionMap:
+//   0 = Celda libre (transitable)
+//   1 = Obstáculo (árbol o agua - impasable)
+//   2 = Ocupada por unidad (temporalmente bloqueada)
+// ============================================================================
+
+// Detecta agua analizando los píxeles del mapa base
+// Utiliza aritmética de punteros para recorrer la matriz
+static void detectarAguaEnMapa(void) {
+    if (!hMapaBmp || !gCollisionMap) return;
+    
+    HDC hdcPantalla = GetDC(NULL);
+    HDC hdcMem = CreateCompatibleDC(hdcPantalla);
+    HBITMAP hOldBmp = (HBITMAP)SelectObject(hdcMem, hMapaBmp);
+    
+    // Puntero a la matriz de colisiones para aritmética de punteros
+    int **ptrCol = gCollisionMap;
+    int contadorAgua = 0;
+    
+    // Recorremos cada celda de la matriz 32x32
+    for (int f = 0; f < GRID_SIZE; f++) {
+        // Aritmética de punteros: acceso a la fila f
+        int *fila = *(ptrCol + f);
+        
+        for (int c = 0; c < GRID_SIZE; c++) {
+            // Si ya está marcado como obstáculo (árbol), saltar
+            if (*(fila + c) == 1) continue;
+            
+            // Analizar el píxel central de la celda 64x64
+            int px = (c * TILE_SIZE) + (TILE_SIZE / 2);
+            int py = (f * TILE_SIZE) + (TILE_SIZE / 2);
+            
+            COLORREF color = GetPixel(hdcMem, px, py);
+            if (color == CLR_INVALID) continue;
+            
+            BYTE r = GetRValue(color);
+            BYTE g = GetGValue(color);
+            BYTE b = GetBValue(color);
+            
+            // DETECCIÓN DE AGUA: el azul domina sobre rojo y verde
+            // Criterio: B > R y B > G y B > umbral (agua azul)
+            if (b > r && b > g && b > 80) {
+                // Marcar como agua (impasable, valor 1)
+                *(fila + c) = 1;
+                contadorAgua++;
+            }
+        }
+    }
+    
+    printf("[DEBUG] Agua detectada: %d celdas marcadas como impasables.\n", contadorAgua);
+    
+    SelectObject(hdcMem, hOldBmp);
+    DeleteDC(hdcMem);
+    ReleaseDC(NULL, hdcPantalla);
+}
+
 void generarBosqueAutomatico() {
     if (!hMapaBmp) return;
 
@@ -121,8 +187,9 @@ void generarBosqueAutomatico() {
             BYTE g = GetGValue(color);
             BYTE b = GetBValue(color);
 
-            // Detección de color verde para mapaDemo2.bmp
-            if (g > r && g > b && g > 45) { 
+            // Detección de color verde para colocar árboles
+            // Solo en tierra (verde domina), no en agua (azul domina)
+            if (g > r && g > b && g > 45 && b < 100) { 
                 if ((rand() % 100) < 25) { 
                     // Acceso por punteros: *(base + desplazamiento)
                     *(*(ptrMatriz + i) + j) = (rand() % 4) + 1; 
@@ -133,21 +200,16 @@ void generarBosqueAutomatico() {
     }
     printf("[DEBUG] Logica: %d arboles registrados en la matriz con punteros.\n", contador);
 
-    // Construir la grilla de colisión a partir de la matriz lógica (movimiento/colisiones)
+    // 1. Construir la grilla de colisión con árboles
     mapaReconstruirCollisionMap();
+    
+    // 2. Detectar agua y marcarla como impasable
+    detectarAguaEnMapa();
 
     SelectObject(hdcMem, hOldBmp);
     DeleteDC(hdcMem);
     ReleaseDC(NULL, hdcPantalla);
 }
-
-static HBITMAP hObreroBmp[4] = {NULL}; // Front, Back, Left, Right
-
-// Definiciones para obrerro fallback
-#define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
-#define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
-#define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
-#define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
 
 void cargarRecursosGraficos() {
     // 1. Cargar Mapa Base (Intento doble)
@@ -192,37 +254,18 @@ void cargarRecursosGraficos() {
     printf("[DEBUG] Recursos: %d/4 arboles cargados fisicamente.\n", cargados);
     generarBosqueAutomatico();
 }
-void dibujarObreros(HDC hdcBuffer, struct Jugador *j, Camara cam, int anchoP, int altoP) {
-    HDC hdcSprites = CreateCompatibleDC(hdcBuffer);
-    for (int i = 0; i < 6; i++) {
-        UnidadObrero *o = &j->obreros[i];
-        int pantX = (int)((o->x - cam.x) * cam.zoom);
-        int pantY = (int)((o->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
-
-
-        // LOG DE POSICIÓN (Solo para el primer obrero para no saturar)
-        // if (i == 0) {
-        //     printf("[DEBUG] Obrero 0 -> Mundo(%.1f, %.1f) | Pantalla(%d, %d) | Zoom: %.2f\n", 
-        //            o->x, o->y, pantX, pantY, cam.zoom);
-        // }
-
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
-            SelectObject(hdcSprites, hObreroBmp[o->dir]);
-            TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
-            
-            if (o->seleccionado) { // Círculo de selección
-                HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-                HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-                SelectObject(hdcBuffer, nullBrush);
-                SelectObject(hdcBuffer, verde);
-                Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam, pantY + tam + 5);
-                DeleteObject(verde);
-            }
-        }
-    }
-    DeleteDC(hdcSprites);
-    }
+// ============================================================================
+// DIBUJADO CON Y-SORTING (PROFUNDIDAD POR FILA)
+// ============================================================================
+// En lugar de dibujar todos los árboles y luego todos los obreros,
+// dibujamos el mapa fila por fila (de arriba hacia abajo).
+// Por cada fila Y:
+//   1. Dibujamos los árboles cuya fila coincide
+//   2. Dibujamos los obreros cuya posición Y coincide con esa fila
+//
+// Esto crea un efecto de profundidad natural: los objetos "más abajo"
+// en la pantalla se dibujan después (encima) de los objetos "más arriba".
+// ============================================================================
 
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador) {
     if (!hMapaBmp) return;
@@ -230,6 +273,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador) {
     int anchoP = rect.right - rect.left;
     int altoP = rect.bottom - rect.top;
 
+    // Crear buffer de doble renderizado
     HDC hdcBuffer = CreateCompatibleDC(hdc);
     HBITMAP hbmBuffer = CreateCompatibleBitmap(hdc, anchoP, altoP);
     HBITMAP hOldBuffer = (HBITMAP)SelectObject(hdcBuffer, hbmBuffer);
@@ -237,23 +281,32 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador) {
     HDC hdcMapa = CreateCompatibleDC(hdc);
     HBITMAP hOldMapa = (HBITMAP)SelectObject(hdcMapa, hMapaBmp);
 
-    // 1. Dibujar Suelo (Mapa base)
+    // 1. DIBUJAR SUELO (MAPA BASE)
     SetStretchBltMode(hdcBuffer, HALFTONE);
     StretchBlt(hdcBuffer, 0, 0, anchoP, altoP, 
                hdcMapa, cam.x, cam.y, (int)(anchoP/cam.zoom), (int)(altoP/cam.zoom), SRCCOPY);
 
-    // 2. Dibujar Árboles con MATRIZ y PUNTEROS
+    // 2. Y-SORTING: DIBUJAR FILA POR FILA (árboles + obreros mezclados)
     HDC hdcSprites = CreateCompatibleDC(hdc);
-    int (*ptrFila)[GRID_SIZE] = mapaObjetos;
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
+    
+    // Puntero a la matriz de objetos para aritmética de punteros
+    int (*ptrMatriz)[GRID_SIZE] = mapaObjetos;
+    
+    // Recorrer cada fila del mapa (0 a GRID_SIZE-1)
+    for (int f = 0; f < GRID_SIZE; f++) {
+        // Puntero a la fila actual
+        int *filaActual = *(ptrMatriz + f);
+        
+        // ================================================================
+        // A) DIBUJAR ÁRBOLES DE ESTA FILA
+        // ================================================================
+        for (int c = 0; c < GRID_SIZE; c++) {
             // Lectura mediante aritmética de punteros
-            int tipo = *(*(ptrFila + i) + j); 
-
+            int tipo = *(filaActual + c);
+            
             if (tipo >= 1 && tipo <= 4 && hArboles[tipo-1] != NULL) {
-                int mundoX = j * TILE_SIZE;
-                int mundoY = i * TILE_SIZE;
+                int mundoX = c * TILE_SIZE;
+                int mundoY = f * TILE_SIZE;
 
                 // Ajuste visual (centrar 128x128 sobre 64x64)
                 int dibX = mundoX - (SPRITE_ARBOL - TILE_SIZE) / 2;
@@ -265,24 +318,61 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador) {
 
                 if (pantX + tamZoom > 0 && pantX < anchoP && pantY + tamZoom > 0 && pantY < altoP) {
                     SelectObject(hdcSprites, hArboles[tipo - 1]);
-                    // Transparencia (Blanco)
                     TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom,
                                    hdcSprites, 0, 0, SPRITE_ARBOL, SPRITE_ARBOL, RGB(255, 255, 255));
                 }
             }
         }
+        
+        // ================================================================
+        // B) DIBUJAR OBREROS CUYA BASE (y + 64) COINCIDE CON ESTA FILA
+        // ================================================================
+        // La "base de los pies" del obrero está en y + TILE_SIZE (64)
+        // Calculamos la fila del mapa correspondiente a esa coordenada Y
+        int yMinFila = f * TILE_SIZE;
+        int yMaxFila = (f + 1) * TILE_SIZE;
+        
+        // Puntero base al array de obreros
+        UnidadObrero *baseObreros = pJugador->obreros;
+        
+        for (UnidadObrero *o = baseObreros; o < baseObreros + 6; o++) {
+            // La base del obrero (pies) está en o->y + TILE_SIZE
+            float basePies = o->y + (float)TILE_SIZE;
+            
+            // Si la base del obrero cae en esta fila, dibujarlo
+            if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+                int pantX = (int)((o->x - cam.x) * cam.zoom);
+                int pantY = (int)((o->y - cam.y) * cam.zoom);
+                int tam = (int)(64 * cam.zoom);
+
+                if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+                    SelectObject(hdcSprites, hObreroBmp[o->dir]);
+                    TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, 
+                                   hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
+                    
+                    // Círculo de selección
+                    if (o->seleccionado) {
+                        HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+                        HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+                        SelectObject(hdcBuffer, nullBrush);
+                        SelectObject(hdcBuffer, verde);
+                        Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam, pantY + tam + 5);
+                        DeleteObject(verde);
+                    }
+                }
+            }
+        }
     }
-    // Dentro de dibujarMundo, después de dibujar los árboles:
 
-    // 3. DIBUJAR OBREROS (Ahora dentro del búfer)
-    // Llamamos a la función usando el puntero del jugador
-    dibujarObreros(hdcBuffer, pJugador, cam, anchoP, altoP);
-
+    // Copiar el buffer a la pantalla
     BitBlt(hdc, 0, 0, anchoP, altoP, hdcBuffer, 0, 0, SRCCOPY);
 
     // Limpieza
     DeleteDC(hdcSprites);
-    SelectObject(hdcMapa, hOldMapa); DeleteDC(hdcMapa);
-    SelectObject(hdcBuffer, hOldBuffer); DeleteObject(hbmBuffer); DeleteDC(hdcBuffer);
+    SelectObject(hdcMapa, hOldMapa); 
+    DeleteDC(hdcMapa);
+    SelectObject(hdcBuffer, hOldBuffer); 
+    DeleteObject(hbmBuffer); 
+    DeleteDC(hdcBuffer);
 }
 

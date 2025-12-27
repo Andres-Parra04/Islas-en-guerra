@@ -37,16 +37,40 @@ void corregirLimitesCamara(RECT rect) {
     if (camara.y > maxH) camara.y = maxH;
 }
 
-// --- LÓGICA DE SELECCIÓN Y MOVIMIENTO CON PUNTEROS ---
+// ============================================================================
+// LÓGICA DE SELECCIÓN PRIORITARIA CON ARITMÉTICA DE PUNTEROS
+// ============================================================================
+// La selección es INDEPENDIENTE del orden de dibujo (renderizado).
+// Aunque un árbol esté dibujado ENCIMA de un obrero, la lógica de selección
+// evalúa directamente la posición del obrero en coordenadas del mundo.
+// Esto permite seleccionar unidades "a través" de objetos visuales.
+// ============================================================================
 void seleccionarObrero(float mundoX, float mundoY) {
-    // Uso de puntero para recorrer la estructura del jugador
+    // Puntero a la estructura del jugador
     struct Jugador *pJugador = &jugador1;
+    
+    // Puntero base al array de obreros (para aritmética de punteros)
     UnidadObrero *base = pJugador->obreros;
+    
+    // Recorrer obreros usando aritmética de punteros (sin usar índices)
     for (UnidadObrero *o = base; o < base + 6; o++) {
-        // Selección RTS simple: hitbox 64x64 (top-left en o->x/o->y)
-        // Aritmética de punteros: iteramos con punteros, sin índices.
-        bool dentroX = (mundoX >= o->x) && (mundoX < o->x + TILE_SIZE);
-        bool dentroY = (mundoY >= o->y) && (mundoY < o->y + TILE_SIZE);
+        // ================================================================
+        // PUNTO EN RECTÁNGULO (Hitbox 64x64)
+        // ================================================================
+        // Verificamos si las coordenadas del mouse (mundoX, mundoY)
+        // están dentro del rectángulo del obrero:
+        //   - Esquina superior izquierda: (o->x, o->y)
+        //   - Esquina inferior derecha: (o->x + 64, o->y + 64)
+        // ================================================================
+        
+        // Comparación en X: mundoX >= o->x && mundoX < o->x + TILE_SIZE
+        bool dentroX = (mundoX >= o->x) && (mundoX < o->x + (float)TILE_SIZE);
+        
+        // Comparación en Y: mundoY >= o->y && mundoY < o->y + TILE_SIZE
+        bool dentroY = (mundoY >= o->y) && (mundoY < o->y + (float)TILE_SIZE);
+        
+        // Si ambas condiciones son verdaderas, el punto está dentro del hitbox
+        // Esto funciona INDEPENDIENTEMENTE de qué se haya dibujado encima
         o->seleccionado = (dentroX && dentroY);
     }
 }

@@ -231,11 +231,26 @@ void actualizarObreros(struct Jugador *j) {
 
         if (!o->moviendose) continue;
 
+        // ==================================================================
+        // VALIDACIÓN CRÍTICA: Verificar que la siguiente celda sea pasable
+        // ==================================================================
         int nextF, nextC;
         if (o->rutaCeldas && o->rutaIdx < o->rutaLen) {
             int targetCelda = o->rutaCeldas[o->rutaIdx];
             nextF = targetCelda / GRID_SIZE;
             nextC = targetCelda % GRID_SIZE;
+            
+            // Acceso a la matriz con aritmética de punteros
+            int *fila = *(col + nextF);
+            int valorCelda = *(fila + nextC);
+            
+            // Si la celda tiene valor 1 (AGUA o ÁRBOL), NO SE PUEDE PASAR
+            if (valorCelda == 1) {
+                // Detenerse inmediatamente
+                o->moviendose = false;
+                obreroLiberarRuta(o);
+                continue;
+            }
         } else {
             o->moviendose = false; continue;
         }
@@ -258,6 +273,7 @@ void actualizarObreros(struct Jugador *j) {
         }
 
         if (dist <= vel) {
+            // Llegó al centro de la celda
             o->x = tx - 32.0f; o->y = ty - 32.0f;
             o->rutaIdx++;
             int cf = obreroFilaActual(o), cc = obreroColActual(o);
@@ -266,33 +282,106 @@ void actualizarObreros(struct Jugador *j) {
                 o->moviendose = false; obreroLiberarRuta(o);
             }
         } else {
-            o->x += (vx / dist) * vel;
-            o->y += (vy / dist) * vel;
+            // Calcular nueva posición
+            float newX = o->x + (vx / dist) * vel;
+            float newY = o->y + (vy / dist) * vel;
+            
+            // Validar que la nueva posición no salga de la isla
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > (float)(MAPA_SIZE - TILE_SIZE)) newX = (float)(MAPA_SIZE - TILE_SIZE);
+            if (newY > (float)(MAPA_SIZE - TILE_SIZE)) newY = (float)(MAPA_SIZE - TILE_SIZE);
+            
+            // Verificar que la celda donde vamos a caer no sea agua/árbol
+            int testF = pixelACelda(newY + 32.0f);
+            int testC = pixelACelda(newX + 32.0f);
+            int *filaTest = *(col + testF);
+            int valorTest = *(filaTest + testC);
+            
+            if (valorTest == 1) {
+                // La nueva posición es agua/árbol, detener
+                o->moviendose = false;
+                obreroLiberarRuta(o);
+                continue;
+            }
+            
+            // Aplicar movimiento
+            o->x = newX;
+            o->y = newY;
         }
     }
 }
 
+// ============================================================================
+// COMANDAR MOVIMIENTO RTS CON SEPARACIÓN DE UNIDADES
+// ============================================================================
+// - Si el destino es impasable (agua/árbol = 1), buscar celda libre cercana.
+// - Si el destino está ocupado por otra unidad (= 2), buscar celda adyacente.
+// - Múltiples unidades seleccionadas reciben destinos diferentes para no solaparse.
+// ============================================================================
 void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     int **col = mapaObtenerCollisionMap();
-    int gF = pixelACelda(mundoY), gC = pixelACelda(mundoX);
+    if (!col) return;
+    
+    // Celda objetivo inicial basada en el clic del mouse
+    int gF = pixelACelda(mundoY);
+    int gC = pixelACelda(mundoX);
 
-    if (col[gF][gC] == 1) { // Si es árbol, buscar cerca
+    // Si el destino base es impasable (árbol/agua), buscar celda libre cercana
+    if (*(*(col + gF) + gC) == 1) {
         if (!buscarCeldaLibreCerca(col, gF, gC, &gF, &gC)) return;
     }
-
-    for (int i = 0; i < 6; i++) {
-        UnidadObrero *o = &j->obreros[i];
+    
+    // Contador de unidades que ya recibieron destino (para separación)
+    int unidadesAsignadas = 0;
+    
+    // Puntero base al array de obreros (aritmética de punteros)
+    UnidadObrero *base = j->obreros;
+    
+    // Recorrer todas las unidades usando aritmética de punteros
+    for (UnidadObrero *o = base; o < base + 6; o++) {
         if (!o->seleccionado) continue;
 
-        int sF = obreroFilaActual(o), sC = obreroColActual(o);
-        int *ruta = NULL; int len = 0;
+        // Calcular destino para esta unidad
+        int destinoF = gF;
+        int destinoC = gC;
         
-        if (pathfindSimple(sF, sC, gF, gC, col, &ruta, &len)) {
+        // ============================================================
+        // SEPARACIÓN DE UNIDADES:
+        // Si la celda destino está ocupada (árbol=1 o unidad=2),
+        // buscar la celda libre más cercana.
+        // ============================================================
+        int valorCelda = *(*(col + destinoF) + destinoC);
+        if (valorCelda == 1 || valorCelda == 2) {
+            // La celda está bloqueada, buscar alternativa
+            if (!buscarCeldaLibreCerca(col, destinoF, destinoC, &destinoF, &destinoC)) {
+                continue; // No hay celda libre, esta unidad no se mueve
+            }
+        }
+        
+        // Obtener posición actual de la unidad
+        int sF = obreroFilaActual(o);
+        int sC = obreroColActual(o);
+        
+        // Si ya estamos en el destino, no moverse
+        if (sF == destinoF && sC == destinoC) continue;
+        
+        // Calcular ruta con pathfinding simple (sin colas)
+        int *ruta = NULL;
+        int len = 0;
+        
+        if (pathfindSimple(sF, sC, destinoF, destinoC, col, &ruta, &len)) {
+            // Liberar ruta anterior y asignar nueva
             obreroLiberarRuta(o);
             o->rutaCeldas = ruta;
             o->rutaLen = len;
             o->rutaIdx = 0;
             o->moviendose = true;
+            
+            // Marcar la celda destino como "reservada" temporalmente (valor 2)
+            // para que la siguiente unidad elija otro destino
+            *(*(col + destinoF) + destinoC) = 2;
+            unidadesAsignadas++;
         }
     }
 }
