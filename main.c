@@ -69,10 +69,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
         case WM_TIMER:
             if (wParam == IDT_TIMER_JUEGO) {
-                actualizarObreros(&jugador1); // Mueve a los obreros
-                InvalidateRect(hwnd, NULL, FALSE); // Redibuja la pantalla
+                actualizarObreros(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
+                InvalidateRect(hwnd, NULL, FALSE); 
             }
             return 0;
+
+        case WM_RBUTTONDOWN: {
+            int px = GET_X_LPARAM(lParam);
+            int py = GET_Y_LPARAM(lParam);
+            float mundoX = (px / camara.zoom) + camara.x;
+            float mundoY = (py / camara.zoom) + camara.y;
+            rtsComandarMovimiento(&jugador1, mundoX, mundoY); // Llama a la lógica de recursos.c
+            return 0;
+        }
 
         case WM_SIZE:
             GetClientRect(hwnd, &rect);
@@ -112,18 +121,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             mouseUltimo.x = px;
             mouseUltimo.y = py;
             SetCapture(hwnd);
-            return 0;
-        }
-
-        case WM_RBUTTONDOWN: {
-            // Click Derecho: MOVER seleccionados
-            int px = GET_X_LPARAM(lParam);
-            int py = GET_Y_LPARAM(lParam);
-
-            float mundoX = (px / camara.zoom) + camara.x;
-            float mundoY = (py / camara.zoom) + camara.y;
-
-            comandarMovimiento(mundoX, mundoY);
             return 0;
         }
 

@@ -44,7 +44,8 @@ static void collisionMapAllocIfNeeded(void) {
     if (!gCollisionMap) return;
 
     for (int i = 0; i < GRID_SIZE; i++) {
-        *(gCollisionMap + i) = (int*)malloc(GRID_SIZE * sizeof(int));
+        // Use calloc to zero-initialize memory (clean map)
+        *(gCollisionMap + i) = (int*)calloc(GRID_SIZE, sizeof(int));
         if (!*(gCollisionMap + i)) {
             for (int k = 0; k < i; k++) free(*(gCollisionMap + k));
             free(gCollisionMap);
@@ -71,26 +72,15 @@ int **mapaObtenerCollisionMap(void) {
 
 void mapaReconstruirCollisionMap(void) {
     collisionMapAllocIfNeeded();
-    if (!gCollisionMap) return;
-
-    // 1) Limpiar
-    collisionMapClear(0);
-
-    // 2) Marcar árboles. Regla: árbol ocupa 2x2 celdas (128x128)
-    // Anclaje simple: si mapaObjetos[f][c] tiene árbol, ocupa (f,c), (f,c+1), (f+1,c), (f+1,c+1)
-    int (*ptrFila)[GRID_SIZE] = mapaObjetos;
+    collisionMapClear(0); // Todo libre al inicio
     for (int f = 0; f < GRID_SIZE; f++) {
         for (int c = 0; c < GRID_SIZE; c++) {
-            int tipo = *(*(ptrFila + f) + c);
-            if (tipo <= 0) continue;
-
-            // Marcar 2x2 con control de límites
-            for (int df = 0; df < 2; df++) {
-                for (int dc = 0; dc < 2; dc++) {
-                    int nf = f + df;
-                    int nc = c + dc;
-                    if (nf < 0 || nf >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-                    *(*(gCollisionMap + nf) + nc) = 1;
+            if (mapaObjetos[f][c] > 0) { // Hay un árbol
+                for (int df = 0; df < 2; df++) {
+                    for (int dc = 0; dc < 2; dc++) {
+                        if (f+df < GRID_SIZE && c+dc < GRID_SIZE)
+                            gCollisionMap[f+df][c+dc] = 1; // 1 = ÁRBOL (Impasable)
+                    }
                 }
             }
         }
@@ -153,6 +143,12 @@ void generarBosqueAutomatico() {
 
 static HBITMAP hObreroBmp[4] = {NULL}; // Front, Back, Left, Right
 
+// Definiciones para obrerro fallback
+#define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
+#define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
+#define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
+#define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
+
 void cargarRecursosGraficos() {
     // 1. Cargar Mapa Base (Intento doble)
     hMapaBmp = (HBITMAP)LoadImageA(NULL, RUTA_MAPA, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
@@ -175,16 +171,19 @@ void cargarRecursosGraficos() {
         if (hArboles[i]) cargados++;
     }
     
-    // --- AGREGA ESTO PARA LOS OBREROS ---
-    hObreroBmp[DIR_FRONT] = (HBITMAP)LoadImageA(NULL, obrero_front, IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hObreroBmp[DIR_BACK]  = (HBITMAP)LoadImageA(NULL, obrero_back, IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hObreroBmp[DIR_LEFT]  = (HBITMAP)LoadImageA(NULL, obrero_left, IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hObreroBmp[DIR_RIGHT] = (HBITMAP)LoadImageA(NULL, obrero_right, IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+    // --- AGREGA ESTO PARA LOS OBREROS (CON FALLBACK) ---
+    const char *rutasObr[] = {obrero_front, obrero_back, obrero_left, obrero_right};
+    const char *rutasObrAlt[] = {OBRERO_F_ALT, OBRERO_B_ALT, OBRERO_L_ALT, OBRERO_R_ALT};
 
     for(int i = 0; i < 4; i++) {
-        if (hObreroBmp[i] == NULL) {
-            printf("[ERROR] No se pudo cargar el BMP del obrero indice %d. Ruta: %s\n", i, 
-                (i==0)?obrero_front:(i==1)?obrero_back:(i==2)?obrero_left:obrero_right);
+        hObreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasObr[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+        if (!hObreroBmp[i]) {
+             hObreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasObrAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+        }
+        
+        if (!hObreroBmp[i]) {
+            printf("[ERROR] No se pudo cargar el BMP del obrero indice %d. Ruta 1: %s, Ruta 2: %s\n", 
+                i, rutasObr[i], rutasObrAlt[i]);
         } else {
             printf("[OK] Obrero BMP %d cargado correctamente.\n", i);
         }
