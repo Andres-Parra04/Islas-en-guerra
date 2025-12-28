@@ -46,6 +46,9 @@ int mapaObjetos[GRID_SIZE][GRID_SIZE] = {0};
 // 0 = libre, 1 = ocupado (árboles u obstáculos)
 static int **gCollisionMap = NULL;
 
+static void detectarAguaEnMapa(void);
+void mapaMarcarArea(int f_inicio, int c_inicio, int ancho_celdas, int alto_celdas, int valor);
+
 static void collisionMapAllocIfNeeded(void) {
   if (gCollisionMap)
     return;
@@ -84,20 +87,35 @@ int **mapaObtenerCollisionMap(void) {
 }
 
 void mapaReconstruirCollisionMap(void) {
-  collisionMapAllocIfNeeded();
-  collisionMapClear(0); // Todo libre al inicio
-  for (int f = 0; f < GRID_SIZE; f++) {
-    for (int c = 0; c < GRID_SIZE; c++) {
-      if (mapaObjetos[f][c] > 0) { // Hay un árbol
-        for (int df = 0; df < 2; df++) {
-          for (int dc = 0; dc < 2; dc++) {
-            if (f + df < GRID_SIZE && c + dc < GRID_SIZE)
-              gCollisionMap[f + df][c + dc] = 1; // 1 = ÁRBOL (Impasable)
-          }
+    collisionMapAllocIfNeeded();
+    collisionMapClear(0); 
+
+    // mapaObjetos es 32x32 (árboles), pero la colisión es 64x64
+    for (int f = 0; f < 32; f++) {
+        for (int c = 0; c < 32; c++) {
+            if (mapaObjetos[f][c] > 0) {
+                // Un árbol de la matriz original ahora ocupa 4x4 celdas de 32px
+                mapaMarcarArea(f * 2, c * 2, 4, 4, 1); 
+            }
         }
-      }
     }
-  }
+    detectarAguaEnMapa(); 
+}
+
+// Asegúrate de que mapaMarcarArea no esté marcada como static si la declaraste normal
+void mapaMarcarArea(int f_inicio, int c_inicio, int ancho_celdas, int alto_celdas, int valor) {
+    int **col = mapaObtenerCollisionMap();
+    if (!col) return;
+    for (int f = 0; f < alto_celdas; f++) {
+        int fila_idx = f_inicio + f;
+        if (fila_idx >= GRID_SIZE) continue;
+        int *fila_ptr = *(col + fila_idx);
+        for (int c = 0; c < ancho_celdas; c++) {
+            int col_idx = c_inicio + c;
+            if (col_idx >= GRID_SIZE) continue;
+            *(fila_ptr + col_idx) = valor;
+        }
+    }
 }
 
 // Función auxiliar para marcar edificios en el collision map
@@ -154,52 +172,191 @@ static void detectarAguaEnMapa(void) {
   if (!hMapaBmp || !gCollisionMap)
     return;
 
-  HDC hdcPantalla = GetDC(NULL);
-  HDC hdcMem = CreateCompatibleDC(hdcPantalla);
-  HBITMAP hOldBmp = (HBITMAP)SelectObject(hdcMem, hMapaBmp);
+  printf("\n[DEBUG AGUA] ============================================\n");
+  printf("[DEBUG AGUA] Iniciando deteccion de agua con GetDIBits...\n");
+  fflush(stdout);
 
-  // Puntero a la matriz de colisiones para aritmética de punteros
-  int **ptrCol = gCollisionMap;
+  // ================================================================
+  // OBTENER INFORMACIÓN DEL BITMAP
+  // ================================================================
+  BITMAP bm;
+  if (!GetObject(hMapaBmp, sizeof(BITMAP), &bm)) {
+    printf("[DEBUG AGUA] ERROR: No se pudo obtener info del bitmap\n");
+    fflush(stdout);
+    return;
+  }
+
+  printf("[DEBUG AGUA] Bitmap dimensions: %dx%d\n", bm.bmWidth, bm.bmHeight);
+  printf("[DEBUG AGUA] Bits per pixel: %d\n", bm.bmBitsPixel);
+  fflush(stdout);
+
+  // ================================================================
+  // CONFIGURAR BITMAPINFO PARA LEER PIXELS
+  // ================================================================
+  BITMAPINFO bmi;
+  ZeroMemory(&bmi, sizeof(BITMAPINFO));
+  bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bmi.bmiHeader.biWidth = bm.bmWidth;
+  bmi.bmiHeader.biHeight = -bm.bmHeight;  // Negativo = top-down
+  bmi.bmiHeader.biPlanes = 1;
+  bmi.bmiHeader.biBitCount = 24;  // 24-bit RGB
+  bmi.bmiHeader.biCompression = BI_RGB;
+
+  // ================================================================
+  // LEER TODO EL BITMAP A MEMORIA
+  // ================================================================
+  int rowSize = ((bm.bmWidth * 3 + 3) & ~3);  // Alineado a 4 bytes
+  int imageSize = rowSize * bm.bmHeight;
+  BYTE *pixelData = (BYTE*)malloc(imageSize);
+  
+  if (!pixelData) {
+    printf("[DEBUG AGUA] ERROR: No se pudo asignar memoria\n");
+    fflush(stdout);
+    return;
+  }
+
+  HDC hdcScreen = GetDC(NULL);
+  int result = GetDIBits(hdcScreen, hMapaBmp, 0, bm.bmHeight, pixelData, &bmi, DIB_RGB_COLORS);
+  ReleaseDC(NULL, hdcScreen);
+
+  if (!result) {
+    printf("[DEBUG AGUA] ERROR: GetDIBits fallo\n");
+    free(pixelData);
+    fflush(stdout);
+    return;
+  }
+
+  printf("[DEBUG AGUA] Bitmap leido exitosamente a memoria\n");
+  fflush(stdout);
+
+  // ================================================================
+  // MUESTREO: Verificar primeros píxeles
+  // ================================================================
+  printf("\n[DEBUG AGUA] === MUESTREO DE COLORES ===\n");
+  int posicionesTest[][2] = {{5,5}, {10,10}, {15,15}, {7,7}, {14,8}};
+  
+  for (int i = 0; i < 5; i++) {
+    int f = posicionesTest[i][0];
+    int c = posicionesTest[i][1];
+    int px = (c * TILE_SIZE) + 16;
+    int py = (f * TILE_SIZE) + 16;
+    
+    if (px >= 0 && px < bm.bmWidth && py >= 0 && py < bm.bmHeight) {
+      int offset = py * rowSize + px * 3;
+      BYTE b = pixelData[offset + 0];
+      BYTE g = pixelData[offset + 1];
+      BYTE r = pixelData[offset + 2];
+      
+      bool verde = (g > r && g > b && g > 45);
+      bool beige = (r > 80 && g > 80 && b < 100 && abs(r-g) < 50);
+      printf("[DEBUG] Celda[%2d][%2d] @ (%4d,%4d): RGB(%3d,%3d,%3d) -> %s\n", 
+             f, c, px, py, r, g, b, (verde || beige) ? "TIERRA" : "AGUA");
+    }
+  }
+  fflush(stdout);
+
+  // ================================================================
+  // DETECCIÓN COMPLETA DE AGUA
+  // ================================================================
   int contadorAgua = 0;
+  int contadorTierra = 0;
+  int contadorFueraDeLimites = 0;
 
-  // Recorremos cada celda de la matriz 32x32
   for (int f = 0; f < GRID_SIZE; f++) {
-    // Aritmética de punteros: acceso a la fila f
-    int *fila = *(ptrCol + f);
-
+    int *fila = *(gCollisionMap + f);
     for (int c = 0; c < GRID_SIZE; c++) {
-      // Si ya está marcado como obstáculo (árbol), saltar
-      if (*(fila + c) == 1)
+      // No sobreescribir árboles u obstáculos
+      if (*(fila + c) != 0) continue;
+
+      // Calcular pixel central de la celda
+      int px = (c * TILE_SIZE) + 16;
+      int py = (f * TILE_SIZE) + 16;
+
+      // Verificar límites
+      if (px < 0 || px >= bm.bmWidth || py < 0 || py >= bm.bmHeight) {
+        contadorFueraDeLimites++;
         continue;
+      }
 
-      // Analizar el píxel central de la celda 64x64
-      int px = (c * TILE_SIZE) + (TILE_SIZE / 2);
-      int py = (f * TILE_SIZE) + (TILE_SIZE / 2);
+      // Leer pixel desde buffer
+      int offset = py * rowSize + px * 3;
+      BYTE b = pixelData[offset + 0];
+      BYTE g = pixelData[offset + 1];
+      BYTE r = pixelData[offset + 2];
 
-      COLORREF color = GetPixel(hdcMem, px, py);
-      if (color == CLR_INVALID)
-        continue;
+      // ================================================================
+      // CRITERIO: DETECTAR SOLO AGUA AZUL
+      // ================================================================
+      // AGUA debe tener azul dominante sobre rojo y verde
+      // Arena/beige/verde son transitables
+      // ================================================================
+      
+      bool esAguaAzulOscura = (b > r + 20 && b > g + 20 && b > 60);  // Azul oscuro
+      bool esAguaAzulClara = (b > r && b > g && b > 100);             // Azul claro (celeste)
+      
+      bool esAgua = esAguaAzulOscura || esAguaAzulClara;
 
-      BYTE r = GetRValue(color);
-      BYTE g = GetGValue(color);
-      BYTE b = GetBValue(color);
-
-      // DETECCIÓN DE AGUA: el azul domina sobre rojo y verde
-      // Criterio: B > R y B > G y B > umbral (agua azul)
-      if (b > r && b > g && b > 80) {
-        // Marcar como agua (impasable, valor 1)
+      if (esAgua) {
+        // ES AGUA - marcar como impasable
         *(fila + c) = 1;
         contadorAgua++;
+        
+        // Debug primeras 5 escrituras
+        if (contadorAgua <= 5) {
+          printf("[DEBUG] AGUA DETECTADA: gCollisionMap[%d][%d] = 1 (RGB=%d,%d,%d)\n", 
+                 f, c, r, g, b);
+          fflush(stdout);
+        }
+      } else {
+        // NO es agua - es tierra transitable (verde, arena, beige, etc)
+        contadorTierra++;
       }
     }
   }
 
-  printf("[DEBUG] Agua detectada: %d celdas marcadas como impasables.\n",
-         contadorAgua);
+  // Liberar memoria
+  free(pixelData);
 
-  SelectObject(hdcMem, hOldBmp);
-  DeleteDC(hdcMem);
-  ReleaseDC(NULL, hdcPantalla);
+  // ================================================================
+  // REPORTE FINAL
+  // ================================================================
+  printf("\n[DEBUG AGUA] === RESUMEN ===\n");
+  printf("[DEBUG AGUA] Celdas de AGUA: %d\n", contadorAgua);
+  printf("[DEBUG AGUA] Celdas de TIERRA: %d\n", contadorTierra);
+  printf("[DEBUG AGUA] Fuera de limites: %d\n", contadorFueraDeLimites);
+  printf("[DEBUG AGUA] Total procesado: %d\n", contadorAgua + contadorTierra + contadorFueraDeLimites);
+  fflush(stdout);
+
+  // Verificación post-escritura
+  printf("\n[DEBUG AGUA] === VERIFICACION POST-ESCRITURA ===\n");
+  for (int i = 0; i < 5; i++) {
+    int f = posicionesTest[i][0];
+    int c = posicionesTest[i][1];
+    int valor = *(*(gCollisionMap + f) + c);
+    printf("[DEBUG] gCollisionMap[%d][%d] = %d\n", f, c, valor);
+  }
+
+  // Snapshot de fila 10
+  printf("\n[DEBUG] Fila 10: ");
+  for (int c = 0; c < 20; c++) {
+    printf("%d", *(*(gCollisionMap + 10) + c));
+  }
+  printf("...\n");
+
+  if (contadorAgua == 0) {
+    printf("\n[DEBUG AGUA] WARNING: No se detecto agua, activando fallback...\n");
+    // Marcar bordes como agua
+    for (int i = 0; i < GRID_SIZE; i++) {
+      if (*(*(gCollisionMap + 0) + i) == 0) *(*(gCollisionMap + 0) + i) = 1;
+      if (*(*(gCollisionMap + GRID_SIZE-1) + i) == 0) *(*(gCollisionMap + GRID_SIZE-1) + i) = 1;
+      if (*(*(gCollisionMap + i) + 0) == 0) *(*(gCollisionMap + i) + 0) = 1;
+      if (*(*(gCollisionMap + i) + GRID_SIZE-1) == 0) *(*(gCollisionMap + i) + GRID_SIZE-1) = 1;
+    }
+  }
+
+  printf("[DEBUG AGUA] Deteccion completada exitosamente.\n");
+  printf("[DEBUG AGUA] ============================================\n\n");
+  fflush(stdout);
 }
 
 void generarBosqueAutomatico() {
@@ -213,41 +370,49 @@ void generarBosqueAutomatico() {
   // Requisito: Aritmética de punteros para manejar la matriz
   int (*ptrMatriz)[GRID_SIZE] = mapaObjetos;
   srand((unsigned int)time(NULL));
+  
+  // REQUISITO CRÍTICO: Colocar exactamente 40 árboles (no por probabilidad)
+  const int NUM_ARBOLES_EXACTO = 40;
   int contador = 0;
-
-  for (int i = 0; i < GRID_SIZE; i++) {
-    for (int j = 0; j < GRID_SIZE; j++) {
-      // Analizamos el píxel central de cada celda de 64x64
-      int px = (j * TILE_SIZE) + (TILE_SIZE / 2);
-      int py = (i * TILE_SIZE) + (TILE_SIZE / 2);
-
-      COLORREF color = GetPixel(hdcMem, px, py);
-      if (color == CLR_INVALID)
-        continue;
-
-      BYTE r = GetRValue(color);
-      BYTE g = GetGValue(color);
-      BYTE b = GetBValue(color);
-
-      // Detección de color verde para colocar árboles
-      // Solo en tierra (verde domina), no en agua (azul domina)
-      if (g > r && g > b && g > 45 && b < 100) {
-        if ((rand() % 100) < 25) {
-          // Acceso por punteros: *(base + desplazamiento)
-          *(*(ptrMatriz + i) + j) = (rand() % 4) + 1;
-          contador++;
-        }
-      }
+  
+  // Bucle while que continúa hasta colocar exactamente 40 árboles
+  while (contador < NUM_ARBOLES_EXACTO) {
+    // Generar coordenadas aleatorias en la matriz 32x32
+    int fila = rand() % GRID_SIZE;
+    int col = rand() % GRID_SIZE;
+    
+    // Verificar que la celda esté vacía (no haya otro árbol)
+    if (*(*(ptrMatriz + fila) + col) != 0) {
+      continue; // Ya hay un árbol aquí, intentar otra posición
+    }
+    
+    // Calcular píxel central de la celda para verificar el color del suelo
+    int px = (col * TILE_SIZE) + (TILE_SIZE / 2);
+    int py = (fila * TILE_SIZE) + (TILE_SIZE / 2);
+    
+    COLORREF color = GetPixel(hdcMem, px, py);
+    if (color == CLR_INVALID)
+      continue;
+    
+    BYTE r = GetRValue(color);
+    BYTE g = GetGValue(color);
+    BYTE b = GetBValue(color);
+    
+    // Verificar que el suelo sea verde (tierra válida para árbol)
+    // Solo colocar en tierra (verde domina), no en agua (azul domina)
+    if (g > r && g > b && g > 45 && b < 100) {
+      // Colocar árbol aleatorio (tipo 1-4) usando aritmética de punteros
+      *(*(ptrMatriz + fila) + col) = (rand() % 4) + 1;
+      contador++;
     }
   }
+  
   printf("[DEBUG] Logica: %d arboles registrados en la matriz con punteros.\n",
          contador);
 
-  // 1. Construir la grilla de colisión con árboles
+  // Construir la grilla de colisión con árboles Y detectar agua
+  // NOTA: mapaReconstruirCollisionMap() YA llama a detectarAguaEnMapa() internamente
   mapaReconstruirCollisionMap();
-
-  // 2. Detectar agua y marcarla como impasable
-  detectarAguaEnMapa();
 
   SelectObject(hdcMem, hOldBmp);
   DeleteDC(hdcMem);
@@ -311,6 +476,7 @@ void cargarRecursosGraficos() {
   printf("[DEBUG] Recursos: %d/4 arboles cargados fisicamente.\n", cargados);
   generarBosqueAutomatico();
 }
+
 // ============================================================================
 // DIBUJADO CON Y-SORTING (PROFUNDIDAD POR FILA)
 // ============================================================================

@@ -10,8 +10,8 @@ struct MenuCompra;
 
 // --- CONSTANTES DE DIMENSIÓN ---
 #define MAPA_SIZE 2048
-#define TILE_SIZE 64                      // Tamaño lógico (celda de matriz)
-#define GRID_SIZE (MAPA_SIZE / TILE_SIZE) // 32x32 celdas
+#define TILE_SIZE 32                      // Tamaño lógico (celda de matriz)
+#define GRID_SIZE (MAPA_SIZE / TILE_SIZE) 
 #define SPRITE_ARBOL 128                  // Tamaño visual del BMP de árbol
 
 typedef struct {

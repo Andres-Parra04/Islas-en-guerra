@@ -71,13 +71,16 @@ void seleccionarObrero(float mundoX, float mundoY) {
     // están dentro del rectángulo del obrero:
     //   - Esquina superior izquierda: (o->x, o->y)
     //   - Esquina inferior derecha: (o->x + 64, o->y + 64)
+    // 
+    // CRÍTICO: El obrero mide 64x64px, NO 32x32px (TILE_SIZE)
     // ================================================================
+    const float OBRERO_SIZE = 64.0f;
 
-    // Comparación en X: mundoX >= o->x && mundoX < o->x + TILE_SIZE
-    bool dentroX = (mundoX >= o->x) && (mundoX < o->x + (float)TILE_SIZE);
+    // Comparación en X: mundoX >= o->x && mundoX < o->x + 64
+    bool dentroX = (mundoX >= o->x) && (mundoX < o->x + OBRERO_SIZE);
 
-    // Comparación en Y: mundoY >= o->y && mundoY < o->y + TILE_SIZE
-    bool dentroY = (mundoY >= o->y) && (mundoY < o->y + (float)TILE_SIZE);
+    // Comparación en Y: mundoY >= o->y && mundoY < o->y + 64
+    bool dentroY = (mundoY >= o->y) && (mundoY < o->y + OBRERO_SIZE);
 
     // Si ambas condiciones son verdaderas, el punto está dentro del hitbox
     // Esto funciona INDEPENDIENTEMENTE de qué se haya dibujado encima
