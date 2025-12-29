@@ -38,9 +38,21 @@
 #define CABALLO_L_ALT "assets/caballero/caballero_walkLeft3.bmp"
 #define CABALLO_R_ALT "assets/caballero/caballero_walkRight3.bmp"
 
+#define VACA_F "../assets/vaca/vaca_front.bmp"
+#define VACA_B "../assets/vaca/vaca_back.bmp"
+#define VACA_L "../assets/vaca/vaca_left.bmp"
+#define VACA_R "../assets/vaca/vaca_right.bmp"
+
+#define VACA_F_ALT "assets/vaca/vaca_front.bmp"
+#define VACA_B_ALT "assets/vaca/vaca_back.bmp"
+#define VACA_L_ALT "assets/vaca/vaca_left.bmp"
+#define VACA_R_ALT "assets/vaca/vaca_right.bmp"
+
 static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
 static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
 static HBITMAP hBarcoBmp[4] = {NULL};     // Front, Back, Left, Right (192x192)
+
+static HBITMAP hVacaBmp[4] = {NULL};
 
 // Definiciones para obrerro fallback
 #define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
@@ -540,6 +552,36 @@ void generarBosqueAutomatico() {
   printf("[DEBUG] Logica: %d arboles registrados en la matriz con punteros.\n",
          contador);
 
+  const int NUM_VACAS_EXACTO = 10;  // 10 vacas distribuidas en el mapa
+int contadorVacas = 0;
+while (contadorVacas < NUM_VACAS_EXACTO) {
+    int fila = rand() % GRID_SIZE;
+    int col = rand() % GRID_SIZE;
+    
+    // No colocar vaca donde ya hay árbol
+    if (*(*(ptrMatriz + fila) + col) != 0) continue;
+    
+    // Verificar que el suelo sea tierra (mismo criterio que árboles)
+    int px = (col * TILE_SIZE) + (TILE_SIZE / 2);
+    int py = (fila * TILE_SIZE) + (TILE_SIZE / 2);
+    
+    COLORREF color = GetPixel(hdcMem, px, py);
+    if (color == CLR_INVALID) continue;
+    
+    BYTE r = GetRValue(color);
+    BYTE g = GetGValue(color);
+    BYTE b = GetBValue(color);
+    
+    // Solo en tierra verde
+    if (g > r && g > b && g > 45 && b < 100) {
+        // Colocar vaca con orientación aleatoria (5-8)
+        *(*(ptrMatriz + fila) + col) = 5 + (rand() % 4);
+        contadorVacas++;
+    }
+}
+printf("[DEBUG] Logica: %d vacas registradas en la matriz.\\n", contadorVacas);
+  
+  
   // Construir la grilla de colisión con árboles Y detectar agua
   // NOTA: mapaReconstruirCollisionMap() YA llama a detectarAguaEnMapa() internamente
   mapaReconstruirCollisionMap();
@@ -638,7 +680,18 @@ void cargarRecursosGraficos() {
     }
   }
 
-  printf("[DEBUG] Recursos: %d/4 arboles cargados fisicamente.\n", cargados);
+  const char *rutasVaca[] = {VACA_F, VACA_B, VACA_L, VACA_R};
+  const char *rutasVacaAlt[] = {VACA_F_ALT, VACA_B_ALT, VACA_L_ALT, VACA_R_ALT};
+  for (int i = 0; i < 4; i++) {
+      hVacaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasVaca[i], IMAGE_BITMAP, 
+                                        64, 64, LR_LOADFROMFILE);
+      if (!hVacaBmp[i]) {
+          hVacaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasVacaAlt[i], IMAGE_BITMAP,
+                                            64, 64, LR_LOADFROMFILE);
+      }
+      printf("[%s] Vaca BMP %d cargado.\\n", hVacaBmp[i] ? "OK" : "ERROR", i);
+  }
+
   generarBosqueAutomatico();
 }
 
@@ -808,6 +861,29 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                          192, 192, RGB(255, 255, 255));
         }
       }
+    }
+
+    // E) DIBUJAR VACAS DE ESTA FILA (64x64)
+    for (int c = 0; c < GRID_SIZE; c++) {
+        int tipo = *(filaActual + c);
+        
+        // Vacas tienen valores 5-8 (front, back, left, right)
+        if (tipo >= 5 && tipo <= 8 && hVacaBmp[tipo - 5] != NULL) {
+            int mundoX = c * TILE_SIZE;
+            int mundoY = f * TILE_SIZE;
+            
+            // Las vacas son 64x64, coinciden exactamente con TILE_SIZE
+            int pantX = (int)((mundoX - cam.x) * cam.zoom);
+            int pantY = (int)((mundoY - cam.y) * cam.zoom);
+            int tamZoom = (int)(64 * cam.zoom);
+            
+            if (pantX + tamZoom > 0 && pantX < anchoP && 
+                pantY + tamZoom > 0 && pantY < altoP) {
+                SelectObject(hdcSprites, hVacaBmp[tipo - 5]);
+                TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom, 
+                              hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
+            }
+        }
     }
   }
 
