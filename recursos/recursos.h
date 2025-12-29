@@ -17,6 +17,12 @@ struct Tropa {
   int VelocidadAtaque;
   int DistanciaAtaque;
 };
+// Tipo de unidad
+typedef enum {
+  TIPO_OBRERO,
+  TIPO_CABALLERO
+} TipoUnidad;
+
 // Estados de animación/dirección
 typedef enum { DIR_FRONT, DIR_BACK, DIR_LEFT, DIR_RIGHT } Direccion;
 
@@ -45,7 +51,7 @@ typedef struct {
   int rutaIdx;
 
   // --- Sincronización Matriz <-> Mundo ---
-  // Celda actualmente ocupada por el obrero (se actualiza solo cuando cambia de
+  // Celda actualmente ocupada (se actualiza solo cuando cambia de
   // celda por completo).
   int celdaFila;
   int celdaCol;
@@ -53,7 +59,10 @@ typedef struct {
   // --- Animación por puntero a estado ---
   const Animation *animActual;
   int animTick;
-} UnidadObrero;
+  
+  // --- Tipo de unidad ---
+  TipoUnidad tipo;  // TIPO_OBRERO o TIPO_CABALLERO
+} Unidad;
 
 struct Jugador {
   char Nombre[30];
@@ -62,7 +71,8 @@ struct Jugador {
   int Madera;
   int Piedra;
   struct Tropa *Ejercito;
-  UnidadObrero obreros[6];
+  Unidad obreros[6];       // Trabajadores
+  Unidad caballeros[4];    // Caballeros (NUEVO)
   int CantidadEspadas;
   int CantidadArqueros;
   int CantidadPicas;

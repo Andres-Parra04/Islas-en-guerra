@@ -50,11 +50,11 @@ static float celdaAPixel(int celda) {
     return (float)(celda * TILE_SIZE);
 }
 
-static int obreroFilaActual(const UnidadObrero *o) {
+static int obreroFilaActual(const Unidad *o) {
     return pixelACelda(o->y + 32.0f);
 }
 
-static int obreroColActual(const UnidadObrero *o) {
+static int obreroColActual(const Unidad *o) {
     return pixelACelda(o->x + 32.0f);
 }
 // 1. Mueve marcarHuellaObrero ARRIBA de ocupacionActualizarUnidad
@@ -69,7 +69,7 @@ static void marcarHuellaObrero(int **collision, int fila, int col, int valor) {
 }
 
 // Ahora esta función ya conoce a la anterior
-static void ocupacionActualizarUnidad(int **collision, UnidadObrero *o, int nuevaF, int nuevaC) {
+static void ocupacionActualizarUnidad(int **collision, Unidad *o, int nuevaF, int nuevaC) {
     if (!collision) return;
     if (o->celdaFila >= 0 && o->celdaCol >= 0) {
         marcarHuellaObrero(collision, o->celdaFila, o->celdaCol, 0);
@@ -95,7 +95,7 @@ static bool buscarCeldaLibreCerca(int **collision, int startF, int startC, int *
     return false;
 }
 
-static void obreroLiberarRuta(UnidadObrero *o) {
+static void obreroLiberarRuta(Unidad *o) {
     if (o->rutaCeldas) free(o->rutaCeldas);
     o->rutaCeldas = NULL;
     o->rutaLen = 0;
@@ -244,8 +244,34 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
         j->obreros[i].celdaFila = -1;
         j->obreros[i].celdaCol = -1;
         j->obreros[i].rutaCeldas = NULL;
+        j->obreros[i].tipo = TIPO_OBRERO;  // Asignar tipo
         j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
     }
+
+  // ================================================================
+  // INICIALIZAR CABALLEROS (NUEVO)
+  // ================================================================
+  struct {int x, y;} posCaballeros[4] = {
+      {500, 500}, {532, 500},   // Fila 1
+      {500, 532}, {532, 532}    // Fila 2
+  };
+  
+  for (int i = 0; i < 4; i++) {
+    j->caballeros[i].x = posCaballeros[i].x;
+    j->caballeros[i].y = posCaballeros[i].y;
+    j->caballeros[i].destinoX = j->caballeros[i].x;
+    j->caballeros[i].destinoY = j->caballeros[i].y;
+    j->caballeros[i].moviendose = false;
+    j->caballeros[i].seleccionado = false;
+    j->caballeros[i].dir = DIR_FRONT;
+    j->caballeros[i].frame = 0;
+    j->caballeros[i].celdaFila = -1;
+    j->caballeros[i].celdaCol = -1;
+    j->caballeros[i].rutaCeldas = NULL;
+    j->caballeros[i].tipo = TIPO_CABALLERO;  // Asignar tipo
+  }
+  
+  printf("[DEBUG] %d caballeros inicializados\n", 4);
 }
 
 
@@ -255,7 +281,7 @@ void actualizarObreros(struct Jugador *j) {
     if (!col) return;
 
     for (int i = 0; i < 6; i++) {
-        UnidadObrero *o = &j->obreros[i];
+        Unidad *o = &j->obreros[i];
         
         // 1. Sincronización inicial de la huella en la matriz (2x2 celdas)
         if (o->celdaFila == -1) {
@@ -355,6 +381,98 @@ void actualizarObreros(struct Jugador *j) {
             
             o->x = newX;
             o->y = newY;
+        }
+    }
+    
+    // ================================================================
+    // ACTUALIZAR CABALLEROS (misma lógica)
+    // ================================================================
+    for (int i = 0; i < 4; i++) {
+        Unidad *u = &j->caballeros[i];
+        
+        // Misma lógica que obreros
+        if (u->celdaFila == -1) {
+            ocupacionActualizarUnidad(col, u, obreroFilaActual(u), obreroColActual(u));
+        }
+
+        if (!u->moviendose) continue;
+
+        int nextF, nextC;
+        if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
+            int targetCelda = u->rutaCeldas[u->rutaIdx];
+            nextF = targetCelda / GRID_SIZE;
+            nextC = targetCelda % GRID_SIZE;
+        } else {
+            u->moviendose = false; 
+            continue;
+        }
+
+        bool bloqueado = false;
+        for (int f = 0; f < 2; f++) {
+            for (int c = 0; c < 2; c++) {
+                int checkF = nextF + f;
+                int checkC = nextC + c;
+
+                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { bloqueado = true; break; }
+
+                int valor = *(*(col + checkF) + checkC);
+
+                if (valor == 1 || valor == 2) { bloqueado = true; break; }
+
+                if (valor == 3) {
+                    bool esMiPropiaHuella = (checkF >= u->celdaFila && checkF <= u->celdaFila + 1 &&
+                                            checkC >= u->celdaCol && checkC <= u->celdaCol + 1);
+                    if (!esMiPropiaHuella) { bloqueado = true; break; }
+                }
+            }
+            if (bloqueado) break;
+        }
+
+        if (bloqueado) {
+            u->moviendose = false;
+            obreroLiberarRuta(u);
+            continue;
+        }
+
+        float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
+        float cx = u->x + 32.0f, cy = u->y + 32.0f;
+        float vx = tx - cx, vy = ty - cy;
+        float dist = sqrtf(vx*vx + vy*vy);
+
+        if (dist > 0.1f) {
+            if (fabsf(vx) > fabsf(vy)) u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
+            else u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
+            
+            u->animActual = animPorDireccion(u->dir);
+            u->animTick++;
+            if (u->animTick >= u->animActual->ticksPerFrame) {
+                u->animTick = 0;
+                u->frame = (u->frame + 1) % u->animActual->frameCount;
+            }
+        }
+
+        if (dist <= vel) {
+            u->x = tx - 32.0f; 
+            u->y = ty - 32.0f;
+            u->rutaIdx++;
+            
+            ocupacionActualizarUnidad(col, u, nextF, nextC);
+            
+            if (u->rutaIdx >= u->rutaLen) {
+                u->moviendose = false; 
+                obreroLiberarRuta(u);
+            }
+        } else {
+            float newX = u->x + (vx / dist) * vel;
+            float newY = u->y + (vy / dist) * vel;
+            
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > (float)(MAPA_SIZE - 64)) newX = (float)(MAPA_SIZE - 64);
+            if (newY > (float)(MAPA_SIZE - 64)) newY = (float)(MAPA_SIZE - 64);
+            
+            u->x = newX;
+            u->y = newY;
         }
     }
 }
@@ -459,10 +577,10 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     int unidadesAsignadas = 0;
     
     // Puntero base al array de obreros (aritmética de punteros)
-    UnidadObrero *base = j->obreros;
+    Unidad *base = j->obreros;
     
     // Recorrer todas las unidades usando aritmética de punteros
-    for (UnidadObrero *o = base; o < base + 6; o++) {
+    for (Unidad *o = base; o < base + 6; o++) {
         if (!o->seleccionado) continue;
 
         // Calcular destino para esta unidad
@@ -506,6 +624,40 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
             *(*(col + destinoF) + destinoC) = 2;
             unidadesAsignadas++;
         }
+    }
+    
+    // ================================================================
+    // COMANDAR CABALLEROS (misma lógica)
+    // ================================================================
+    Unidad *baseCaballeros = j->caballeros;
+    for (Unidad *u = baseCaballeros; u < baseCaballeros + 4; u++) {
+        if (!u->seleccionado) continue;
+
+        // Calcular offset para separación
+        int offF = (unidadesAsignadas / 3) - 1;
+        int offC = (unidadesAsignadas % 3) - 1;
+        int targetF = gF + offF;
+        int targetC = gC + offC;
+        targetF = (targetF < 0) ? 0 : ((targetF >= GRID_SIZE) ? GRID_SIZE - 1 : targetF);
+        targetC = (targetC < 0) ? 0 : ((targetC >= GRID_SIZE) ? GRID_SIZE - 1 : targetC);
+
+        // Pathfinding
+        int *path = NULL;
+        int len = 0;
+        bool success = pathfindSimple(obreroFilaActual(u), obreroColActual(u), 
+                                       targetF, targetC, col, &path, &len);
+        
+        if (success) {
+            obreroLiberarRuta(u);
+            u->rutaCeldas = path;
+            u->rutaLen = len;
+            u->rutaIdx = 0;
+            u->objetivoFila = targetF;
+            u->objetivoCol = targetC;
+            u->moviendose = true;
+        }
+
+        unidadesAsignadas++;
     }
 }
 

@@ -58,12 +58,17 @@ void corregirLimitesCamara(RECT rect) {
 void seleccionarObrero(float mundoX, float mundoY) {
   // Puntero a la estructura del jugador
   struct Jugador *pJugador = &jugador1;
+  
+  // ================================================================
+  // CONSTANTE: Tamaño de hitbox de las unidades (64x64px)
+  // ================================================================
+  const float OBRERO_SIZE = 64.0f;
 
   // Puntero base al array de obreros (para aritmética de punteros)
-  UnidadObrero *base = pJugador->obreros;
+  Unidad *base = pJugador->obreros;
 
-  // Recorrer obreros usando aritmética de punteros (sin usar índices)
-  for (UnidadObrero *o = base; o < base + 6; o++) {
+  // Solo cambiar el estado del que se clickeó
+  for (Unidad *o = base; o < base + 6; o++) {
     // ================================================================
     // PUNTO EN RECTÁNGULO (Hitbox 64x64)
     // ================================================================
@@ -74,7 +79,6 @@ void seleccionarObrero(float mundoX, float mundoY) {
     // 
     // CRÍTICO: El obrero mide 64x64px, NO 32x32px (TILE_SIZE)
     // ================================================================
-    const float OBRERO_SIZE = 64.0f;
 
     // Comparación en X: mundoX >= o->x && mundoX < o->x + 64
     bool dentroX = (mundoX >= o->x) && (mundoX < o->x + OBRERO_SIZE);
@@ -85,6 +89,24 @@ void seleccionarObrero(float mundoX, float mundoY) {
     // Si ambas condiciones son verdaderas, el punto está dentro del hitbox
     // Esto funciona INDEPENDIENTEMENTE de qué se haya dibujado encima
     o->seleccionado = (dentroX && dentroY);
+  }
+  
+  // ================================================================
+  // SELECCIONAR CABALLEROS (NUEVO)
+  // ================================================================
+  Unidad *baseCaballeros = pJugador->caballeros;
+  for (Unidad *c = baseCaballeros; c < baseCaballeros + 4; c++) {
+    float mundoXUnit = c->x;
+    float mundoYUnit = c->y;
+
+    bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
+                   mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
+
+    if (dentro) {
+      c->seleccionado = !c->seleccionado;
+    } else {
+      c->seleccionado = false;
+    }
   }
 }
 

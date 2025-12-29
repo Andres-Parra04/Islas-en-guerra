@@ -28,13 +28,27 @@
 #define obrero_left "../assets/obrero/obrero_left.bmp"
 #define obrero_right "../assets/obrero/obrero_right.bmp"
 
-static HBITMAP hObreroBmp[4] = {NULL}; // Front, Back, Left, Right
+#define caballero_front "../assets/caballero/caballero_front.bmp"
+#define caballero_back "../assets/caballero/caballero_back.bmp"
+#define caballero_left "../assets/caballero/caballero_walkLeft3.bmp"
+#define caballero_right "../assets/caballero/caballero_walkRight3.bmp"
+
+#define CABALLO_F_ALT "assets/caballero/caballero_front.bmp"
+#define CABALLO_B_ALT "assets/caballero/caballero_back.bmp"
+#define CABALLO_L_ALT "assets/caballero/caballero_walkLeft3.bmp"
+#define CABALLO_R_ALT "assets/caballero/caballero_walkRight3.bmp"
+
+static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
+static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
 
 // Definiciones para obrerro fallback
 #define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
 #define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
 #define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
 #define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
+
+
+
 
 static HBITMAP hMapaBmp = NULL;
 static HBITMAP hArboles[4] = {NULL};
@@ -465,11 +479,32 @@ void cargarRecursosGraficos() {
     }
 
     if (!hObreroBmp[i]) {
-      printf("[ERROR] No se pudo cargar el BMP del obrero indice %d. Ruta 1: "
-             "%s, Ruta 2: %s\n",
-             i, rutasObr[i], rutasObrAlt[i]);
+      printf("[ERROR] No se pudo cargar obrero[%d]\n", i);
     } else {
       printf("[OK] Obrero BMP %d cargado correctamente.\n", i);
+    }
+  }
+
+  // --- CARGAR SPRITES DE CABALLEROS ---
+
+
+  const char *rutasCab[] = {caballero_front, caballero_back, caballero_left,
+                            caballero_right};
+  const char *rutasCabAlt[] = {CABALLO_F_ALT, CABALLO_B_ALT, CABALLO_L_ALT,
+                               CABALLO_R_ALT};
+
+  for (int i = 0; i < 4; i++) {
+    hCaballeroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCab[i], IMAGE_BITMAP, 64, 64,
+                                        LR_LOADFROMFILE);
+    if (!hCaballeroBmp[i]) {
+      hCaballeroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCabAlt[i], IMAGE_BITMAP,
+                                          64, 64, LR_LOADFROMFILE);
+    }
+
+    if (!hCaballeroBmp[i]) {
+      printf("[ERROR] No se pudo cargar caballero[%d]\n", i);
+    } else {
+      printf("[OK] Caballero BMP %d cargado correctamente.\n", i);
     }
   }
 
@@ -565,9 +600,9 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
     int yMaxFila = (f + 1) * TILE_SIZE;
 
     // Puntero base al array de obreros
-    UnidadObrero *baseObreros = pJugador->obreros;
+    Unidad *baseObreros = pJugador->obreros;
 
-    for (UnidadObrero *o = baseObreros; o < baseObreros + 6; o++) {
+    for (Unidad *o = baseObreros; o < baseObreros + 6; o++) {
       // La base del obrero (pies) está en o->y + TILE_SIZE
       float basePies = o->y + (float)TILE_SIZE;
 
@@ -585,6 +620,35 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
           // Círculo de selección
           if (o->seleccionado) {
+            HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+            SelectObject(hdcBuffer, nullBrush);
+            SelectObject(hdcBuffer, verde);
+            Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
+                    pantY + tam + 5);
+            DeleteObject(verde);
+          }
+        }
+      }
+    }
+    
+    // C) DIBUJAR CABALLEROS (NUEVO)
+    Unidad *baseCaballeros = pJugador->caballeros;
+    for (Unidad *c = baseCaballeros; c < baseCaballeros + 4; c++) {
+      float basePies = c->y + (float)TILE_SIZE;
+      
+      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+        int pantX = (int)((c->x - cam.x) * cam.zoom);
+        int pantY = (int)((c->y - cam.y) * cam.zoom);
+        int tam = (int)(64 * cam.zoom);
+
+        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+          SelectObject(hdcSprites, hCaballeroBmp[c->dir]);
+          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
+                         64, 64, RGB(255, 255, 255));
+
+          // Círculo de selección
+          if (c->seleccionado) {
             HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
             HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
             SelectObject(hdcBuffer, nullBrush);
