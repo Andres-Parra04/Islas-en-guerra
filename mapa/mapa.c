@@ -38,6 +38,16 @@
 #define CABALLO_L_ALT "assets/caballero/caballero_walkLeft3.bmp"
 #define CABALLO_R_ALT "assets/caballero/caballero_walkRight3.bmp"
 
+#define guerrero_front "../assets/guerrero/guerrero_front.bmp"
+#define guerrero_back "../assets/guerrero/guerrero_back.bmp"
+#define guerrero_left "../assets/guerrero/guerrero_left.bmp"
+#define guerrero_right "../assets/guerrero/guerrero_right.bmp"
+
+#define GUERRERO_F_ALT "assets/guerrero/guerrero_front.bmp"
+#define GUERRERO_B_ALT "assets/guerrero/guerrero_back.bmp"
+#define GUERRERO_L_ALT "assets/guerrero/guerrero_left.bmp"
+#define GUERRERO_R_ALT "assets/guerrero/guerrero_right.bmp"
+
 #define VACA_F "../assets/vaca/vaca_front.bmp"
 #define VACA_B "../assets/vaca/vaca_back.bmp"
 #define VACA_L "../assets/vaca/vaca_left.bmp"
@@ -51,6 +61,8 @@
 static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
 static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
 static HBITMAP hBarcoBmp[4] = {NULL};     // Front, Back, Left, Right (192x192)
+
+static HBITMAP hGuerreroBmp[4] = {NULL}; // Front, Back, Left, Right
 
 static HBITMAP hVacaBmp[4] = {NULL};
 
@@ -666,6 +678,23 @@ void cargarRecursosGraficos() {
     }
   }
 
+  // --- CARGAR SPRITES DE GUERREROS ---
+  const char *rutasGuerr[] = {guerrero_front, guerrero_back, guerrero_left, guerrero_right};
+
+  const char *rutasGuerrAlt[] = {GUERRERO_F_ALT, GUERRERO_B_ALT, GUERRERO_L_ALT, GUERRERO_R_ALT};
+
+  for (int i = 0; i < 4; i++) {
+    hGuerreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasGuerr[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+    if (!hGuerreroBmp[i]) {
+      hGuerreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasGuerrAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+    }
+    if (!hGuerreroBmp[i]) {
+      printf("[ERROR] No se pudo cargar guerrero[%d]\\n", i);
+    } else {
+      printf("[OK] Guerrero BMP %d cargado correctamente.\\n", i);
+    }
+  }
+
   // --- CARGAR SPRITES DE BARCO (192x192) ---
   const char *rutasBarcoAlt[] = {BARCO_F_ALT, BARCO_B_ALT, BARCO_L_ALT, BARCO_R_ALT};
 
@@ -850,24 +879,32 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
       }
     }
     
-    // D) DIBUJAR BARCO SI ESTÁ ACTIVO (192x192)
-    if (pJugador->barco.activo) {
-      Barco *b = &pJugador->barco;
-      // El barco es 192px de alto, por lo que su base está en y + 192
-      float basePies = b->y + 192.0f;
-      
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((b->x - cam.x) * cam.zoom);
-        int pantY = (int)((b->y - cam.y) * cam.zoom);
-        int tam = (int)(192 * cam.zoom);
-        
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
-          SelectObject(hdcSprites, hBarcoBmp[b->dir]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         192, 192, RGB(255, 255, 255));
-        }
+    
+
+    // D) DIBUJAR GUERREROS (NUEVO)
+Unidad *baseGuerreros = pJugador->guerreros;
+for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
+  float basePies = g->y + (float)TILE_SIZE;
+  
+  if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+    int pantX = (int)((g->x - cam.x) * cam.zoom);
+    int pantY = (int)((g->y - cam.y) * cam.zoom);
+    int tam = (int)(64 * cam.zoom);
+    if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+      SelectObject(hdcSprites, hGuerreroBmp[g->dir]);
+      TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
+      // Círculo de selección (color diferente para distinguirlos)
+      if (g->seleccionado) {
+        HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+        HPEN amarillo = CreatePen(PS_SOLID, 2, RGB(255, 255, 0)); // Amarillo para guerreros
+        SelectObject(hdcBuffer, nullBrush);
+        SelectObject(hdcBuffer, amarillo);
+        Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam, pantY + tam + 5);
+        DeleteObject(amarillo);
       }
     }
+  }
+}
 
     // E) DIBUJAR VACAS DE ESTA FILA (64x64)
     for (int c = 0; c < GRID_SIZE; c++) {
@@ -891,6 +928,27 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
             }
         }
     }
+
+    // F) DIBUJAR BARCO SI ESTÁ ACTIVO (192x192)
+    if (pJugador->barco.activo) {
+      Barco *b = &pJugador->barco;
+      // El barco es 192px de alto, por lo que su base está en y + 192
+      float basePies = b->y + 192.0f;
+      
+      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+        int pantX = (int)((b->x - cam.x) * cam.zoom);
+        int pantY = (int)((b->y - cam.y) * cam.zoom);
+        int tam = (int)(192 * cam.zoom);
+        
+        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+          SelectObject(hdcSprites, hBarcoBmp[b->dir]);
+          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
+                         192, 192, RGB(255, 255, 255));
+        }
+      }
+    }
+
+
   }
 
   // 3. DIBUJAR INTERFAZ DE USUARIO (MENÚ) - AQUÍ EVITAMOS FLICKERING

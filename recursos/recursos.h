@@ -21,6 +21,7 @@ struct Tropa {
 typedef enum {
   TIPO_OBRERO,
   TIPO_CABALLERO,
+  TIPO_GUERRERO,
   TIPO_BARCO
 } TipoUnidad;
 
@@ -81,6 +82,7 @@ struct Jugador {
   struct Tropa *Ejercito;
   Unidad obreros[6];       // Trabajadores
   Unidad caballeros[4];    // Caballeros (NUEVO)
+  Unidad guerreros[4];     // Guerreros (NUEVO)
   Barco barco;             // Barco en la orilla (192x192px)
   int CantidadEspadas;
   int CantidadArqueros;
@@ -95,7 +97,7 @@ struct Jugador {
   void *mina;         // Puntero a Edificio de la mina
 };
 
-void actualizarObreros(struct Jugador *j);
+void actualizarPersonajes(struct Jugador *j);
 // Movimiento estilo RTS: planifica ruta evitando colisiones y límites del mapa.
 void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY);
 // Libera memoria dinámica asociada al movimiento (rutas por unidad, etc).

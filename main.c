@@ -110,6 +110,20 @@ void seleccionarObrero(float mundoX, float mundoY) {
       c->seleccionado = false;
     }
   }
+
+  // SELECCIONAR GUERREROS (NUEVO)
+    Unidad *baseGuerreros = pJugador->guerreros;
+    for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
+      float mundoXUnit = g->x;
+      float mundoYUnit = g->y;
+      bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
+                    mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
+      if (dentro) {
+        g->seleccionado = !g->seleccionado;
+      } else {
+        g->seleccionado = false;
+      }
+    }
 }
 
 void comandarMovimiento(float mundoX, float mundoY) {
@@ -167,7 +181,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
   case WM_TIMER:
     if (wParam == IDT_TIMER_JUEGO) {
-      actualizarObreros(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
+      actualizarPersonajes(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
       menuCompraActualizar(&menuCompra); // Actualizar timers del menú
       InvalidateRect(hwnd, NULL, FALSE);
     }

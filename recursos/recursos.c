@@ -248,6 +248,27 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
         j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
     }
 
+
+    // INICIALIZAR GUERREROS (NUEVO)
+struct {int x, y;} posGuerreros[2] = {
+    {600, 500}, {632, 500}  // 2 guerreros en una fila
+};
+for (int i = 0; i < 2; i++) {
+  j->guerreros[i].x = posGuerreros[i].x;
+  j->guerreros[i].y = posGuerreros[i].y;
+  j->guerreros[i].destinoX = j->guerreros[i].x;
+  j->guerreros[i].destinoY = j->guerreros[i].y;
+  j->guerreros[i].moviendose = false;
+  j->guerreros[i].seleccionado = false;
+  j->guerreros[i].dir = DIR_FRONT;
+  j->guerreros[i].frame = 0;
+  j->guerreros[i].celdaFila = -1;
+  j->guerreros[i].celdaCol = -1;
+  j->guerreros[i].rutaCeldas = NULL;
+  j->guerreros[i].tipo = TIPO_GUERRERO;
+}
+printf("[DEBUG] %d guerreros inicializados\\n", 2);
+
   // ================================================================
   // INICIALIZAR CABALLEROS (NUEVO)
   // ================================================================
@@ -285,11 +306,12 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
 }
 
 
-void actualizarObreros(struct Jugador *j) {
+void actualizarPersonajes(struct Jugador *j) {
     const float vel = 4.0f;
     int **col = mapaObtenerCollisionMap();
     if (!col) return;
-
+    
+    //Obreros
     for (int i = 0; i < 6; i++) {
         Unidad *o = &j->obreros[i];
         
@@ -485,6 +507,94 @@ void actualizarObreros(struct Jugador *j) {
             u->y = newY;
         }
     }
+
+    for (int i = 0; i < 2; i++) {
+    Unidad *u = &j->guerreros[i];
+    
+    // Sincronización inicial
+    if (u->celdaFila == -1) {
+        ocupacionActualizarUnidad(col, u, obreroFilaActual(u), obreroColActual(u));
+    }
+    if (!u->moviendose) continue;
+
+    int nextF, nextC;
+        if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
+            int targetCelda = u->rutaCeldas[u->rutaIdx];
+            nextF = targetCelda / GRID_SIZE;
+            nextC = targetCelda % GRID_SIZE;
+        } else {
+            u->moviendose = false; 
+            continue;
+        }
+
+        bool bloqueado = false;
+        for (int f = 0; f < 2; f++) {
+            for (int c = 0; c < 2; c++) {
+                int checkF = nextF + f;
+                int checkC = nextC + c;
+
+                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { bloqueado = true; break; }
+
+                int valor = *(*(col + checkF) + checkC);
+
+                if (valor == 1 || valor == 2) { bloqueado = true; break; }
+
+                if (valor == 3) {
+                    bool esMiPropiaHuella = (checkF >= u->celdaFila && checkF <= u->celdaFila + 1 &&
+                                            checkC >= u->celdaCol && checkC <= u->celdaCol + 1);
+                    if (!esMiPropiaHuella) { bloqueado = true; break; }
+                }
+            }
+            if (bloqueado) break;
+        }
+
+        if (bloqueado) {
+            u->moviendose = false;
+            obreroLiberarRuta(u);
+            continue;
+        }
+
+        float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
+        float cx = u->x + 32.0f, cy = u->y + 32.0f;
+        float vx = tx - cx, vy = ty - cy;
+        float dist = sqrtf(vx*vx + vy*vy);
+
+        if (dist > 0.1f) {
+            if (fabsf(vx) > fabsf(vy)) u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
+            else u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
+            
+            u->animActual = animPorDireccion(u->dir);
+            u->animTick++;
+            if (u->animTick >= u->animActual->ticksPerFrame) {
+                u->animTick = 0;
+                u->frame = (u->frame + 1) % u->animActual->frameCount;
+            }
+        }
+
+        if (dist <= vel) {
+            u->x = tx - 32.0f; 
+            u->y = ty - 32.0f;
+            u->rutaIdx++;
+            
+            ocupacionActualizarUnidad(col, u, nextF, nextC);
+            
+            if (u->rutaIdx >= u->rutaLen) {
+                u->moviendose = false; 
+                obreroLiberarRuta(u);
+            }
+        } else {
+            float newX = u->x + (vx / dist) * vel;
+            float newY = u->y + (vy / dist) * vel;
+            
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > (float)(MAPA_SIZE - 64)) newX = (float)(MAPA_SIZE - 64);
+            if (newY > (float)(MAPA_SIZE - 64)) newY = (float)(MAPA_SIZE - 64);
+            
+            u->x = newX;
+            u->y = newY;
+        }
+}
 }
 // ============================================================================
 // COMANDAR MOVIMIENTO RTS CON SEPARACIÓN DE UNIDADES
@@ -669,8 +779,45 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
 
         unidadesAsignadas++;
     }
+
+    // ================================================================
+    // COMANDAR GUERREROS (misma lógica)
+    // ================================================================
+    Unidad *baseGuerreros = j->guerreros;
+    for (Unidad *u = baseGuerreros; u < baseGuerreros + 2; u++) {
+        if (!u->seleccionado) continue;
+
+        // Calcular offset para separación
+        int offF = (unidadesAsignadas / 3) - 1;
+        int offC = (unidadesAsignadas % 3) - 1;
+        int targetF = gF + offF;
+        int targetC = gC + offC;
+        targetF = (targetF < 0) ? 0 : ((targetF >= GRID_SIZE) ? GRID_SIZE - 1 : targetF);
+        targetC = (targetC < 0) ? 0 : ((targetC >= GRID_SIZE) ? GRID_SIZE - 1 : targetC);
+
+        // Pathfinding
+        int *path = NULL;
+        int len = 0;
+        bool success = pathfindSimple(obreroFilaActual(u), obreroColActual(u), 
+                                       targetF, targetC, col, &path, &len);
+        
+        if (success) {
+            obreroLiberarRuta(u);
+            u->rutaCeldas = path;
+            u->rutaLen = len;
+            u->rutaIdx = 0;
+            u->objetivoFila = targetF;
+            u->objetivoCol = targetC;
+            u->moviendose = true;
+        }
+
+        unidadesAsignadas++;
+    }
 }
 
 void rtsLiberarMovimientoJugador(struct Jugador *j) {
     for (int i = 0; i < 6; i++) obreroLiberarRuta(&j->obreros[i]);
+    for (int i = 0; i < 4; i++) obreroLiberarRuta(&j->caballeros[i]);
+    for (int i = 0; i < 2; i++) obreroLiberarRuta(&j->guerreros[i]); 
+
 }
