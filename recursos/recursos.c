@@ -272,6 +272,16 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   }
   
   printf("[DEBUG] %d caballeros inicializados\n", 4);
+
+  // ================================================================
+  // INICIALIZAR BARCO EN LA ORILLA (192x192px)
+  // ================================================================
+  j->barco.activo = false;  // Se activará después de detectar la orilla
+  j->barco.x = 0.0f;
+  j->barco.y = 0.0f;
+  j->barco.dir = DIR_FRONT;
+  
+  printf("[DEBUG] Barco inicializado (pendiente de colocacion en orilla)\n");
 }
 
 

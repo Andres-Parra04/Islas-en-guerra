@@ -27,6 +27,8 @@ int **mapaObtenerCollisionMap(void);
 void mapaReconstruirCollisionMap(void);
 // Marca un edificio en el collision map como impasable
 void mapaMarcarEdificio(float x, float y, int ancho, int alto);
+// Detecta automáticamente una posición válida en la orilla del mapa
+void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
 

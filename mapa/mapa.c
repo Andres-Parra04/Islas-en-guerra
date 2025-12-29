@@ -40,12 +40,18 @@
 
 static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
 static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
+static HBITMAP hBarcoBmp[4] = {NULL};     // Front, Back, Left, Right (192x192)
 
 // Definiciones para obrerro fallback
 #define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
 #define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
 #define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
 #define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
+
+#define BARCO_F_ALT "../assets/barco/barco_front.bmp"
+#define BARCO_B_ALT "../assets/barco/barco_back.bmp"
+#define BARCO_L_ALT "../assets/barco/barco_left.bmp"
+#define BARCO_R_ALT "../assets/barco/barco_right.bmp"
 
 
 
@@ -373,6 +379,116 @@ static void detectarAguaEnMapa(void) {
   fflush(stdout);
 }
 
+// ============================================================================
+// DETECCIÓN AUTOMÁTICA DE ORILLA PARA BARCO (192x192px)
+// ============================================================================
+// Encuentra una posición válida en la orilla del mapa donde:
+// - El barco está EN EL AGUA (valor 1 = azul)
+// - Hay tierra adyacente (para confirmar que es orilla, no mar abierto)
+// - Hay espacio suficiente para el barco (6x6 celdas = 192px de agua)
+// Retorna la posición en píxeles y la dirección hacia la tierra
+// ============================================================================
+void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
+  int **col = mapaObtenerCollisionMap();
+  if (!col) {
+    *outX = 512.0f;
+    *outY = 512.0f;
+    *outDir = DIR_FRONT;
+    return;
+  }
+  
+  printf("\n[DEBUG BARCO] ============================================\n");
+  printf("[DEBUG BARCO] Buscando AGUA para colocar barco...\n");
+  fflush(stdout);
+  
+  // El barco ocupa 6x6 celdas (192px / 32px = 6)
+  const int BARCO_CELDAS = 6;
+  
+  // Direcciones: arriba, abajo, izquierda, derecha
+  int dF[4] = {-1, 1, 0, 0};
+  int dC[4] = {0, 0, -1, 1};
+  // Orientación HACIA la tierra (inverso)
+  Direccion direcciones[4] = {DIR_FRONT, DIR_BACK, DIR_RIGHT, DIR_LEFT};
+  
+  // Buscar desde el centro del mapa hacia afuera
+  int centroF = GRID_SIZE / 2;
+  int centroC = GRID_SIZE / 2;
+  
+  for (int radio = 10; radio < GRID_SIZE / 2; radio++) {
+    for (int f = centroF - radio; f <= centroF + radio; f++) {
+      for (int c = centroC - radio; c <= centroC + radio; c++) {
+        // Verificar límites (el barco necesita espacio 6x6)
+        if (f < 1 || f >= GRID_SIZE - BARCO_CELDAS - 1 || 
+            c < 1 || c >= GRID_SIZE - BARCO_CELDAS - 1) continue;
+        
+        // ================================================================
+        // CRÍTICO: La celda actual debe ser AGUA (valor 1)
+        // ================================================================
+        if (*(*(col + f) + c) != 1) continue;
+        
+        // Verificar que el bloque 6x6 completo sea AGUA (valor 1)
+        bool bloqueAgua = true;
+        int celdasAgua = 0;
+        for (int df = 0; df < BARCO_CELDAS && bloqueAgua; df++) {
+          int *fila_ptr = *(col + f + df);
+          for (int dc = 0; dc < BARCO_CELDAS && bloqueAgua; dc++) {
+            int valor = *(fila_ptr + c + dc);
+            // Debe ser agua (1) para que el barco flote
+            if (valor == 1) {
+              celdasAgua++;
+            } else {
+              // Si encuentra tierra o árbol, este bloque no es válido
+              bloqueAgua = false;
+            }
+          }
+        }
+        
+        if (!bloqueAgua) continue;
+        
+        // Verificar que al menos el 90% del bloque sea agua
+        if (celdasAgua < (BARCO_CELDAS * BARCO_CELDAS * 9 / 10)) continue;
+        
+        // Buscar TIERRA adyacente en las 4 direcciones para confirmar que es orilla
+        for (int d = 0; d < 4; d++) {
+          int nf = f + dF[d];
+          int nc = c + dC[d];
+          
+          // Verificar límites
+          if (nf < 0 || nf >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
+          
+          // Verificar si la celda adyacente es TIERRA (0)
+          if (*(*(col + nf) + nc) == 0) {
+            // ¡Encontramos una orilla válida! El barco está en agua, orientado hacia tierra
+            *outX = (float)(c * TILE_SIZE);
+            *outY = (float)(f * TILE_SIZE);
+            *outDir = direcciones[d];
+            
+            printf("[DEBUG BARCO] Orilla encontrada!\n");
+            printf("[DEBUG BARCO]   Celda AGUA: [%d][%d]\n", f, c);
+            printf("[DEBUG BARCO]   Posicion: (%.1f, %.1f)\n", *outX, *outY);
+            printf("[DEBUG BARCO]   Direccion hacia tierra: %d\n", *outDir);
+            printf("[DEBUG BARCO]   Espacio: %dx%d celdas de AGUA\n", 
+                   BARCO_CELDAS, BARCO_CELDAS);
+            printf("[DEBUG BARCO]   Celdas de agua verificadas: %d/%d\n",
+                   celdasAgua, BARCO_CELDAS * BARCO_CELDAS);
+            printf("[DEBUG BARCO] ============================================\n\n");
+            fflush(stdout);
+            return;
+          }
+        }
+      }
+    }
+  }
+  
+  // Fallback: centro del mapa si no se encuentra orilla
+  *outX = (float)(centroC * TILE_SIZE);
+  *outY = (float)(centroF * TILE_SIZE);
+  *outDir = DIR_FRONT;
+  printf("[DEBUG BARCO] Orilla no encontrada, usando posicion central\n");
+  printf("[DEBUG BARCO] ============================================\n\n");
+  fflush(stdout);
+}
+
 void generarBosqueAutomatico() {
   if (!hMapaBmp)
     return;
@@ -505,6 +621,20 @@ void cargarRecursosGraficos() {
       printf("[ERROR] No se pudo cargar caballero[%d]\n", i);
     } else {
       printf("[OK] Caballero BMP %d cargado correctamente.\n", i);
+    }
+  }
+
+  // --- CARGAR SPRITES DE BARCO (192x192) ---
+  const char *rutasBarcoAlt[] = {BARCO_F_ALT, BARCO_B_ALT, BARCO_L_ALT, BARCO_R_ALT};
+
+  for (int i = 0; i < 4; i++) {
+    hBarcoBmp[i] = (HBITMAP)LoadImageA(NULL, rutasBarcoAlt[i], IMAGE_BITMAP, 
+                                        192, 192, LR_LOADFROMFILE);
+
+    if (!hBarcoBmp[i]) {
+      printf("[ERROR] No se pudo cargar barco[%d]\n", i);
+    } else {
+      printf("[OK] Barco BMP %d cargado correctamente (192x192).\n", i);
     }
   }
 
@@ -657,6 +787,25 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                     pantY + tam + 5);
             DeleteObject(verde);
           }
+        }
+      }
+    }
+    
+    // D) DIBUJAR BARCO SI ESTÁ ACTIVO (192x192)
+    if (pJugador->barco.activo) {
+      Barco *b = &pJugador->barco;
+      // El barco es 192px de alto, por lo que su base está en y + 192
+      float basePies = b->y + 192.0f;
+      
+      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+        int pantX = (int)((b->x - cam.x) * cam.zoom);
+        int pantY = (int)((b->y - cam.y) * cam.zoom);
+        int tam = (int)(192 * cam.zoom);
+        
+        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+          SelectObject(hdcSprites, hBarcoBmp[b->dir]);
+          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
+                         192, 192, RGB(255, 255, 255));
         }
       }
     }

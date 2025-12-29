@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <windows.h>
 #include <windowsx.h>
+#include <stdio.h>
 
 // --- CONFIGURACIÓN ---
 #define ZOOM_MAXIMO 6.0f
@@ -136,6 +137,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
     // Inicializar menú de compra
     menuCompraInicializar(&menuCompra);
+
+    // Detectar orilla y colocar barco (192x192)
+    float barcoX, barcoY;
+    int barcoDir;
+    mapaDetectarOrilla(&barcoX, &barcoY, &barcoDir);
+    jugador1.barco.x = barcoX;
+    jugador1.barco.y = barcoY;
+    jugador1.barco.dir = (Direccion)barcoDir;
+    jugador1.barco.activo = true;
+    
+    printf("[DEBUG] Barco colocado en orilla: (%.1f, %.1f), dir=%d\n", 
+           barcoX, barcoY, barcoDir);
 
     // Timer para actualizar física a 60 FPS (16ms)
     SetTimer(hwnd, IDT_TIMER_JUEGO, 16, NULL);

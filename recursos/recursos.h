@@ -20,7 +20,8 @@ struct Tropa {
 // Tipo de unidad
 typedef enum {
   TIPO_OBRERO,
-  TIPO_CABALLERO
+  TIPO_CABALLERO,
+  TIPO_BARCO
 } TipoUnidad;
 
 // Estados de animación/dirección
@@ -64,6 +65,13 @@ typedef struct {
   TipoUnidad tipo;  // TIPO_OBRERO o TIPO_CABALLERO
 } Unidad;
 
+// Estructura para el barco (192x192 píxeles)
+typedef struct {
+  float x, y;          // Posición en el mapa
+  Direccion dir;       // Orientación del barco
+  bool activo;         // Si el barco está colocado
+} Barco;
+
 struct Jugador {
   char Nombre[30];
   int Comida;
@@ -73,6 +81,7 @@ struct Jugador {
   struct Tropa *Ejercito;
   Unidad obreros[6];       // Trabajadores
   Unidad caballeros[4];    // Caballeros (NUEVO)
+  Barco barco;             // Barco en la orilla (192x192px)
   int CantidadEspadas;
   int CantidadArqueros;
   int CantidadPicas;
