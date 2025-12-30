@@ -93,6 +93,11 @@ int mapaObjetos[GRID_SIZE][GRID_SIZE] = {0};
 // 0 = libre, 1 = ocupado (árboles u obstáculos)
 static int **gCollisionMap = NULL;
 
+// --- SISTEMA DE VACAS DINÁMICAS ---
+// Array de vacas con movimiento automático (10 vacas)
+static Vaca gVacas[10];
+static int gNumVacas = 0; // Cantidad de vacas activas
+
 static void detectarAguaEnMapa(void);
 void mapaMarcarArea(int f_inicio, int c_inicio, int ancho_celdas, int alto_celdas, int valor);
 
@@ -573,13 +578,18 @@ void generarBosqueAutomatico() {
   printf("[DEBUG] Logica: %d arboles registrados en la matriz con punteros.\n",
          contador);
 
-  const int NUM_VACAS_EXACTO = 10;  // 10 vacas distribuidas en el mapa
-int contadorVacas = 0;
-while (contadorVacas < NUM_VACAS_EXACTO) {
+
+  // ============================================================================
+  // GENERACIÓN DE VACAS DINÁMICAS (en lugar de estáticas en mapaObjetos)
+  // ============================================================================
+  const int NUM_VACAS_EXACTO = 10;
+  gNumVacas = 0;
+  
+  while (gNumVacas < NUM_VACAS_EXACTO) {
     int fila = rand() % GRID_SIZE;
     int col = rand() % GRID_SIZE;
     
-    // No colocar vaca donde ya hay árbol
+    // No colocar vaca donde ya hay árbol u otra vaca
     if (*(*(ptrMatriz + fila) + col) != 0) continue;
     
     // Verificar que el suelo sea tierra (mismo criterio que árboles)
@@ -595,12 +605,25 @@ while (contadorVacas < NUM_VACAS_EXACTO) {
     
     // Solo en tierra verde
     if (g > r && g > b && g > 45 && b < 100) {
-        // Colocar vaca con orientación aleatoria (5-8)
-        *(*(ptrMatriz + fila) + col) = 5 + (rand() % 4);
-        contadorVacas++;
+      // Inicializar vaca en el array dinámico
+      Vaca *v = &gVacas[gNumVacas];
+      
+      // Posición: centro de la celda en píxeles
+      v->x = (float)(col * TILE_SIZE);
+      v->y = (float)(fila * TILE_SIZE);
+      
+      // Dirección aleatoria (0-3 = DIR_FRONT, DIR_BACK, DIR_LEFT, DIR_RIGHT)
+      v->dir = (Direccion)(rand() % 4);
+      
+      // Timer aleatorio para que no se muevan todas a la vez
+      v->timerMovimiento = rand() % 120;
+      
+      gNumVacas++;
     }
-}
-printf("[DEBUG] Logica: %d vacas registradas en la matriz.\\n", contadorVacas);
+  }
+  
+  printf("[DEBUG] Logica: %d vacas dinámicas generadas.\n", gNumVacas);
+  
   
   
   // Construir la grilla de colisión con árboles Y detectar agua
@@ -731,6 +754,100 @@ void cargarRecursosGraficos() {
   }
 
   generarBosqueAutomatico();
+}
+
+// ============================================================================
+// ACTUALIZACIÓN DE VACAS (MOVIMIENTO AUTOMÁTICO)
+// ============================================================================
+// Se ejecuta cada frame (60 FPS). Cada vaca tiene un timer que cuenta hasta 120
+// frames (~2 segundos). Cuando el timer llega a 120, la vaca se mueve una celda
+// en una dirección aleatoria, validando colisiones antes de moverse.
+// ============================================================================
+void mapaActualizarVacas(void) {
+  if (!gCollisionMap) return;
+  
+  // Iterar sobre todas las vacas usando punteros
+  Vaca *v = gVacas;
+  for (int i = 0; i < gNumVacas; i++, v++) {
+    // Incrementar timer de movimiento
+    v->timerMovimiento++;
+    
+    // Si el timer alcanza 120 frames (2 segundos a 60 FPS), mover la vaca
+    if (v->timerMovimiento >= 120) {
+      // Resetear timer
+      v->timerMovimiento = 0;
+      
+      // Intentar mover en una dirección aleatoria
+      // Probar hasta 4 direcciones diferentes si hay obstáculos
+      int intentos = 4;
+      int direccionBase = rand() % 4; // 0=front, 1=back, 2=left, 3=right
+      
+      for (int d = 0; d < intentos; d++) {
+        int direccion = (direccionBase + d) % 4;
+        
+        // Calcular nueva posición según la dirección
+        float nuevoX = v->x;
+        float nuevoY = v->y;
+        
+        switch (direccion) {
+          case DIR_FRONT:  // Abajo
+            nuevoY += TILE_SIZE;
+            break;
+          case DIR_BACK:   // Arriba
+            nuevoY -= TILE_SIZE;
+            break;
+          case DIR_LEFT:   // Izquierda
+            nuevoX -= TILE_SIZE;
+            break;
+          case DIR_RIGHT:  // Derecha
+            nuevoX += TILE_SIZE;
+            break;
+        }
+        
+        // Verificar límites del mapa
+        if (nuevoX < 0 || nuevoX >= MAPA_SIZE - TILE_SIZE ||
+            nuevoY < 0 || nuevoY >= MAPA_SIZE - TILE_SIZE) {
+          continue; // Fuera de límites, probar otra dirección
+        }
+        
+        // Convertir a coordenadas de celda para verificar colisión
+        int celdaX = (int)(nuevoX / TILE_SIZE);
+        int celdaY = (int)(nuevoY / TILE_SIZE);
+        
+        // Verificar que esté dentro de la grid
+        if (celdaX < 0 || celdaX >= GRID_SIZE ||
+            celdaY < 0 || celdaY >= GRID_SIZE) {
+          continue;
+        }
+        
+        // Verificar colisión usando aritmética de punteros
+        int valorColision = *(*(gCollisionMap + celdaY) + celdaX);
+        
+        // Si la celda está libre (0) o tiene una unidad temporal (2), podemos movernos
+        // No moverse a agua (1) o árboles (1)
+        if (valorColision == 0 || valorColision == 2) {
+          // ¡Movimiento válido! Actualizar posición y dirección
+          v->x = nuevoX;
+          v->y = nuevoY;
+          v->dir = (Direccion)direccion;
+          break; // Salir del bucle de intentos
+        }
+        
+        // Si llegamos aquí, esta dirección está bloqueada, probar la siguiente
+      }
+    }
+  }
+}
+
+// ============================================================================
+// OBTENER ARRAY DE VACAS PARA RENDERIZADO
+// ============================================================================
+// Retorna el puntero al array de vacas y escribe la cantidad en el parámetro
+// de salida. Esto permite que dibujarMundo() itere sobre las vacas dinámicas.
+// ============================================================================
+Vaca* mapaObtenerVacas(int *cantidad) {
+  *cantidad = gNumVacas;
+  return gVacas;
 }
 
 // ============================================================================
@@ -915,27 +1032,27 @@ for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
   }
 }
 
-    // E) DIBUJAR VACAS DE ESTA FILA (64x64)
-    for (int c = 0; c < GRID_SIZE; c++) {
-        int tipo = *(filaActual + c);
+    // E) DIBUJAR VACAS DINÁMICAS DE ESTA FILA (64x64)
+    // Usar el array dinámico gVacas en lugar de leer desde mapaObjetos
+    Vaca *baseVacas = gVacas;
+    for (Vaca *vaca = baseVacas; vaca < baseVacas + gNumVacas; vaca++) {
+      // La base de la vaca (pies) está en vaca->y + TILE_SIZE
+      float basePies = vaca->y + (float)TILE_SIZE;
+      
+      // Si la base de la vaca cae en esta fila, dibujarla
+      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
+        int pantX = (int)((vaca->x - cam.x) * cam.zoom);
+        int pantY = (int)((vaca->y - cam.y) * cam.zoom);
+        int tam = (int)(64 * cam.zoom);
         
-        // Vacas tienen valores 5-8 (front, back, left, right)
-        if (tipo >= 5 && tipo <= 8 && hVacaBmp[tipo - 5] != NULL) {
-            int mundoX = c * TILE_SIZE;
-            int mundoY = f * TILE_SIZE;
-            
-            // Las vacas son 64x64, coinciden exactamente con TILE_SIZE
-            int pantX = (int)((mundoX - cam.x) * cam.zoom);
-            int pantY = (int)((mundoY - cam.y) * cam.zoom);
-            int tamZoom = (int)(64 * cam.zoom);
-            
-            if (pantX + tamZoom > 0 && pantX < anchoP && 
-                pantY + tamZoom > 0 && pantY < altoP) {
-                SelectObject(hdcSprites, hVacaBmp[tipo - 5]);
-                TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom, 
-                              hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
-            }
+        // Verificar que la vaca esté visible en pantalla
+        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+          // Seleccionar sprite según dirección de la vaca
+          SelectObject(hdcSprites, hVacaBmp[vaca->dir]);
+          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam,
+                        hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
         }
+      }
     }
 
     // F) DIBUJAR BARCO SI ESTÁ ACTIVO (192x192)

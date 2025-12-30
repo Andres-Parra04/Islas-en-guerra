@@ -20,6 +20,14 @@ typedef struct {
   float zoom; // Nivel de zoom
 } Camara;
 
+// --- SISTEMA DE VACAS DINÁMICAS ---
+// Estructura para vacas con movimiento automático
+typedef struct {
+  float x, y;          // Posición en píxeles (0-2048)
+  Direccion dir;       // DIR_FRONT, DIR_BACK, DIR_LEFT, DIR_RIGHT
+  int timerMovimiento; // Contador de frames hasta próximo movimiento
+} Vaca;
+
 // --- COLISIONES / GRID (matriz dinámica con punteros) ---
 // Retorna una matriz GRID_SIZE x GRID_SIZE (int**) donde 1 = ocupado.
 int **mapaObtenerCollisionMap(void);
@@ -31,6 +39,12 @@ void mapaMarcarEdificio(float x, float y, int ancho, int alto);
 void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
+
+// --- FUNCIONES DE VACAS ---
+// Actualiza la posición de las vacas (movimiento automático)
+void mapaActualizarVacas(void);
+// Obtiene el array de vacas para renderizado
+Vaca* mapaObtenerVacas(int *cantidad);
 
 // Dibuja el mundo (terreno, árboles, obreros) en el DC especificado
 // Ahora acepta el menú para dibujarlo dentro del mismo buffer (evitar parpadeo)

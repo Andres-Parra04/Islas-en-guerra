@@ -182,6 +182,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_TIMER:
     if (wParam == IDT_TIMER_JUEGO) {
       actualizarPersonajes(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
+      mapaActualizarVacas();           // NUEVO: Actualizar vacas (movimiento automático)
       menuCompraActualizar(&menuCompra); // Actualizar timers del menú
       InvalidateRect(hwnd, NULL, FALSE);
     }
