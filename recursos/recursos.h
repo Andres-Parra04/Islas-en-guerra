@@ -17,9 +17,6 @@ struct Tropa {
   int VelocidadAtaque;
   int DistanciaAtaque;
 };
-// Tipo de unidad
-typedef enum { TIPO_OBRERO, TIPO_CABALLERO, TIPO_BARCO } TipoUnidad;
-
 // Estados de animación/dirección
 typedef enum { DIR_FRONT, DIR_BACK, DIR_LEFT, DIR_RIGHT } Direccion;
 
@@ -48,7 +45,7 @@ typedef struct {
   int rutaIdx;
 
   // --- Sincronización Matriz <-> Mundo ---
-  // Celda actualmente ocupada (se actualiza solo cuando cambia de
+  // Celda actualmente ocupada por el obrero (se actualiza solo cuando cambia de
   // celda por completo).
   int celdaFila;
   int celdaCol;
@@ -56,17 +53,7 @@ typedef struct {
   // --- Animación por puntero a estado ---
   const Animation *animActual;
   int animTick;
-
-  // --- Tipo de unidad ---
-  TipoUnidad tipo; // TIPO_OBRERO o TIPO_CABALLERO
-} Unidad;
-
-// Estructura para el barco (192x192 píxeles)
-typedef struct {
-  float x, y;    // Posición en el mapa
-  Direccion dir; // Orientación del barco
-  bool activo;   // Si el barco está colocado
-} Barco;
+} UnidadObrero;
 
 struct Jugador {
   char Nombre[30];
@@ -75,9 +62,7 @@ struct Jugador {
   int Madera;
   int Piedra;
   struct Tropa *Ejercito;
-  Unidad obreros[6];    // Trabajadores
-  Unidad caballeros[4]; // Caballeros (NUEVO)
-  Barco barco;          // Barco en la orilla (192x192px)
+  UnidadObrero obreros[6];
   int CantidadEspadas;
   int CantidadArqueros;
   int CantidadPicas;
@@ -85,10 +70,9 @@ struct Jugador {
   int NumeroTropas;
   int Capacidad;
 
-  // Edificios del jugador
+  // Edificio del jugador (por ahora solo el ayuntamiento)
   void *ayuntamiento; // Puntero a Edificio (void* para evitar dependencia
                       // circular)
-  void *mina;         // Puntero a Edificio de la mina
 };
 
 void actualizarObreros(struct Jugador *j);
@@ -102,10 +86,5 @@ void IniciacionTropa(struct Tropa *t, const char *Nombre, int Oro, int Comida,
                      int VelocidadAtaque, int DistanciaAtaque);
 void gotoxy(int x, int y);
 void mostrarStats(struct Jugador j, int x, int y);
-
-// Nueva función lógica para talar
-bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY);
-// Nueva función para recoger de la mina
-bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX, float mundoY);
 
 #endif
