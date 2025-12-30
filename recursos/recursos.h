@@ -66,11 +66,26 @@ typedef struct {
   TipoUnidad tipo;  // TIPO_OBRERO o TIPO_CABALLERO
 } Unidad;
 
+// Estado de vista del juego
+typedef enum {
+  VISTA_LOCAL,   // Vista normal de la isla con zoom
+  VISTA_GLOBAL   // Mapa completo con todas las islas
+} EstadoVista;
+
 // Estructura para el barco (192x192 píxeles)
 typedef struct {
   float x, y;          // Posición en el mapa
   Direccion dir;       // Orientación del barco
   bool activo;         // Si el barco está colocado
+  
+  // === Sistema de tropas ===
+  Unidad* tropas[6];   // Punteros a las tropas embarcadas (máximo 6)
+  int numTropas;       // Cantidad actual de tropas en el barco
+  
+  // === Sistema de navegación ===
+  bool navegando;      // Si está en ruta a otra isla
+  float destinoX, destinoY; // Coordenadas del destino
+  float velocidad;     // Velocidad de navegación (px/frame)
 } Barco;
 
 struct Jugador {
@@ -95,6 +110,10 @@ struct Jugador {
   void *ayuntamiento; // Puntero a Edificio (void* para evitar dependencia
                       // circular)
   void *mina;         // Puntero a Edificio de la mina
+  
+  // Estado de vista
+  EstadoVista vistaActual; // Vista actual (local o global)
+  int islaActual;          // Isla donde está el jugador (1, 2, o 3)
 };
 
 void actualizarPersonajes(struct Jugador *j);

@@ -5,8 +5,9 @@
 #include "../recursos/ui_compra.h"
 #include <windows.h>
 
-// Forward declaration de la estructura
+// Forward declaration de las estructuras
 struct MenuCompra;
+typedef struct MenuEmbarque MenuEmbarque;
 
 // --- CONSTANTES DE DIMENSIÓN ---
 #define MAPA_SIZE 2048
@@ -49,7 +50,11 @@ Vaca* mapaObtenerVacas(int *cantidad);
 // Dibuja el mundo (terreno, árboles, obreros) en el DC especificado
 // Ahora acepta el menú para dibujarlo dentro del mismo buffer (evitar parpadeo)
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
-                  struct MenuCompra *menu);
+                  struct MenuCompra *menu, MenuEmbarque *menuEmb);
+
+// Dibuja vista de mapa global (solo mapa y barco, sin zoom)
+void dibujarMapaGlobal(HDC hdc, RECT rect, struct Jugador *pJugador);
+
 void cargarRecursosGraficos();
 void dibujarObreros(HDC hdcBuffer, struct Jugador *j, Camara cam, int anchoP,
                     int altoP);

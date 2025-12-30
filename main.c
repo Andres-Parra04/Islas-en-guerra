@@ -3,6 +3,8 @@
 #include "mapa/menu.h"
 #include "recursos/recursos.h"
 #include "recursos/ui_compra.h"
+#include "recursos/ui_embarque.h"
+#include "recursos/navegacion.h"
 #include <math.h>
 #include <stdbool.h>
 #include <windows.h>
@@ -19,6 +21,7 @@ struct Jugador jugador1;
 bool arrastrandoCamara = false;
 POINT mouseUltimo;
 MenuCompra menuCompra; // Estado global del menú de compra
+MenuEmbarque menuEmbarque; // Menú de embarque de tropas
 Edificio ayuntamiento; // Edificio del ayuntamiento
 Edificio mina;         // Edificio de la mina
 
@@ -139,6 +142,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_CREATE:
     // Inicializar recursos del jugador y obreros
     IniciacionRecursos(&jugador1, "Jugador 1");
+    
+    // NUEVO: Guardar isla inicial seleccionada
+    jugador1.islaActual = menuObtenerIsla(); // 1, 2, o 3
 
     // Inicializar ayuntamiento en el centro del mapa (1024, 1024)
     // Tamaño 128x128, centrado en el mapa de 2048x2048
@@ -162,6 +168,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
     // Inicializar menú de compra
     menuCompraInicializar(&menuCompra);
+    
+    // Inicializar menú de embarque
+    menuEmbarqueInicializar(&menuEmbarque);
 
     // Detectar orilla y colocar barco (192x192)
     float barcoX, barcoY;
@@ -171,6 +180,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     jugador1.barco.y = barcoY;
     jugador1.barco.dir = (Direccion)barcoDir;
     jugador1.barco.activo = true;
+    jugador1.barco.numTropas = 0;
+    jugador1.barco.navegando = false;
+    jugador1.barco.velocidad = 3.0f;
+    
+    // Inicializar vista en modo local
+    jugador1.vistaActual = VISTA_LOCAL;
     
     printf("[DEBUG] Barco colocado en orilla: (%.1f, %.1f), dir=%d\n", 
            barcoX, barcoY, barcoDir);
@@ -184,6 +199,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       actualizarPersonajes(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
       mapaActualizarVacas();           // NUEVO: Actualizar vacas (movimiento automático)
       menuCompraActualizar(&menuCompra); // Actualizar timers del menú
+      
+      // NUEVO: Actualizar navegación del barco
+      if (jugador1.barco.navegando) {
+        barcoActualizarNavegacion(&jugador1.barco, &jugador1);
+      }
+      
       InvalidateRect(hwnd, NULL, FALSE);
     }
     return 0;
@@ -191,18 +212,29 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_RBUTTONDOWN: {
     int px = GET_X_LPARAM(lParam);
     int py = GET_Y_LPARAM(lParam);
-    float mundoX = (px / camara.zoom) + camara.x;
-    float mundoY = (py / camara.zoom) + camara.y;
+    
+    // Solo procesar en vista local
+    if (jugador1.vistaActual == VISTA_LOCAL) {
+      float mundoX = (px / camara.zoom) + camara.x;
+      float mundoY = (py / camara.zoom) + camara.y;
 
-    // Verificar si se hizo click sobre el ayuntamiento
-    if (edificioContienePunto(&ayuntamiento, mundoX, mundoY)) {
-      // Abrir menú de compra
-      GetClientRect(hwnd, &rect);
-      menuCompraAbrir(&menuCompra, rect.right - rect.left,
-                      rect.bottom - rect.top);
-    } else {
-      // Comandar movimiento normal
-      rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      // Verificar si se hizo click sobre el barco
+      if (barcoContienePunto(&jugador1.barco, mundoX, mundoY)) {
+        // Abrir menú de embarque
+        GetClientRect(hwnd, &rect);
+        menuEmbarqueAbrir(&menuEmbarque, rect.right - rect.left,
+                          rect.bottom - rect.top);
+      }
+      // Verificar si se hizo click sobre el ayuntamiento
+      else if (edificioContienePunto(&ayuntamiento, mundoX, mundoY)) {
+        // Abrir menú de compra
+        GetClientRect(hwnd, &rect);
+        menuCompraAbrir(&menuCompra, rect.right - rect.left,
+                        rect.bottom - rect.top);
+      } else {
+        // Comandar movimiento normal
+        rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      }
     }
     return 0;
   }
@@ -234,11 +266,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     int px = GET_X_LPARAM(lParam);
     int py = GET_Y_LPARAM(lParam);
 
-    // Si el menú está abierto, procesar click en el menú
+    // Si el menú de embarque está abierto, procesar click
+    if (menuEmbarqueClick(&menuEmbarque, &jugador1, px, py)) {
+      InvalidateRect(hwnd, NULL, FALSE);
+      return 0; // Click procesado por el menú de embarque
+    }
+
+    // Si el menú de compra está abierto, procesar click en el menú
     if (menuCompraClick(&menuCompra, &jugador1, px, py)) {
       return 0; // Click procesado por el menú
     }
 
+    // En vista global, click selecciona isla destino
+    if (jugador1.vistaActual == VISTA_GLOBAL) {
+      seleccionarIslaDestino(&jugador1, px, py);
+      return 0;
+    }
+
+    // Vista local: selección normal
     // Convertir coordenadas de pantalla a coordenadas del mundo real (0-2048)
     float mundoX = (px / camara.zoom) + camara.x;
     float mundoY = (py / camara.zoom) + camara.y;
@@ -272,6 +317,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     ReleaseCapture();
     return 0;
 
+  case WM_KEYDOWN:
+    if (wParam == 'M' || wParam == 'm') {
+      // Alternar entre vista local y global
+      if (jugador1.vistaActual == VISTA_LOCAL) {
+        jugador1.vistaActual = VISTA_GLOBAL;
+      } else {
+        jugador1.vistaActual = VISTA_LOCAL;
+      }
+      InvalidateRect(hwnd, NULL, FALSE);
+    }
+    return 0;
+
   case WM_ERASEBKGND:
     return 1; // Indicar que nosotros manejamos el fondo para evitar parpadeo
 
@@ -279,8 +336,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
 
-    // Dibujar TODO (juego + UI) usando double buffering interno en dibujarMundo
-    dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra);
+    // Dibujar según la vista actual
+    if (jugador1.vistaActual == VISTA_LOCAL) {
+      // Vista local: mapa con zoom, personajes, edificios, etc.
+      // IMPORTANTE: Pasar menuEmbarque a dibujarMundo para evitar parpadeo
+      dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque);
+    } else {
+      // Vista global: solo mapa y barco, sin zoom
+      dibujarMapaGlobal(hdc, rect, &jugador1);
+    }
 
     EndPaint(hwnd, &ps);
     return 0;

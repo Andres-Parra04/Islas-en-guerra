@@ -2,6 +2,8 @@
 #include "../edificios/edificios.h"
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
+#include "../recursos/ui_embarque.h"
+#include "../recursos/navegacion.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -80,7 +82,8 @@ static HBITMAP hVacaBmp[4] = {NULL};
 
 
 
-static HBITMAP hMapaBmp = NULL;
+static HBITMAP hMapaBmp = NULL;        // Mapa de isla individual (isla1, isla2, o isla3)
+static HBITMAP hMapaGlobalBmp = NULL;  // NUEVO: Mapa global con las 3 islas (mapaDemo2.bmp)
 static HBITMAP hArboles[4] = {NULL};
 
 static char gRutaMapaPrincipal[MAX_PATH] = RUTA_MAPA;
@@ -643,6 +646,22 @@ void cargarRecursosGraficos() {
     hMapaBmp = (HBITMAP)LoadImageA(NULL, gRutaMapaAlterna, IMAGE_BITMAP, 0, 0,
                                    LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
+  // NUEVO: Cargar mapa global con las 3 islas (mapaDemo2.bmp)
+  hMapaGlobalBmp = (HBITMAP)LoadImageA(NULL, "../assets/mapaDemo2.bmp", 
+                                       IMAGE_BITMAP, 0, 0,
+                                       LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+  if (!hMapaGlobalBmp) {
+    hMapaGlobalBmp = (HBITMAP)LoadImageA(NULL, "assets/mapaDemo2.bmp", 
+                                         IMAGE_BITMAP, 0, 0,
+                                         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+  }
+  
+  if (!hMapaGlobalBmp) {
+    printf("[ERROR] No se pudo cargar mapaDemo2.bmp para vista global\n");
+  } else {
+    printf("[OK] Mapa global (mapaDemo2.bmp) cargado correctamente\n");
+  }
+
   // 2. Cargar cada árbol individualmente con sistema de respaldo (Fallback)
   const char *rutasPrincipales[] = {ARBOL1, ARBOL2, ARBOL3, ARBOL4};
   const char *rutasAlternas[] = {ARBOL1_ALT, ARBOL2_ALT, ARBOL3_ALT,
@@ -864,7 +883,7 @@ Vaca* mapaObtenerVacas(int *cantidad) {
 // ============================================================================
 
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
-                  struct MenuCompra *menu) {
+                  struct MenuCompra *menu, MenuEmbarque *menuEmb) {
   if (!hMapaBmp)
     return;
 
@@ -1082,6 +1101,11 @@ for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
   if (menu != NULL) {
     menuCompraDibujar(hdcBuffer, menu, pJugador);
   }
+  
+  // NUEVO: Dibujar menú de embarque si está activo (DENTRO DEL BUFFER)
+  if (menuEmb != NULL && menuEmb->activo) {
+    menuEmbarqueDibujar(hdcBuffer, menuEmb, pJugador);
+  }
 
   // Copiar el buffer COMPLETO (Juego + UI) a la pantalla de una vez
   BitBlt(hdc, 0, 0, anchoP, altoP, hdcBuffer, 0, 0, SRCCOPY);
@@ -1095,3 +1119,96 @@ for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
   DeleteDC(hdcBuffer);
 }
 
+
+// ============================================================================
+// VISTA DE MAPA GLOBAL
+// ============================================================================
+// Dibuja el mapa completo sin zoom, mostrando solo el terreno y el barco.
+// No se muestran árboles, personajes, edificios ni vacas.
+// Esta vista se usa para navegar entre islas.
+// ============================================================================
+
+void dibujarMapaGlobal(HDC hdc, RECT rect, struct Jugador *pJugador) {
+  // CRÍTICO: Usar mapa global (mapaDemo2.bmp) no el mapa de isla individual
+  if (!hMapaGlobalBmp) return;
+  
+  int anchoP = rect.right - rect.left;
+  int altoP = rect.bottom - rect.top;
+  
+  // Crear buffer de doble renderizado
+  HDC hdcBuffer = CreateCompatibleDC(hdc);
+  HBITMAP hbmBuffer = CreateCompatibleBitmap(hdc, anchoP, altoP);
+  HBITMAP hOldBuffer = (HBITMAP)SelectObject(hdcBuffer, hbmBuffer);
+  
+  HDC hdcMapa = CreateCompatibleDC(hdc);
+  // IMPORTANTE: Usar hMapaGlobalBmp en lugar de hMapaBmp
+  HBITMAP hOldMapa = (HBITMAP)SelectObject(hdcMapa, hMapaGlobalBmp);
+  
+  // Dibujar el mapa completo escalado para llenar la ventana
+  SetStretchBltMode(hdcBuffer, HALFTONE);
+  StretchBlt(hdcBuffer, 0, 0, anchoP, altoP, 
+             hdcMapa, 0, 0, MAPA_SIZE, MAPA_SIZE, SRCCOPY);
+  
+  // Calcular factor de escala del mapa
+  float escalaX = (float)anchoP / (float)MAPA_SIZE;
+  float escalaY = (float)altoP / (float)MAPA_SIZE;
+  
+  // Dibujar el barco en su posición actual
+  if (pJugador->barco.activo) {
+    HDC hdcSprites = CreateCompatibleDC(hdc);
+    
+    Barco *b = &pJugador->barco;
+    
+    // Convertir posición del barco a coordenadas de pantalla
+    int pantX = (int)(b->x * escalaX);
+    int pantY = (int)(b->y * escalaY);
+    int tam = (int)(192 * escalaX); // Escalar tamaño del barco
+    
+    SelectObject(hdcSprites, hBarcoBmp[b->dir]);
+    TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
+                   192, 192, RGB(255, 255, 255));
+    
+    DeleteDC(hdcSprites);
+  }
+  
+  // Dibujar marcadores de islas (opcional)
+  // Esto ayuda al jugador a identificar las islas
+  SetBkMode(hdcBuffer, TRANSPARENT);
+  SetTextColor(hdcBuffer, RGB(255, 255, 0));
+  
+  HFONT hFont = CreateFontA(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                            CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                            DEFAULT_PITCH | FF_SWISS, "Arial");
+  HFONT hOldFont = (HFONT)SelectObject(hdcBuffer, hFont);
+  
+  // Instrucciones para el usuario
+  RECT rectInstrucciones = {10, 10, anchoP - 10, 100};
+  DrawTextA(hdcBuffer, "MODO NAVEGACION - Haz click en el mapa para viajar", -1,
+            &rectInstrucciones, DT_LEFT | DT_TOP | DT_WORDBREAK);
+  
+  RECT rectTropas = {10, 50, anchoP - 10, 100};
+  char bufferTropas[100];
+  snprintf(bufferTropas, sizeof(bufferTropas), "Tropas a bordo: %d", 
+           pJugador->barco.numTropas);
+  DrawTextA(hdcBuffer, bufferTropas, -1, &rectTropas, DT_LEFT | DT_TOP);
+  
+  // Instrucción para volver a vista local
+  RECT rectVolver = {10, altoP - 40, anchoP - 10, altoP - 10};
+  SetTextColor(hdcBuffer, RGB(200, 200, 200));
+  DrawTextA(hdcBuffer, "Presiona 'M' para volver a vista local", -1,
+            &rectVolver, DT_LEFT | DT_TOP);
+  
+  SelectObject(hdcBuffer, hOldFont);
+  DeleteObject(hFont);
+  
+  // Copiar buffer a pantalla
+  BitBlt(hdc, 0, 0, anchoP, altoP, hdcBuffer, 0, 0, SRCCOPY);
+  
+  // Limpieza
+  SelectObject(hdcMapa, hOldMapa);
+  DeleteDC(hdcMapa);
+  SelectObject(hdcBuffer, hOldBuffer);
+  DeleteObject(hbmBuffer);
+  DeleteDC(hdcBuffer);
+}
