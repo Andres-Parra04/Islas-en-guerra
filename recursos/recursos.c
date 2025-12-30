@@ -154,15 +154,18 @@ static bool pathfindSimple(int startF, int startC, int goalF, int goalC, int **c
             // VALIDACIÓN CRÍTICA: BLOQUE 2x2 COMPLETO (64x64px)
             // El obrero ocupa 2x2 celdas, por lo que debemos validar
             // las 4 celdas que ocuparía en la nueva posición.
-            // Si CUALQUIERA de las 4 celdas está bloqueada (valor 1),
+            // Si CUALQUIERA de las 4 celdas está bloqueada (valor 1 o 2),
             // esta dirección NO es válida.
+            // NOTA: Los personajes (valor 3) NO bloquean el pathfinding,
+            // solo la ejecución del movimiento en actualizarPersonajes.
             // ================================================================
             bool bloqueado = false;
             for (int df = 0; df < 2; df++) {
                 int *fila_ptr = *(collision + nf + df);
                 for (int dc = 0; dc < 2; dc++) {
                     int valor = *(fila_ptr + nc + dc);
-                    // Bloqueado si hay agua/árbol (1) o edificio (2)
+                    // Bloqueado SOLO si hay agua/árbol (1) o edificio (2)
+                    // Los personajes (3) NO bloquean el pathfinding
                     if (valor == 1 || valor == 2) {
                         bloqueado = true;
                         break;
@@ -237,8 +240,8 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
     strcpy(j->Nombre, Nombre);
     j->Comida = 200; j->Oro = 100; j->Madera = 150; j->Piedra = 100;
     for (int i = 0; i < 6; i++) {
-        j->obreros[i].x = 400.0f + (i * 70.0f);
-        j->obreros[i].y = 400.0f;
+        j->obreros[i].x = 900.0f + (i * 64.0f);
+        j->obreros[i].y = 900.0f;
         j->obreros[i].moviendose = false;
         j->obreros[i].seleccionado = false;
         j->obreros[i].celdaFila = -1;
@@ -248,17 +251,30 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
         j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
     }
 
+
+
+for (int i = 0; i < 2; i++) {
+  j->guerreros[i].x = 900.0f + (i * 64.0f);
+  j->guerreros[i].y = 850.0f;
+  j->guerreros[i].destinoX = j->guerreros[i].x;
+  j->guerreros[i].destinoY = j->guerreros[i].y;
+  j->guerreros[i].moviendose = false;
+  j->guerreros[i].seleccionado = false;
+  j->guerreros[i].dir = DIR_FRONT;
+  j->guerreros[i].frame = 0;
+  j->guerreros[i].celdaFila = -1;
+  j->guerreros[i].celdaCol = -1;
+  j->guerreros[i].rutaCeldas = NULL;
+  j->guerreros[i].tipo = TIPO_GUERRERO;
+}
+printf("[DEBUG] %d guerreros inicializados\\n", 2);
+
   // ================================================================
   // INICIALIZAR CABALLEROS (NUEVO)
   // ================================================================
-  struct {int x, y;} posCaballeros[4] = {
-      {500, 500}, {532, 500},   // Fila 1
-      {500, 532}, {532, 532}    // Fila 2
-  };
-  
   for (int i = 0; i < 4; i++) {
-    j->caballeros[i].x = posCaballeros[i].x;
-    j->caballeros[i].y = posCaballeros[i].y;
+    j->caballeros[i].x = 900.0f + (i * 64.0f);
+    j->caballeros[i].y = 800.0f;
     j->caballeros[i].destinoX = j->caballeros[i].x;
     j->caballeros[i].destinoY = j->caballeros[i].y;
     j->caballeros[i].moviendose = false;
@@ -285,11 +301,12 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
 }
 
 
-void actualizarObreros(struct Jugador *j) {
+void actualizarPersonajes(struct Jugador *j) {
     const float vel = 4.0f;
     int **col = mapaObtenerCollisionMap();
     if (!col) return;
-
+    
+    //Obreros
     for (int i = 0; i < 6; i++) {
         Unidad *o = &j->obreros[i];
         
@@ -312,37 +329,55 @@ void actualizarObreros(struct Jugador *j) {
         }
 
         // 3. VALIDACIÓN DE BLOQUE 2x2 (Huella del obrero)
-        // Revisamos si el espacio al que se dirige está libre de obstáculos u otros obreros
-        bool bloqueado = false;
+        // Revisamos si el espacio al que se dirige está libre de obstáculos
+        bool bloqueadoPermanente = false;  // Agua/Árbol/Edificio (cancelar ruta)
+        bool bloqueadoTemporal = false;    // Otro personaje (esperar)
+        
         for (int f = 0; f < 2; f++) {
             for (int c = 0; c < 2; c++) {
                 int checkF = nextF + f;
                 int checkC = nextC + c;
 
                 // Verificar límites del mapa
-                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { bloqueado = true; break; }
+                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
 
                 // Aritmética de punteros para obtener el valor de la celda
                 int valor = *(*(col + checkF) + checkC);
 
-                // Bloqueado si es Agua/Árbol (1) o Edificio (2)
-                if (valor == 1 || valor == 2) { bloqueado = true; break; }
+                // Bloqueado PERMANENTEMENTE si es Agua/Árbol (1) o Edificio (2)
+                if (valor == 1 || valor == 2) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
 
-                // Bloqueado si es OTRO Obrero (3)
+                // Bloqueado TEMPORALMENTE si es OTRO Obrero (3)
                 if (valor == 3) {
                     // Solo es bloqueante si la celda NO es parte de nuestra posición actual
                     bool esMiPropiaHuella = (checkF >= o->celdaFila && checkF <= o->celdaFila + 1 &&
                                             checkC >= o->celdaCol && checkC <= o->celdaCol + 1);
-                    if (!esMiPropiaHuella) { bloqueado = true; break; }
+                    if (!esMiPropiaHuella) { 
+                        bloqueadoTemporal = true; 
+                        break; 
+                    }
                 }
             }
-            if (bloqueado) break;
+            if (bloqueadoPermanente || bloqueadoTemporal) break;
         }
 
-        if (bloqueado) {
+        // Si hay obstáculo PERMANENTE (agua/edificio), cancelar movimiento
+        if (bloqueadoPermanente) {
             o->moviendose = false;
             obreroLiberarRuta(o);
             continue;
+        }
+
+        // Si hay obstáculo TEMPORAL (otro personaje), ESPERAR sin cancelar ruta
+        // El personaje mantiene su ruta y volverá a intentar en el siguiente frame
+        if (bloqueadoTemporal) {
+            continue; // Esperar, NO cancelar la ruta
         }
 
         // 4. Cálculo de movimiento hacia el centro de la celda destino
@@ -417,30 +452,45 @@ void actualizarObreros(struct Jugador *j) {
             continue;
         }
 
-        bool bloqueado = false;
+        bool bloqueadoPermanente = false;
+        bool bloqueadoTemporal = false;
+        
         for (int f = 0; f < 2; f++) {
             for (int c = 0; c < 2; c++) {
                 int checkF = nextF + f;
                 int checkC = nextC + c;
 
-                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { bloqueado = true; break; }
+                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
 
                 int valor = *(*(col + checkF) + checkC);
 
-                if (valor == 1 || valor == 2) { bloqueado = true; break; }
+                if (valor == 1 || valor == 2) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
 
                 if (valor == 3) {
                     bool esMiPropiaHuella = (checkF >= u->celdaFila && checkF <= u->celdaFila + 1 &&
                                             checkC >= u->celdaCol && checkC <= u->celdaCol + 1);
-                    if (!esMiPropiaHuella) { bloqueado = true; break; }
+                    if (!esMiPropiaHuella) { 
+                        bloqueadoTemporal = true; 
+                        break; 
+                    }
                 }
             }
-            if (bloqueado) break;
+            if (bloqueadoPermanente || bloqueadoTemporal) break;
         }
 
-        if (bloqueado) {
+        if (bloqueadoPermanente) {
             u->moviendose = false;
             obreroLiberarRuta(u);
+            continue;
+        }
+
+        if (bloqueadoTemporal) {
             continue;
         }
 
@@ -485,6 +535,109 @@ void actualizarObreros(struct Jugador *j) {
             u->y = newY;
         }
     }
+
+    for (int i = 0; i < 2; i++) {
+    Unidad *u = &j->guerreros[i];
+    
+    // Sincronización inicial
+    if (u->celdaFila == -1) {
+        ocupacionActualizarUnidad(col, u, obreroFilaActual(u), obreroColActual(u));
+    }
+    if (!u->moviendose) continue;
+
+    int nextF, nextC;
+        if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
+            int targetCelda = u->rutaCeldas[u->rutaIdx];
+            nextF = targetCelda / GRID_SIZE;
+            nextC = targetCelda % GRID_SIZE;
+        } else {
+            u->moviendose = false; 
+            continue;
+        }
+
+        bool bloqueadoPermanente = false;
+        bool bloqueadoTemporal = false;
+        
+        for (int f = 0; f < 2; f++) {
+            for (int c = 0; c < 2; c++) {
+                int checkF = nextF + f;
+                int checkC = nextC + c;
+
+                if (checkF >= GRID_SIZE || checkC >= GRID_SIZE) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
+
+                int valor = *(*(col + checkF) + checkC);
+
+                if (valor == 1 || valor == 2) { 
+                    bloqueadoPermanente = true; 
+                    break; 
+                }
+
+                if (valor == 3) {
+                    bool esMiPropiaHuella = (checkF >= u->celdaFila && checkF <= u->celdaFila + 1 &&
+                                            checkC >= u->celdaCol && checkC <= u->celdaCol + 1);
+                    if (!esMiPropiaHuella) { 
+                        bloqueadoTemporal = true; 
+                        break; 
+                    }
+                }
+            }
+            if (bloqueadoPermanente || bloqueadoTemporal) break;
+        }
+
+        if (bloqueadoPermanente) {
+            u->moviendose = false;
+            obreroLiberarRuta(u);
+            continue;
+        }
+
+        if (bloqueadoTemporal) {
+            continue;
+        }
+
+        float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
+        float cx = u->x + 32.0f, cy = u->y + 32.0f;
+        float vx = tx - cx, vy = ty - cy;
+        float dist = sqrtf(vx*vx + vy*vy);
+
+        if (dist > 0.1f) {
+            if (fabsf(vx) > fabsf(vy)) u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
+            else u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
+            
+            u->animActual = animPorDireccion(u->dir);
+            u->animTick++;
+            if (u->animTick >= u->animActual->ticksPerFrame) {
+                u->animTick = 0;
+                u->frame = (u->frame + 1) % u->animActual->frameCount;
+            }
+        }
+
+        if (dist <= vel) {
+            u->x = tx - 32.0f; 
+            u->y = ty - 32.0f;
+            u->rutaIdx++;
+            
+            ocupacionActualizarUnidad(col, u, nextF, nextC);
+            
+            if (u->rutaIdx >= u->rutaLen) {
+                u->moviendose = false; 
+                obreroLiberarRuta(u);
+            }
+        } else {
+            float newX = u->x + (vx / dist) * vel;
+            float newY = u->y + (vy / dist) * vel;
+            
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > (float)(MAPA_SIZE - 64)) newX = (float)(MAPA_SIZE - 64);
+            if (newY > (float)(MAPA_SIZE - 64)) newY = (float)(MAPA_SIZE - 64);
+            
+            u->x = newX;
+            u->y = newY;
+        }
+}
 }
 // ============================================================================
 // COMANDAR MOVIMIENTO RTS CON SEPARACIÓN DE UNIDADES
@@ -538,7 +691,9 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     // VALIDACIÓN DE BLOQUE 2x2 COMPLETO EN EL DESTINO
     // ================================================================
     // El jugador debe ser "sordo" a órdenes sobre agua/obstáculos.
-    // Validamos que TODAS las 4 celdas del bloque estén libres.
+    // Validamos que TODAS las 4 celdas del bloque estén libres de
+    // agua/árboles (1) y edificios (2).
+    // Los personajes (3) NO bloquean las órdenes de movimiento.
     // ================================================================
     bool destinoBloqueado = false;
     int motivoBloqueo = -1; // Para debug: qué celda causó el bloqueo
@@ -547,6 +702,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
         for (int dc = 0; dc < 2; dc++) {
             int valor = *(fila_ptr + gC + dc);
             // Si hay Agua/Árbol (1) o Edificio (2), rechazar orden
+            // Los personajes (3) NO bloquean las órdenes
             if (valor == 1 || valor == 2) {
                 destinoBloqueado = true;
                 motivoBloqueo = valor;
@@ -593,22 +749,9 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     for (Unidad *o = base; o < base + 6; o++) {
         if (!o->seleccionado) continue;
 
-        // Calcular destino para esta unidad
+        // Usar el destino global para todas las unidades
         int destinoF = gF;
         int destinoC = gC;
-        
-        // ============================================================
-        // SEPARACIÓN DE UNIDADES:
-        // Si la celda destino está ocupada (árbol=1 o unidad=2),
-        // buscar la celda libre más cercana.
-        // ============================================================
-        int valorCelda = *(*(col + destinoF) + destinoC);
-        if (valorCelda == 1 || valorCelda == 2) {
-            // La celda está bloqueada, buscar alternativa
-            if (!buscarCeldaLibreCerca(col, destinoF, destinoC, &destinoF, &destinoC)) {
-                continue; // No hay celda libre, esta unidad no se mueve
-            }
-        }
         
         // Obtener posición actual de la unidad
         int sF = obreroFilaActual(o);
@@ -628,10 +771,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
             o->rutaLen = len;
             o->rutaIdx = 0;
             o->moviendose = true;
-            
-            // Marcar la celda destino como "reservada" temporalmente (valor 2)
-            // para que la siguiente unidad elija otro destino
-            *(*(col + destinoF) + destinoC) = 2;
+            // NO marcar el destino aquí - se actualizará cuando llegue
             unidadesAsignadas++;
         }
     }
@@ -669,8 +809,45 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
 
         unidadesAsignadas++;
     }
+
+    // ================================================================
+    // COMANDAR GUERREROS (misma lógica)
+    // ================================================================
+    Unidad *baseGuerreros = j->guerreros;
+    for (Unidad *u = baseGuerreros; u < baseGuerreros + 2; u++) {
+        if (!u->seleccionado) continue;
+
+        // Calcular offset para separación
+        int offF = (unidadesAsignadas / 3) - 1;
+        int offC = (unidadesAsignadas % 3) - 1;
+        int targetF = gF + offF;
+        int targetC = gC + offC;
+        targetF = (targetF < 0) ? 0 : ((targetF >= GRID_SIZE) ? GRID_SIZE - 1 : targetF);
+        targetC = (targetC < 0) ? 0 : ((targetC >= GRID_SIZE) ? GRID_SIZE - 1 : targetC);
+
+        // Pathfinding
+        int *path = NULL;
+        int len = 0;
+        bool success = pathfindSimple(obreroFilaActual(u), obreroColActual(u), 
+                                       targetF, targetC, col, &path, &len);
+        
+        if (success) {
+            obreroLiberarRuta(u);
+            u->rutaCeldas = path;
+            u->rutaLen = len;
+            u->rutaIdx = 0;
+            u->objetivoFila = targetF;
+            u->objetivoCol = targetC;
+            u->moviendose = true;
+        }
+
+        unidadesAsignadas++;
+    }
 }
 
 void rtsLiberarMovimientoJugador(struct Jugador *j) {
     for (int i = 0; i < 6; i++) obreroLiberarRuta(&j->obreros[i]);
+    for (int i = 0; i < 4; i++) obreroLiberarRuta(&j->caballeros[i]);
+    for (int i = 0; i < 2; i++) obreroLiberarRuta(&j->guerreros[i]); 
+
 }
