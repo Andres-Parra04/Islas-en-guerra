@@ -3,6 +3,7 @@
 
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
+#include <stdio.h>
 #include <windows.h>
 
 // Forward declaration de la estructura
@@ -10,9 +11,9 @@ struct MenuCompra;
 
 // --- CONSTANTES DE DIMENSIÓN ---
 #define MAPA_SIZE 2048
-#define TILE_SIZE 64                      // Tamaño lógico (celda de matriz)
-#define GRID_SIZE (MAPA_SIZE / TILE_SIZE) // 32x32 celdas
-#define SPRITE_ARBOL 128                  // Tamaño visual del BMP de árbol
+#define TILE_SIZE 32 // Tamaño lógico (celda de matriz)
+#define GRID_SIZE (MAPA_SIZE / TILE_SIZE)
+#define SPRITE_ARBOL 128 // Tamaño visual del BMP de árbol
 
 typedef struct {
   int x;      // Posicion X en el mapa 2048
@@ -27,6 +28,8 @@ int **mapaObtenerCollisionMap(void);
 void mapaReconstruirCollisionMap(void);
 // Marca un edificio en el collision map como impasable
 void mapaMarcarEdificio(float x, float y, int ancho, int alto);
+// Detecta automáticamente una posición válida en la orilla del mapa
+void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
 
@@ -37,5 +40,13 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 void cargarRecursosGraficos();
 void dibujarObreros(HDC hdcBuffer, struct Jugador *j, Camara cam, int anchoP,
                     int altoP);
+
+// Nuevas funciones para interacción con recursos
+int mapaObtenerTipoObjeto(int f, int c);
+void mapaEliminarObjeto(int f, int c);
+
+// Serialización
+void mapaGuardar(FILE *f);
+void mapaCargar(FILE *f);
 
 #endif

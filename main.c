@@ -5,6 +5,7 @@
 #include "recursos/ui_compra.h"
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
 
@@ -19,6 +20,7 @@ bool arrastrandoCamara = false;
 POINT mouseUltimo;
 MenuCompra menuCompra; // Estado global del menú de compra
 Edificio ayuntamiento; // Edificio del ayuntamiento
+Edificio mina;         // Edificio de la mina
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
 void corregirLimitesCamara(RECT rect) {
@@ -59,11 +61,16 @@ void seleccionarObrero(float mundoX, float mundoY) {
   // Puntero a la estructura del jugador
   struct Jugador *pJugador = &jugador1;
 
-  // Puntero base al array de obreros (para aritmética de punteros)
-  UnidadObrero *base = pJugador->obreros;
+  // ================================================================
+  // CONSTANTE: Tamaño de hitbox de las unidades (64x64px)
+  // ================================================================
+  const float OBRERO_SIZE = 64.0f;
 
-  // Recorrer obreros usando aritmética de punteros (sin usar índices)
-  for (UnidadObrero *o = base; o < base + 6; o++) {
+  // Puntero base al array de obreros (para aritmética de punteros)
+  Unidad *base = pJugador->obreros;
+
+  // Solo cambiar el estado del que se clickeó
+  for (Unidad *o = base; o < base + 6; o++) {
     // ================================================================
     // PUNTO EN RECTÁNGULO (Hitbox 64x64)
     // ================================================================
@@ -71,17 +78,37 @@ void seleccionarObrero(float mundoX, float mundoY) {
     // están dentro del rectángulo del obrero:
     //   - Esquina superior izquierda: (o->x, o->y)
     //   - Esquina inferior derecha: (o->x + 64, o->y + 64)
+    //
+    // CRÍTICO: El obrero mide 64x64px, NO 32x32px (TILE_SIZE)
     // ================================================================
 
-    // Comparación en X: mundoX >= o->x && mundoX < o->x + TILE_SIZE
-    bool dentroX = (mundoX >= o->x) && (mundoX < o->x + (float)TILE_SIZE);
+    // Comparación en X: mundoX >= o->x && mundoX < o->x + 64
+    bool dentroX = (mundoX >= o->x) && (mundoX < o->x + OBRERO_SIZE);
 
-    // Comparación en Y: mundoY >= o->y && mundoY < o->y + TILE_SIZE
-    bool dentroY = (mundoY >= o->y) && (mundoY < o->y + (float)TILE_SIZE);
+    // Comparación en Y: mundoY >= o->y && mundoY < o->y + 64
+    bool dentroY = (mundoY >= o->y) && (mundoY < o->y + OBRERO_SIZE);
 
     // Si ambas condiciones son verdaderas, el punto está dentro del hitbox
     // Esto funciona INDEPENDIENTEMENTE de qué se haya dibujado encima
     o->seleccionado = (dentroX && dentroY);
+  }
+
+  // ================================================================
+  // SELECCIONAR CABALLEROS (NUEVO)
+  // ================================================================
+  Unidad *baseCaballeros = pJugador->caballeros;
+  for (Unidad *c = baseCaballeros; c < baseCaballeros + 4; c++) {
+    float mundoXUnit = c->x;
+    float mundoYUnit = c->y;
+
+    bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
+                   mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
+
+    if (dentro) {
+      c->seleccionado = !c->seleccionado;
+    } else {
+      c->seleccionado = false;
+    }
   }
 }
 
@@ -109,8 +136,30 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     mapaMarcarEdificio(ayuntamiento.x, ayuntamiento.y, ayuntamiento.ancho,
                        ayuntamiento.alto);
 
+    // Inicializar mina en la parte superior de la isla (zona verde)
+    // Coordenadas ajustables: (x, y)
+    // - x: 960 = centrado horizontalmente en el mapa (2048/2 - 64)
+    // - y: 600 = zona superior pero no extrema (ajusta según necesites)
+    edificioInicializar(&mina, EDIFICIO_MINA, 1024.0f - 64.0f, 450.0f);
+    jugador1.mina = &mina;
+
+    // Marcar la mina en el mapa de colisiones
+    mapaMarcarEdificio(mina.x, mina.y, mina.ancho, mina.alto);
+
     // Inicializar menú de compra
     menuCompraInicializar(&menuCompra);
+
+    // Detectar orilla y colocar barco (192x192)
+    float barcoX, barcoY;
+    int barcoDir;
+    mapaDetectarOrilla(&barcoX, &barcoY, &barcoDir);
+    jugador1.barco.x = barcoX;
+    jugador1.barco.y = barcoY;
+    jugador1.barco.dir = (Direccion)barcoDir;
+    jugador1.barco.activo = true;
+
+    printf("[DEBUG] Barco colocado en orilla: (%.1f, %.1f), dir=%d\n", barcoX,
+           barcoY, barcoDir);
 
     // Timer para actualizar física a 60 FPS (16ms)
     SetTimer(hwnd, IDT_TIMER_JUEGO, 16, NULL);
@@ -118,11 +167,80 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
   case WM_TIMER:
     if (wParam == IDT_TIMER_JUEGO) {
-      actualizarObreros(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
-      menuCompraActualizar(&menuCompra); // Actualizar timers del menú
+      actualizarObreros(&jugador1);
+      menuCompraActualizar(&menuCompra);
+
+      // Actualizar mina si existe
+      if (jugador1.mina != NULL) {
+        edificioActualizar((Edificio *)jugador1.mina);
+      }
+
       InvalidateRect(hwnd, NULL, FALSE);
     }
     return 0;
+
+    // ============================================================================
+    // SISTEMA DE GUARDAR / CARGAR (PERSISTENCIA)
+    // ============================================================================
+    void GuardarJuego() {
+      FILE *f = fopen("savegame.dat", "wb");
+      if (!f) {
+        MessageBox(NULL, "No se pudo crear el archivo de guardado.", "Error",
+                   MB_OK | MB_ICONERROR);
+        return;
+      }
+
+      // 1. Guardar datos del jugador (Recursos, unidades, etc.)
+      fwrite(&jugador1, sizeof(struct Jugador), 1, f);
+
+      // 2. Guardar estado del mapa (Árboles cortados, etc.)
+      mapaGuardar(f);
+
+      fclose(f);
+      MessageBox(NULL, "Partida Guardada Exitosamente!", "Sistema", MB_OK);
+    }
+
+    void CargarJuego() {
+      FILE *f = fopen("savegame.dat", "rb");
+      if (!f) {
+        MessageBox(NULL, "No existe archivo de guardado.", "Error",
+                   MB_OK | MB_ICONWARNING);
+        return;
+      }
+
+      // 1. Cargar datos del jugador
+      fread(&jugador1, sizeof(struct Jugador), 1, f);
+
+      // 2. Cargar mapa
+      mapaCargar(f);
+
+      // 3. Reconstrucción post-carga
+      // Los punteros internos (como rutas o sprites) no se guardan válidos.
+      // Hay que reinicializarlos.
+
+      // Reiniciar punteros de unidades
+      for (int i = 0; i < 6; i++) {
+        jugador1.obreros[i].rutaCeldas = NULL; // Evitar crash por puntero viejo
+        jugador1.obreros[i].animActual = NULL; // Se reasigna en update
+                                               // Reiniciar animaciones básicas
+      }
+      for (int i = 0; i < 4; i++) {
+        jugador1.caballeros[i].rutaCeldas = NULL;
+      }
+
+      // Reconectar punteros de edificios
+      jugador1.ayuntamiento =
+          &ayuntamiento; // Asumimos que ayuntamiento es estático
+      jugador1.mina = &mina;
+
+      // Reconstruir mapa de colisiones basado en nuevas posiciones
+      mapaReconstruirCollisionMap();
+
+      fclose(f);
+      MessageBox(NULL, "Partida Cargada!", "Sistema", MB_OK);
+    }
+
+    // ...
 
   case WM_RBUTTONDOWN: {
     int px = GET_X_LPARAM(lParam);
@@ -136,12 +254,34 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       GetClientRect(hwnd, &rect);
       menuCompraAbrir(&menuCompra, rect.right - rect.left,
                       rect.bottom - rect.top);
+    }
+    // Intentar recoger recursos de la mina
+    else if (recursosIntentarRecogerMina(&jugador1, mundoX, mundoY)) {
+      // Interacción con mina ya manejada
     } else {
-      // Comandar movimiento normal
-      rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      // 1. Intentar acción de talar (si es árbol y hay obrero cerca)
+      if (!recursosIntentarTalar(&jugador1, mundoX, mundoY)) {
+        // 2. Comandar movimiento normal
+        rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      }
     }
     return 0;
   }
+
+  case WM_KEYDOWN:
+    if (wParam == VK_F6) {
+      CargarJuego();
+    }
+    if (wParam == 'C') {
+      // Centrar cámara en el Ayuntamiento (1024, 1024)
+      // Restamos la mitad de la pantalla (aprox 640x360) para que quede al
+      // centro
+      camara.x = 1024 - (1280 / 2 / camara.zoom);
+      camara.y = 1024 - (720 / 2 / camara.zoom);
+      corregirLimitesCamara(rect);
+      InvalidateRect(hwnd, NULL, FALSE);
+    }
+    break;
 
   case WM_SIZE:
     GetClientRect(hwnd, &rect);
@@ -214,6 +354,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_PAINT: {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
+
+    // Asegurar que el rect esté actualizado para el culling de los edificios
+    GetClientRect(hwnd, &rect);
 
     // Dibujar TODO (juego + UI) usando double buffering interno en dibujarMundo
     dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra);
