@@ -155,9 +155,13 @@ void mapaReconstruirCollisionMap(void) {
     // Mapeo 1:1 entre mapaObjetos y collisionMap (cada celda = 64px)
     for (int f = 0; f < GRID_SIZE; f++) {
         for (int c = 0; c < GRID_SIZE; c++) {
-            // Si hay un árbol en esta celda, marcar como obstáculo en collision map
+            // Si hay un arbol en esta celda, marcar como obstaculo en collision map
             if (mapaObjetos[f][c] == SIMBOLO_ARBOL) {
                 gCollisionMap[f][c] = 1; // Bloquear celda
+            }
+            // NUEVO: Las vacas tambien bloquean el paso temporalmente
+            if (mapaObjetos[f][c] == SIMBOLO_VACA) {
+                gCollisionMap[f][c] = 3; // Mismo valor que unidades temporales
             }
         }
     }
@@ -649,6 +653,9 @@ void generarBosqueAutomatico() {
       // Timer aleatorio para que no se muevan todas a la vez
       v->timerMovimiento = rand() % 120;
       
+      // NUEVO: Registrar vaca en mapaObjetos para identificar su posicion
+      *(*(ptrMatriz + fila) + col) = SIMBOLO_VACA;
+      
       gNumVacas++;
     }
   }
@@ -867,13 +874,30 @@ void mapaActualizarVacas(void) {
           continue;
         }
         
-        // Verificar colisión usando aritmética de punteros
+        // Verificar colision usando aritmetica de punteros
         int valorColision = *(*(gCollisionMap + celdaY) + celdaX);
         
-        // Si la celda está libre (0) o tiene una unidad temporal (2), podemos movernos
-        // No moverse a agua (1) o árboles (1)
-        if (valorColision == 0 || valorColision == 2) {
-          // ¡Movimiento válido! Actualizar posición y dirección
+        // Verificar tambien en mapaObjetos que no haya objetos
+        char simboloDestino = mapaObjetos[celdaY][celdaX];
+        
+        // ================================================================
+        // VERIFICACION DE BLOQUEO COMPLETA:
+        // - collisionMap: 0=libre, 1=agua/arbol, 2=edificio, 3=unidad
+        // - mapaObjetos: '.'=vacio, 'A'=arbol, 'E'=edificio, 'M'=mina, 
+        //                'V'=vaca, 'O'/'C'/'G'=personajes
+        // ================================================================
+        // Solo moverse si AMBAS condiciones son true:
+        // 1. collisionMap == 0 (no hay agua, arbol, edificio ni unidad)
+        // 2. mapaObjetos esta vacio (no hay arbol, edificio, mina, vaca, etc)
+        // ================================================================
+        bool colisionLibre = (valorColision == 0);
+        bool celdaVacia = (simboloDestino == SIMBOLO_VACIO || simboloDestino == 0);
+        
+        if (colisionLibre && celdaVacia) {
+          // Sincronizar movimiento con mapaObjetos
+          mapaMoverObjeto(v->x, v->y, nuevoX, nuevoY, SIMBOLO_VACA);
+          
+          // Actualizar posicion y direccion
           v->x = nuevoX;
           v->y = nuevoY;
           v->dir = (Direccion)direccion;
