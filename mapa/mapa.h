@@ -3,6 +3,7 @@
 
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
+#include <stdio.h>
 #include <windows.h>
 
 // Forward declaration de las estructuras
@@ -58,6 +59,8 @@ void mapaReconstruirCollisionMap(void);
 void mapaMarcarEdificio(float x, float y, int ancho, int alto);
 // Detecta automáticamente una posición válida en la orilla del mapa
 void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
+// Detecta automáticamente una posición válida en la orilla del mapa
+void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
 
@@ -101,5 +104,21 @@ void cargarRecursosGraficos();
 void dibujarObreros(HDC hdcBuffer, struct Jugador *j, Camara cam, int anchoP,
                     int altoP);
 void mapaSeleccionarIsla(int isla);
+
+// Nuevas funciones para interacción con recursos
+int mapaObtenerTipoObjeto(int f, int c);
+void mapaEliminarObjeto(int f, int c);
+
+// Serialización
+void mapaGuardar(FILE *f);
+void mapaCargar(FILE *f);
+
+// Nuevas funciones para interacción con recursos
+int mapaObtenerTipoObjeto(int f, int c);
+void mapaEliminarObjeto(int f, int c);
+
+// Serialización
+void mapaGuardar(FILE *f);
+void mapaCargar(FILE *f);
 
 #endif

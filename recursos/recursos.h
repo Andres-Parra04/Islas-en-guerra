@@ -109,11 +109,11 @@ struct Jugador {
   // Edificios del jugador
   void *ayuntamiento; // Puntero a Edificio (void* para evitar dependencia
                       // circular)
-  void *mina;         // Puntero a Edificio de la mina
-  
   // Estado de vista
   EstadoVista vistaActual; // Vista actual (local o global)
   int islaActual;          // Isla donde está el jugador (1, 2, o 3)
+  void *mina;         // Puntero a Edificio de la mina
+  void *cuartel;      // Puntero a Edificio del cuartel
 };
 
 void actualizarPersonajes(struct Jugador *j);
@@ -127,5 +127,16 @@ void IniciacionTropa(struct Tropa *t, const char *Nombre, int Oro, int Comida,
                      int VelocidadAtaque, int DistanciaAtaque);
 void gotoxy(int x, int y);
 void mostrarStats(struct Jugador j, int x, int y);
+
+// Nueva función lógica para talar
+bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY);
+// Nueva función para recoger de la mina
+bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX, float mundoY);
+// Nueva función para cazar vacas
+bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY);
+
+// Funciones de entrenamiento de tropas
+bool entrenarObrero(struct Jugador *j, float x, float y);
+bool entrenarCaballero(struct Jugador *j, float x, float y);
 
 #endif

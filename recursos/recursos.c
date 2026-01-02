@@ -1,34 +1,41 @@
+#include "recursos.h"
+#include "../edificios/edificios.h"
+#include "../mapa/mapa.h"
+#include "../mapa/menu.h"
+#include "stdbool.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
-#include "../mapa/menu.h"
-#include "../mapa/mapa.h"
-#include "recursos.h"
-#include "stdbool.h"
-#include <math.h>
 
 // --- Animaciones Lógicas ---
-static const Animation gAnimFront = { DIR_FRONT, 4, 6 };
-static const Animation gAnimBack  = { DIR_BACK,  4, 6 };
-static const Animation gAnimLeft  = { DIR_LEFT,  4, 6 };
-static const Animation gAnimRight = { DIR_RIGHT, 4, 6 };
+static const Animation gAnimFront = {DIR_FRONT, 4, 6};
+static const Animation gAnimBack = {DIR_BACK, 4, 6};
+static const Animation gAnimLeft = {DIR_LEFT, 4, 6};
+static const Animation gAnimRight = {DIR_RIGHT, 4, 6};
 
 static const Animation *animPorDireccion(Direccion d) {
-    switch (d) {
-        case DIR_BACK:  return &gAnimBack;
-        case DIR_LEFT:  return &gAnimLeft;
-        case DIR_RIGHT: return &gAnimRight;
-        case DIR_FRONT:
-        default:        return &gAnimFront;
-    }
+  switch (d) {
+  case DIR_BACK:
+    return &gAnimBack;
+  case DIR_LEFT:
+    return &gAnimLeft;
+  case DIR_RIGHT:
+    return &gAnimRight;
+  case DIR_FRONT:
+  default:
+    return &gAnimFront;
+  }
 }
 
 // --- Utilidades de Grid ---
 static int clampInt(int v, int lo, int hi) {
-    if (v < lo) return lo;
-    if (v > hi) return hi;
-    return v;
+  if (v < lo)
+    return lo;
+  if (v > hi)
+    return hi;
+  return v;
 }
 
 static int pixelACelda(float px) {
@@ -344,7 +351,8 @@ void actualizarPersonajes(struct Jugador *j) {
             ocupacionActualizarUnidad(col, o, obreroFilaActual(o), obreroColActual(o));
         }
 
-        if (!o->moviendose) continue;
+    if (!o->moviendose)
+      continue;
 
         // 2. Obtener la siguiente celda de la ruta
         int nextF, nextC;
@@ -671,7 +679,8 @@ void actualizarPersonajes(struct Jugador *j) {
 // ============================================================================
 // - Si el destino es impasable (agua/árbol = 1), buscar celda libre cercana.
 // - Si el destino está ocupado por otra unidad (= 2), buscar celda adyacente.
-// - Múltiples unidades seleccionadas reciben destinos diferentes para no solaparse.
+// - Múltiples unidades seleccionadas reciben destinos diferentes para no
+// solaparse.
 // ============================================================================
 void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     int **col = mapaObtenerCollisionMap();
@@ -885,8 +894,395 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
 }
 
 void rtsLiberarMovimientoJugador(struct Jugador *j) {
-    for (int i = 0; i < 6; i++) obreroLiberarRuta(&j->obreros[i]);
+  // Liberar rutas de obreros
+  for (int i = 0; i < 6; i++) {
+    obreroLiberarRuta(&j->obreros[i]);
     for (int i = 0; i < 4; i++) obreroLiberarRuta(&j->caballeros[i]);
     for (int i = 0; i < 2; i++) obreroLiberarRuta(&j->guerreros[i]); 
 
+  }
+}
+
+
+// ============================================================================
+// FUNCIONES DE ENTRENAMIENTO DE TROPAS
+// ============================================================================
+
+bool entrenarObrero(struct Jugador *j, float x, float y) {
+  // Buscar un espacio disponible en el array de obreros
+  for (int i = 0; i < 6; i++) {
+    // Si el obrero está fuera de pantalla, está libre
+    if (j->obreros[i].x < 0) {
+      // Obtener la posición del cuartel
+      if (j->cuartel == NULL)
+        return false;
+
+      Edificio *cuartel = (Edificio *)j->cuartel;
+
+      // Generar posición cerca del cuartel (offset aleatorio pequeño)
+      // Generar posición base cerca del cuartel
+      float offsetX = (float)((i % 3) * 70);
+      float offsetY = (float)((i / 3) * 70);
+      float baseX = cuartel->x + offsetX;
+      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
+
+      j->obreros[i].x = baseX;
+      j->obreros[i].y = baseY;
+
+      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
+      int **col = mapaObtenerCollisionMap();
+      if (col) {
+        int cX = (int)(j->obreros[i].x / 32.0f);
+        int cY = (int)(j->obreros[i].y / 32.0f);
+
+        // Si la posición inicial es inválida (no es 0), buscar vecino libre
+        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
+            col[cY][cX] != 0) {
+          bool encontrado = false;
+          // Buscar en un radio creciente alrededor del cuartel
+          int centroCX = (int)((cuartel->x + 64) / 32.0f);
+          int centroCY = (int)((cuartel->y + 64) / 32.0f);
+
+          for (int r = 2; r < 8; r++) { // Radio 2 a 8 tiles
+            for (int dy = -r; dy <= r; dy++) {
+              for (int dx = -r; dx <= r; dx++) {
+                int ny = centroCY + dy;
+                int nx = centroCX + dx;
+                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
+                  if (col[ny][nx] == 0) { // Celda libre encontrada
+                    j->obreros[i].x = nx * 32.0f;
+                    j->obreros[i].y = ny * 32.0f;
+                    encontrado = true;
+                    break;
+                  }
+                }
+              }
+              if (encontrado)
+                break;
+            }
+            if (encontrado)
+              break;
+          }
+        }
+      }
+
+      j->obreros[i].destinoX = j->obreros[i].x;
+      j->obreros[i].destinoY = j->obreros[i].y;
+      j->obreros[i].moviendose = false;
+      j->obreros[i].seleccionado = false;
+      j->obreros[i].dir = DIR_FRONT;
+      j->obreros[i].frame = 0;
+      j->obreros[i].celdaFila = -1;
+      j->obreros[i].celdaCol = -1;
+      j->obreros[i].rutaCeldas = NULL;
+      j->obreros[i].tipo = TIPO_OBRERO;
+      j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
+
+      printf("[CUARTEL] Nuevo obrero entrenado en posición (%.1f, %.1f)\n",
+             j->obreros[i].x, j->obreros[i].y);
+      return true;
+    }
+  }
+
+  // No hay espacio disponible
+  return false;
+}
+
+bool entrenarCaballero(struct Jugador *j, float x, float y) {
+  // Buscar un espacio disponible en el array de caballeros
+  for (int i = 0; i < 4; i++) {
+    // Si el caballero está fuera de pantalla, está libre
+    if (j->caballeros[i].x < 0) {
+      // Obtener la posición del cuartel
+      if (j->cuartel == NULL)
+        return false;
+
+      Edificio *cuartel = (Edificio *)j->cuartel;
+
+      // Generar posición cerca del cuartel
+      float offsetX = (float)((i % 2) * 70);
+      float offsetY = (float)((i / 2) * 70);
+      float baseX = cuartel->x + offsetX;
+      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
+
+      j->caballeros[i].x = baseX;
+      j->caballeros[i].y = baseY;
+
+      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
+      int **col = mapaObtenerCollisionMap();
+      if (col) {
+        int cX = (int)(j->caballeros[i].x / 32.0f);
+        int cY = (int)(j->caballeros[i].y / 32.0f);
+
+        // Si la posición inicial es inválida, buscar vecino libre
+        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
+            col[cY][cX] != 0) {
+          bool encontrado = false;
+          // Buscar en un radio creciente alrededor del cuartel
+          int centroCX = (int)((cuartel->x + 64) / 32.0f);
+          int centroCY = (int)((cuartel->y + 64) / 32.0f);
+
+          for (int r = 2; r < 8; r++) {
+            for (int dy = -r; dy <= r; dy++) {
+              for (int dx = -r; dx <= r; dx++) {
+                int ny = centroCY + dy;
+                int nx = centroCX + dx;
+                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
+                  if (col[ny][nx] == 0) { // Celda libre
+                    j->caballeros[i].x = nx * 32.0f;
+                    j->caballeros[i].y = ny * 32.0f;
+                    encontrado = true;
+                    break;
+                  }
+                }
+              }
+              if (encontrado)
+                break;
+            }
+            if (encontrado)
+              break;
+          }
+        }
+      }
+
+      j->caballeros[i].destinoX = j->caballeros[i].x;
+      j->caballeros[i].destinoY = j->caballeros[i].y;
+      j->caballeros[i].moviendose = false;
+      j->caballeros[i].seleccionado = false;
+      j->caballeros[i].dir = DIR_FRONT;
+      j->caballeros[i].frame = 0;
+      j->caballeros[i].celdaFila = -1;
+      j->caballeros[i].celdaCol = -1;
+      j->caballeros[i].rutaCeldas = NULL;
+      j->caballeros[i].tipo = TIPO_CABALLERO;
+      j->caballeros[i].animActual = animPorDireccion(DIR_FRONT);
+
+      printf("[CUARTEL] Nuevo caballero entrenado en posición (%.1f, %.1f)\n",
+             j->caballeros[i].x, j->caballeros[i].y);
+      return true;
+    }
+  }
+
+  // No hay espacio disponible
+  return false;
+}
+
+bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
+  // 1. Verificar qué objeto hay en el mapa (coordenadas mundo -> celda)
+  int clickF = (int)(mundoY / TILE_SIZE);
+  int clickC = (int)(mundoX / TILE_SIZE);
+
+  // Buscar en la celda clickeada y sus vecinas (arriba/izquierda)
+  // porque la vaca mide 2x2 tiles pero solo se registra en la esquina superior
+  // izquierda.
+  int targets[4][2] = {{0, 0}, {0, -1}, {-1, 0}, {-1, -1}};
+  int tipoObjeto = 0;
+  int f = -1, c = -1;
+
+  for (int k = 0; k < 4; k++) {
+    int tf = clickF + targets[k][0];
+    int tc = clickC + targets[k][1];
+
+    if (tf >= 0 && tf < GRID_SIZE && tc >= 0 && tc < GRID_SIZE) {
+      int t = mapaObtenerTipoObjeto(tf, tc);
+      if (t >= 5 && t <= 8) {
+        tipoObjeto = t;
+        f = tf;
+        c = tc;
+        break; // Vaca encontrada
+      }
+    }
+  }
+
+  // Las vacas son tipos 5 a 8 (Front, Back, Left, Right)
+  if (tipoObjeto >= 5 && tipoObjeto <= 8) {
+    printf("[DEBUG] Cazar: Click (o vecindad) en vaca (tipo %d) anclada en "
+           "Celda[%d][%d]\n",
+           tipoObjeto, f, c);
+
+    // 2. Buscar si hay algún obrero O caballero SELECCIONADO cerca
+    bool tropaCercana = false;
+    const float DISTANCIA_MAXIMA = 200.0f; // Aumentado un poco por seguridad
+
+    // Revisar Obreros
+    for (int i = 0; i < 6; i++) {
+      Unidad *o = &j->obreros[i];
+      if (!o->seleccionado)
+        continue;
+      float dx = (o->x + 32.0f) - mundoX;
+      float dy = (o->y + 32.0f) - mundoY;
+      float dist = sqrtf(dx * dx + dy * dy);
+      if (dist < DISTANCIA_MAXIMA) {
+        tropaCercana = true;
+        break;
+      }
+    }
+
+    // Revisar Caballeros (si no se encontró obrero)
+    if (!tropaCercana) {
+      for (int i = 0; i < 4; i++) {
+        Unidad *cab = &j->caballeros[i];
+        if (!cab->seleccionado)
+          continue;
+        float dx = (cab->x + 32.0f) - mundoX;
+        float dy = (cab->y + 32.0f) - mundoY;
+        float dist = sqrtf(dx * dx + dy * dy);
+        if (dist < DISTANCIA_MAXIMA) {
+          tropaCercana = true;
+          break;
+        }
+      }
+    }
+
+    if (tropaCercana) {
+      // 3. Confirmación
+      int respuesta = MessageBox(NULL, "¿Quieres cazar esta vaca por comida?",
+                                 "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
+
+      if (respuesta == IDYES) {
+        // Eliminar objeto de la matriz
+        mapaEliminarObjeto(f, c);
+        j->Comida += 100;
+        MessageBox(NULL, "¡Vaca cazada! +100 Comida", "Recursos",
+                   MB_OK | MB_ICONINFORMATION);
+      }
+      return true; // Click manejado
+    }
+
+    // Si no hay tropa cerca, retornamos FALSE para que el click pase a la
+    // logica de movimiento y la unidad camine hacia la vaca.
+    return false;
+  }
+
+  // No era una vaca
+  return false;
+}
+
+
+// ============================================================================
+// LÓGICA DE TALAR ÁRBOLES
+// ============================================================================
+bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
+  // 1. Verificar qué objeto hay en el mapa (coordenadas mundo -> celda)
+  int f = (int)(mundoY / TILE_SIZE);
+  int c = (int)(mundoX / TILE_SIZE);
+
+  // Validar límites
+  if (f < 0 || f >= GRID_SIZE || c < 0 || c >= GRID_SIZE)
+    return false;
+
+  int tipoObjeto = mapaObtenerTipoObjeto(f, c);
+
+  // Los árboles son tipos 1 a 4
+  if (tipoObjeto >= 1 && tipoObjeto <= 4) {
+    printf("[DEBUG] Talar: Click en arbol tipo %d en Celda[%d][%d]\n",
+           tipoObjeto, f, c);
+
+    // 2. Buscar si hay algún obrero SELECCIONADO cerca
+    Unidad *obreroCercano = NULL;
+    float distMinima = 9999.0f;
+    const float DISTANCIA_MAXIMA = 150.0f; // Aprox 4-5 celdas
+
+    for (int i = 0; i < 6; i++) {
+      Unidad *o = &j->obreros[i];
+      if (!o->seleccionado)
+        continue;
+
+      // Distancia Euclídea
+      float dx = (o->x + 32.0f) - mundoX;
+      float dy = (o->y + 32.0f) - mundoY;
+      float dist = sqrtf(dx * dx + dy * dy);
+
+      if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
+        distMinima = dist;
+        obreroCercano = o;
+      }
+    }
+
+    if (obreroCercano != NULL) {
+      // 3. Confirmación del usuario
+      int respuesta =
+          MessageBox(NULL, "¿Quieres talar este arbol y obtener madera?",
+                     "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
+
+      if (respuesta == IDYES) {
+        // ... ejecutar accion ...
+        mapaEliminarObjeto(f, c);
+        j->Madera += 50;
+        MessageBox(NULL, "Arbol talado! +50 Madera", "Recursos",
+                   MB_OK | MB_ICONINFORMATION);
+      }
+      return true; // Accion manejada (confirmada o cancelada)
+    }
+
+    // Si no hay obrero cerca, retornamos FALSE para que el click
+    // pase a la logica de movimiento y el obrero camine hacia el arbol
+    return false;
+  }
+
+  // No era un árbol, permitir que el click pase a la lógica de movimiento
+  return false;
+}
+
+bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
+                                 float mundoY) {
+  if (j->mina == NULL)
+    return false;
+  Edificio *e = (Edificio *)j->mina;
+
+  // 1. Verificar si el click fue sobre la mina
+  if (edificioContienePunto(e, mundoX, mundoY)) {
+    // 2. Verificar si hay recursos
+    if (e->oroAcumulado <= 0 && e->piedraAcumulada <= 0) {
+      MessageBox(NULL, "La mina no tiene recursos acumulados aun.",
+                 "Mina Vacia", MB_OK | MB_ICONINFORMATION);
+      return true; // Click manejado
+    }
+
+    // 3. Buscar obrero seleccionado cerca
+    Unidad *obreroCercano = NULL;
+    float distMinima = 9999.0f;
+    const float DISTANCIA_MAXIMA = 200.0f;
+
+    for (int i = 0; i < 6; i++) {
+      Unidad *o = &j->obreros[i];
+      if (!o->seleccionado)
+        continue;
+
+      float dx = (o->x + 32.0f) - mundoX;
+      float dy = (o->y + 32.0f) - mundoY;
+      float dist = sqrtf(dx * dx + dy * dy);
+
+      if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
+        distMinima = dist;
+        obreroCercano = o;
+      }
+    }
+
+    if (obreroCercano != NULL) {
+      char msg[256];
+      sprintf(msg,
+              "¿Quieres recoger los recursos de la mina?\n\nOro acumulado: "
+              "%d\nPiedra acumulada: %d",
+              e->oroAcumulado, e->piedraAcumulada);
+
+      int respuesta =
+          MessageBox(NULL, msg, "Recoger Recursos", MB_YESNO | MB_ICONQUESTION);
+
+      if (respuesta == IDYES) {
+        j->Oro += e->oroAcumulado;
+        j->Piedra += e->piedraAcumulada;
+        e->oroAcumulado = 0;
+        e->piedraAcumulada = 0;
+        MessageBox(NULL, "¡Recursos recogidos con exito!", "Recursos",
+                   MB_OK | MB_ICONINFORMATION);
+      }
+      return true;
+    }
+
+    // Si no hay obrero cerca, permitimos el movimiento hacia la mina
+    return false;
+  }
+
+  return false;
 }

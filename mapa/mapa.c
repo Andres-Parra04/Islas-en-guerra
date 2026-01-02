@@ -2,6 +2,7 @@
 #include "../edificios/edificios.h"
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
+#include "../recursos/ui_entrena.h"
 #include "../recursos/ui_embarque.h"
 #include "../recursos/navegacion.h"
 #include <stdio.h>
@@ -79,6 +80,11 @@ static HBITMAP hVacaBmp[4] = {NULL};
 #define BARCO_L_ALT "../assets/barco/barco_left.bmp"
 #define BARCO_R_ALT "../assets/barco/barco_right.bmp"
 
+#define BARCO_F_ALT "../assets/barco/barco_front.bmp"
+#define BARCO_B_ALT "../assets/barco/barco_back.bmp"
+#define BARCO_L_ALT "../assets/barco/barco_left.bmp"
+#define BARCO_R_ALT "../assets/barco/barco_right.bmp"
+
 
 
 
@@ -103,6 +109,8 @@ static int gNumVacas = 0; // Cantidad de vacas activas
 
 static void detectarAguaEnMapa(void);
 void mapaMarcarArea(int f_inicio, int c_inicio, int ancho_celdas, int alto_celdas, int valor);
+
+
 
 static void collisionMapAllocIfNeeded(void) {
   if (gCollisionMap)
@@ -316,7 +324,8 @@ static void detectarAguaEnMapa(void) {
     int *fila = *(gCollisionMap + f);
     for (int c = 0; c < GRID_SIZE; c++) {
       // No sobreescribir árboles u obstáculos
-      if (*(fila + c) != 0) continue;
+      if (*(fila + c) != 0)
+        continue;
 
       // Calcular pixel central de la celda
       int px = (c * TILE_SIZE) + 16;
@@ -949,6 +958,34 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
   // Dibujar mina
   if (pJugador->mina != NULL) {
     Edificio *edificioMina = (Edificio *)pJugador->mina;
+    edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP,
+                    altoP);
+  }
+
+  // Dibujar cuartel
+  if (pJugador->cuartel != NULL) {
+    Edificio *edificioCuartel = (Edificio *)pJugador->cuartel;
+    edificioDibujar(hdcBuffer, edificioCuartel, cam.x, cam.y, cam.zoom, anchoP,
+                    altoP);
+  }
+
+  // Dibujar mina
+  if (pJugador->mina != NULL) {
+    Edificio *edificioMina = (Edificio *)pJugador->mina;
+    edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP,
+                    altoP);
+  }
+
+  // Dibujar cuartel
+  if (pJugador->cuartel != NULL) {
+    Edificio *edificioCuartel = (Edificio *)pJugador->cuartel;
+    edificioDibujar(hdcBuffer, edificioCuartel, cam.x, cam.y, cam.zoom, anchoP,
+                    altoP);
+  }
+
+  // Dibujar mina
+  if (pJugador->mina != NULL) {
+    Edificio *edificioMina = (Edificio *)pJugador->mina;
     edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP, altoP);
   }
 
@@ -1001,42 +1038,57 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
       float basePies = o->y + (float)TILE_SIZE;
 
       // Si la base del obrero cae en esta fila, dibujarlo
+      // Si la base del obrero cae en esta fila, dibujarlo
       if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
         int pantX = (int)((o->x - cam.x) * cam.zoom);
         int pantY = (int)((o->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
+        int tam = (int)(64 * cam.zoom); // Definir tam (asumiendo 64px)
 
         if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
             pantY < altoP) {
+          // SELECCIONAR SPRITE SEGUN DIRECCION
+          // Suponemos que hObreroBmp es un array de 4 bitmaps [FRONT, BACK,
+          // LEFT, RIGHT] o algo similar. La estructura Unidad tiene 'dir'.
+          // Buscamos hObreroBmp global.
+
+          // NOTA: Como no vi la declaración exacta, asumo el patrón usado en
+          // caballeros (hCaballeroBmp[c->dir]) Si falla, el compilador avisará
+          // y corregiremos el nombre exacto.
           SelectObject(hdcSprites, hObreroBmp[o->dir]);
+
+          // Dibujar Frame actual (si hay animación por frames en el bitmap,
+          // ajustar srcX) Por ahora dibujamos el frame 0 (0,0) o usamos
+          // o->frame si el bitmap es una tira. Viendo el código original
+          // (truncado), asumiremos dibujo simple de 64x64.
           TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
                          64, 64, RGB(255, 255, 255));
+        }
 
-          // Círculo de selección
-          if (o->seleccionado) {
-            HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-            SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, verde);
-            Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                    pantY + tam + 5);
-            DeleteObject(verde);
-          }
+        // Círculo de selección
+        if (o->seleccionado) {
+          HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+          HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+          SelectObject(hdcBuffer, nullBrush);
+          SelectObject(hdcBuffer, verde);
+          Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
+                  pantY + tam + 5);
+          DeleteObject(verde);
         }
       }
     }
-    
+
     // C) DIBUJAR CABALLEROS (NUEVO)
     Unidad *baseCaballeros = pJugador->caballeros;
     for (Unidad *c = baseCaballeros; c < baseCaballeros + 4; c++) {
       float basePies = c->y + (float)TILE_SIZE;
-      
+
       if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
         int pantX = (int)((c->x - cam.x) * cam.zoom);
         int pantY = (int)((c->y - cam.y) * cam.zoom);
         int tam = (int)(64 * cam.zoom);
 
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 && pantY < altoP) {
+        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
+            pantY < altoP) {
           SelectObject(hdcSprites, hCaballeroBmp[c->dir]);
           TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
                          64, 64, RGB(255, 255, 255));
@@ -1132,6 +1184,12 @@ for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
   if (menu != NULL) {
     menuCompraDibujar(hdcBuffer, menu, pJugador);
   }
+
+  // DIBUJAR MENÚ DE ENTRENAMIENTO (si está activo)
+  extern MenuEntrenamiento menuEntrenamiento;
+  if (menuEntrenamiento.abierto) {
+    menuEntrenamientoDibujar(hdcBuffer, &menuEntrenamiento, pJugador);
+  }
   
   // NUEVO: Dibujar menú de embarque si está activo (DENTRO DEL BUFFER)
   if (menuEmb != NULL && menuEmb->activo) {
@@ -1188,6 +1246,49 @@ for (Unidad *g = baseGuerreros; g < baseGuerreros + 2; g++) {
   SelectObject(hdcBuffer, hOldBuffer);
   DeleteObject(hbmBuffer);
   DeleteDC(hdcBuffer);
+}
+
+// ============================================================================
+// FUNCIONES DE GESTIÓN DE OBJETOS DEL MAPA (ACCESO EXTERNO)
+// ============================================================================
+
+int mapaObtenerTipoObjeto(int f, int c) {
+  if (f >= 0 && f < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+    // Aritmética de punteros para acceso a matriz
+    return *(*(mapaObjetos + f) + c);
+  }
+  return 0; // 0 = Nada
+}
+
+void mapaEliminarObjeto(int f, int c) {
+  if (f >= 0 && f < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+    // 1. Eliminar de la matriz lógica
+    *(*(mapaObjetos + f) + c) = 0;
+
+    // 2. Actualizar mapa de colisiones (el árbol ya no bloquea)
+    mapaReconstruirCollisionMap();
+  }
+}
+
+// ============================================================================
+// SERIALIZACIÓN DEL MAPA
+// ============================================================================
+void mapaGuardar(FILE *f) {
+  if (!f)
+    return;
+  // Guardar la matriz entera de objetos (64x64 ints)
+  // mapaObjetos es int[GRID_SIZE][GRID_SIZE]
+  fwrite(mapaObjetos, sizeof(int), GRID_SIZE * GRID_SIZE, f);
+}
+
+void mapaCargar(FILE *f) {
+  if (!f)
+    return;
+  // Cargar la matriz entera
+  fread(mapaObjetos, sizeof(int), GRID_SIZE * GRID_SIZE, f);
+
+  // IMPORTANTE: Reconstruir colisiones tras cargar
+  mapaReconstruirCollisionMap();
 }
 
 // ============================================================================

@@ -5,8 +5,10 @@
 #include "recursos/ui_compra.h"
 #include "recursos/ui_embarque.h"
 #include "recursos/navegacion.h"
+#include "recursos/ui_entrena.h"
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <stdio.h>
@@ -20,14 +22,17 @@ Camara camara = {0, 0, 1.0f};
 struct Jugador jugador1;
 bool arrastrandoCamara = false;
 POINT mouseUltimo;
-MenuCompra menuCompra; // Estado global del menú de compra
+MenuCompra menuCompra;               // Estado global del menú de compra
 MenuEmbarque menuEmbarque; // Menú de embarque de tropas
-Edificio ayuntamiento; // Edificio del ayuntamiento
+MenuEntrenamiento menuEntrenamiento; // Estado global del menú de entrenamiento
+Edificio ayuntamiento;               // Edificio del ayuntamiento
 Edificio mina;         // Edificio de la mina
 
 // Variables para resaltar celda bajo el cursor
 int mouseFilaHover = -1;  // Fila de la celda bajo el cursor (-1 = ninguna)
 int mouseColHover = -1;   // Columna de la celda bajo el cursor
+Edificio mina;                       // Edificio de la mina
+Edificio cuartel;                    // Edificio del cuartel
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
 void corregirLimitesCamara(RECT rect) {
@@ -176,6 +181,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Registrar en mapaObjetos
     mapaRegistrarObjeto(mina.x, mina.y, SIMBOLO_MINA);
 
+    // Inicializar mina en la parte superior de la isla (zona verde)
+    // Coordenadas ajustables: (x, y)
+    // - x: 960 = centrado horizontalmente en el mapa (2048/2 - 64)
+    // - y: 600 = zona superior pero no extrema (ajusta según necesites)
+    edificioInicializar(&mina, EDIFICIO_MINA, 1024.0f - 64.0f, 450.0f);
+    jugador1.mina = &mina;
+
+    // Marcar la mina en el mapa de colisiones
+    mapaMarcarEdificio(mina.x, mina.y, mina.ancho, mina.alto);
+
     // Inicializar menú de compra
     menuCompraInicializar(&menuCompra);
     
@@ -198,19 +213,110 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Registrar barco en mapaObjetos
     mapaRegistrarObjeto(jugador1.barco.x, jugador1.barco.y, SIMBOLO_BARCO);
 
+    // Inicializar cuartel en la parte inferior del mapa (lado opuesto a la
+    // mina) Coordenadas: (960, 1600) - centrado horizontalmente, zona inferior
+    edificioInicializar(&cuartel, EDIFICIO_CUARTEL, 1024.0f - 64.0f, 1600.0f);
+    jugador1.cuartel = &cuartel;
+
+    // Marcar el cuartel en el mapa de colisiones
+    mapaMarcarEdificio(cuartel.x, cuartel.y, cuartel.ancho, cuartel.alto);
+
+    // Inicializar menú de entrenamiento
+    menuEntrenamientoInicializar(&menuEntrenamiento);
+
+    // Inicializar cuartel en la parte inferior del mapa (lado opuesto a la
+    // mina) Coordenadas: (960, 1600) - centrado horizontalmente, zona inferior
+    edificioInicializar(&cuartel, EDIFICIO_CUARTEL, 1024.0f - 64.0f, 1600.0f);
+    jugador1.cuartel = &cuartel;
+
+    // Marcar el cuartel en el mapa de colisiones
+    mapaMarcarEdificio(cuartel.x, cuartel.y, cuartel.ancho, cuartel.alto);
+
     // Timer para actualizar física a 60 FPS (16ms)
     SetTimer(hwnd, IDT_TIMER_JUEGO, 16, NULL);
     return 0;
 
   case WM_TIMER:
     if (wParam == IDT_TIMER_JUEGO) {
-      actualizarPersonajes(&jugador1); // LA CLAVE: Se ejecuta 60 veces por segundo
+      actualizarPersonajes(&jugador1);
       mapaActualizarVacas();           // NUEVO: Actualizar vacas (movimiento automático)
-      menuCompraActualizar(&menuCompra); // Actualizar timers del menú
+      menuCompraActualizar(&menuCompra);
+
+      // Actualizar mina si existe
+      if (jugador1.mina != NULL) {
+        edificioActualizar((Edificio *)jugador1.mina);
+      }
+
+      // Actualizar menú de entrenamiento
+      menuEntrenamientoActualizar(&menuEntrenamiento);
+
       
       InvalidateRect(hwnd, NULL, FALSE);
     }
     return 0;
+
+    // ============================================================================
+    // SISTEMA DE GUARDAR / CARGAR (PERSISTENCIA)
+    // ============================================================================
+    void GuardarJuego() {
+      FILE *f = fopen("savegame.dat", "wb");
+      if (!f) {
+        MessageBox(NULL, "No se pudo crear el archivo de guardado.", "Error",
+                   MB_OK | MB_ICONERROR);
+        return;
+      }
+
+      // 1. Guardar datos del jugador (Recursos, unidades, etc.)
+      fwrite(&jugador1, sizeof(struct Jugador), 1, f);
+
+      // 2. Guardar estado del mapa (Árboles cortados, etc.)
+      mapaGuardar(f);
+
+      fclose(f);
+      MessageBox(NULL, "Partida Guardada Exitosamente!", "Sistema", MB_OK);
+    }
+
+    void CargarJuego() {
+      FILE *f = fopen("savegame.dat", "rb");
+      if (!f) {
+        MessageBox(NULL, "No existe archivo de guardado.", "Error",
+                   MB_OK | MB_ICONWARNING);
+        return;
+      }
+
+      // 1. Cargar datos del jugador
+      fread(&jugador1, sizeof(struct Jugador), 1, f);
+
+      // 2. Cargar mapa
+      mapaCargar(f);
+
+      // 3. Reconstrucción post-carga
+      // Los punteros internos (como rutas o sprites) no se guardan válidos.
+      // Hay que reinicializarlos.
+
+      // Reiniciar punteros de unidades
+      for (int i = 0; i < 6; i++) {
+        jugador1.obreros[i].rutaCeldas = NULL; // Evitar crash por puntero viejo
+        jugador1.obreros[i].animActual = NULL; // Se reasigna en update
+                                               // Reiniciar animaciones básicas
+      }
+      for (int i = 0; i < 4; i++) {
+        jugador1.caballeros[i].rutaCeldas = NULL;
+      }
+
+      // Reconectar punteros de edificios
+      jugador1.ayuntamiento =
+          &ayuntamiento; // Asumimos que ayuntamiento es estático
+      jugador1.mina = &mina;
+
+      // Reconstruir mapa de colisiones basado en nuevas posiciones
+      mapaReconstruirCollisionMap();
+
+      fclose(f);
+      MessageBox(NULL, "Partida Cargada!", "Sistema", MB_OK);
+    }
+
+    // ...
 
   case WM_RBUTTONDOWN: {
     int px = GET_X_LPARAM(lParam);
@@ -234,13 +340,48 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         GetClientRect(hwnd, &rect);
         menuCompraAbrir(&menuCompra, rect.right - rect.left,
                         rect.bottom - rect.top);
-      } else {
-        // Comandar movimiento normal
-        rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      }
+    // Verificar si se hizo click sobre el cuartel
+    else if (edificioContienePunto(&cuartel, mundoX, mundoY)) {
+      // Abrir menú de entrenamiento
+      GetClientRect(hwnd, &rect);
+      menuEntrenamientoAbrir(&menuEntrenamiento, rect.right - rect.left,
+                             rect.bottom - rect.top);
+    }
+    // Intentar recoger recursos de la mina
+    else if (recursosIntentarRecogerMina(&jugador1, mundoX, mundoY)) {
+      // Interacción con mina ya manejada
+    } else if (recursosIntentarCazar(&jugador1, mundoX, mundoY)) {
+      // Interacción con vaca ya manejada
+    } else {
+        // 1. Intentar acción de talar (si es árbol y hay obrero cerca)
+      if (!recursosIntentarTalar(&jugador1, mundoX, mundoY)) {
+        // 2. Comandar movimiento normal
+          rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+      }
       }
     }
     return 0;
   }
+
+  case WM_KEYDOWN:
+    if (wParam == VK_F6) {
+      CargarJuego();
+    }
+    if (wParam == 'C') {
+      // Centrar cámara en el Ayuntamiento (1024, 1024)
+      // Restamos la mitad de la pantalla (aprox 640x360) para que quede al
+      // centro
+      camara.x = 1024 - (1280 / 2 / camara.zoom);
+      camara.y = 1024 - (720 / 2 / camara.zoom);
+      corregirLimitesCamara(rect);
+      InvalidateRect(hwnd, NULL, FALSE);
+    }
+    // Tecla 'M' para mostrar matriz en consola (debug)
+    if (wParam == 'M') {
+      mostrarMapa(mapaObjetos);
+    }
+    break;
 
   case WM_SIZE:
     GetClientRect(hwnd, &rect);
@@ -278,6 +419,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Si el menú de compra está abierto, procesar click en el menú
     if (menuCompraClick(&menuCompra, &jugador1, px, py)) {
       return 0; // Click procesado por el menú
+    }
+
+    // Si el menú de entrenamiento está abierto, procesar click
+    if (menuEntrenamientoClick(&menuEntrenamiento, &jugador1, px, py)) {
+      return 0; // Click procesado por el menú de entrenamiento
     }
 
     // Vista local: selección normal
@@ -337,12 +483,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     ReleaseCapture();
     return 0;
 
-  case WM_KEYDOWN:
-    // Tecla 'M' para mostrar matriz en consola (debug)
-    if (wParam == 'M') {
-      mostrarMapa(mapaObjetos);
-    }
-    return 0;
+
 
   case WM_ERASEBKGND:
     return 1; // Indicar que nosotros manejamos el fondo para evitar parpadeo
@@ -350,6 +491,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_PAINT: {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
+
+    // Asegurar que el rect esté actualizado para el culling de los edificios
+    GetClientRect(hwnd, &rect);
+
+    // Asegurar que el rect esté actualizado para el culling de los edificios
+    GetClientRect(hwnd, &rect);
 
     // Solo vista local: mapa con zoom, personajes, edificios, etc.
     dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque, 
