@@ -29,6 +29,7 @@ typedef struct MenuEmbarque MenuEmbarque;
 #define SIMBOLO_BARCO     'B'  // Barco
 #define SIMBOLO_EDIFICIO  'E'  // Edificio (ayuntamiento)
 #define SIMBOLO_MINA      'M'  // Mina
+#define SIMBOLO_CUARTEL   'Q'  // Cuartel (barracks)
 #define SIMBOLO_RECURSO   '$'  // Recurso (para futuro uso)
 #define SIMBOLO_JUGADOR   'P'  // Posición base del jugador
 // ============================================================================

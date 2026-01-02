@@ -31,7 +31,6 @@ Edificio mina;         // Edificio de la mina
 // Variables para resaltar celda bajo el cursor
 int mouseFilaHover = -1;  // Fila de la celda bajo el cursor (-1 = ninguna)
 int mouseColHover = -1;   // Columna de la celda bajo el cursor
-Edificio mina;                       // Edificio de la mina
 Edificio cuartel;                    // Edificio del cuartel
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
@@ -181,16 +180,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Registrar en mapaObjetos
     mapaRegistrarObjeto(mina.x, mina.y, SIMBOLO_MINA);
 
-    // Inicializar mina en la parte superior de la isla (zona verde)
-    // Coordenadas ajustables: (x, y)
-    // - x: 960 = centrado horizontalmente en el mapa (2048/2 - 64)
-    // - y: 600 = zona superior pero no extrema (ajusta según necesites)
-    edificioInicializar(&mina, EDIFICIO_MINA, 1024.0f - 64.0f, 450.0f);
-    jugador1.mina = &mina;
-
-    // Marcar la mina en el mapa de colisiones
-    mapaMarcarEdificio(mina.x, mina.y, mina.ancho, mina.alto);
-
     // Inicializar menú de compra
     menuCompraInicializar(&menuCompra);
     
@@ -220,17 +209,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
     // Marcar el cuartel en el mapa de colisiones
     mapaMarcarEdificio(cuartel.x, cuartel.y, cuartel.ancho, cuartel.alto);
+    
+    // Registrar cuartel en mapaObjetos
+    mapaRegistrarObjeto(cuartel.x, cuartel.y, SIMBOLO_CUARTEL);
 
     // Inicializar menú de entrenamiento
     menuEntrenamientoInicializar(&menuEntrenamiento);
-
-    // Inicializar cuartel en la parte inferior del mapa (lado opuesto a la
-    // mina) Coordenadas: (960, 1600) - centrado horizontalmente, zona inferior
-    edificioInicializar(&cuartel, EDIFICIO_CUARTEL, 1024.0f - 64.0f, 1600.0f);
-    jugador1.cuartel = &cuartel;
-
-    // Marcar el cuartel en el mapa de colisiones
-    mapaMarcarEdificio(cuartel.x, cuartel.y, cuartel.ancho, cuartel.alto);
 
     // Timer para actualizar física a 60 FPS (16ms)
     SetTimer(hwnd, IDT_TIMER_JUEGO, 16, NULL);

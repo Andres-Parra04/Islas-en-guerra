@@ -566,6 +566,44 @@ void generarBosqueAutomatico() {
   char (*ptrMatriz)[GRID_SIZE] = mapaObjetos;
   srand((unsigned int)time(NULL));
   
+  // ============================================================================
+  // RESERVAR CELDAS DE EDIFICIOS ANTES DE GENERAR BOSQUE
+  // ============================================================================
+  // Los edificios se inicializan en WM_CREATE DESPUÉS de esta función,
+  // pero las posiciones son fijas. Reservamos las celdas para evitar que
+  // árboles o vacas se coloquen en las posiciones de los edificios.
+  // ============================================================================
+  
+  // Ayuntamiento: (960, 960) = 1024-64, tamaño 128x128 (2x2 celdas)
+  // Celda inicio: fila=15, col=15 (960/64=15)
+  int ayuntFila = (int)((1024.0f - 64.0f) / TILE_SIZE);
+  int ayuntCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
+  *(*(ptrMatriz + ayuntFila) + ayuntCol) = SIMBOLO_EDIFICIO;
+  *(*(ptrMatriz + ayuntFila) + ayuntCol + 1) = SIMBOLO_EDIFICIO;
+  *(*(ptrMatriz + ayuntFila + 1) + ayuntCol) = SIMBOLO_EDIFICIO;
+  *(*(ptrMatriz + ayuntFila + 1) + ayuntCol + 1) = SIMBOLO_EDIFICIO;
+  
+  // Mina: (960, 450) = 1024-64, tamaño 128x128 (2x2 celdas)
+  // Celda inicio: fila=7, col=15 (450/64=7, 960/64=15)
+  int minaFila = (int)(450.0f / TILE_SIZE);
+  int minaCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
+  *(*(ptrMatriz + minaFila) + minaCol) = SIMBOLO_MINA;
+  *(*(ptrMatriz + minaFila) + minaCol + 1) = SIMBOLO_MINA;
+  *(*(ptrMatriz + minaFila + 1) + minaCol) = SIMBOLO_MINA;
+  *(*(ptrMatriz + minaFila + 1) + minaCol + 1) = SIMBOLO_MINA;
+  
+  // Cuartel: (960, 1600), tamaño 128x128 (2x2 celdas)
+  // Celda inicio: fila=25, col=15 (1600/64=25)
+  int cuartelFila = (int)(1600.0f / TILE_SIZE);
+  int cuartelCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
+  *(*(ptrMatriz + cuartelFila) + cuartelCol) = SIMBOLO_CUARTEL;
+  *(*(ptrMatriz + cuartelFila) + cuartelCol + 1) = SIMBOLO_CUARTEL;
+  *(*(ptrMatriz + cuartelFila + 1) + cuartelCol) = SIMBOLO_CUARTEL;
+  *(*(ptrMatriz + cuartelFila + 1) + cuartelCol + 1) = SIMBOLO_CUARTEL;
+  
+  printf("[DEBUG] Edificios reservados en mapaObjetos: Ayunt[%d,%d] Mina[%d,%d] Cuartel[%d,%d]\n",
+         ayuntFila, ayuntCol, minaFila, minaCol, cuartelFila, cuartelCol);
+  
   // REQUISITO CRÍTICO: Colocar exactamente 40 árboles (no por probabilidad)
   const int NUM_ARBOLES_EXACTO = 40;
   int contador = 0;
@@ -1314,7 +1352,7 @@ void mostrarMapa(char mapa[GRID_SIZE][GRID_SIZE]) {
          GRID_SIZE, GRID_SIZE, TILE_SIZE);
   printf("==========================================================================\n");
   printf("Leyenda: . =Vacio  A=Arbol  O=Obrero  C=Caballero  G=Guerrero\n");
-  printf("         V=Vaca    B=Barco  E=Edificio  M=Mina\n");
+  printf("         V=Vaca    B=Barco  E=Edificio  M=Mina  Q=Cuartel\n");
   printf("==========================================================================\n\n");
   
   char (*ptrFila)[GRID_SIZE] = mapa;
