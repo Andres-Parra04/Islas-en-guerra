@@ -33,8 +33,8 @@
 
 #define caballero_front "../assets/caballero/caballero_front.bmp"
 #define caballero_back "../assets/caballero/caballero_back.bmp"
-#define caballero_left "../assets/caballero/caballero_walkLeft3.bmp"
-#define caballero_right "../assets/caballero/caballero_walkRight3.bmp"
+#define caballero_left "../assets/caballero/caballero_left.bmp"
+#define caballero_right "../assets/caballero/caballero_right.bmp"
 
 #define CABALLO_F_ALT "assets/caballero/caballero_front.bmp"
 #define CABALLO_B_ALT "assets/caballero/caballero_back.bmp"
