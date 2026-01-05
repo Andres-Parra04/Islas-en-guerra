@@ -86,6 +86,8 @@ void mapaMoverObjeto(float viejoX, float viejoY, float nuevoX, float nuevoY,
 bool mapaEstaOcupada(int fila, int columna);
 // Limpia una celda (marca como vacía)
 void mapaLimpiarCelda(int fila, int columna);
+// Habilita o deshabilita la generación automática de árboles/vacas en cargarRecursosGraficos
+void mapaSetGenerarRecursos(bool habilitar);
 
 // --- FUNCIONES DE VACAS ---
 // Actualiza la posición de las vacas (movimiento automático)
