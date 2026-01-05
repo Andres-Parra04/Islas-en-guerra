@@ -1324,7 +1324,38 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
            "Celda[%d][%d]\n",
            tipoObjeto, f, c);
 
-    if (recursosCualquierTropaCercaDePunto(j, mundoX, mundoY, 200.0f)) {
+    // Usar centro de la vaca para proximidad (aprox 64px de offset del ancla)
+    float vacaCentroX = (float)(c * TILE_SIZE) + 64.0f;
+    float vacaCentroY = (float)(f * TILE_SIZE) + 64.0f;
+
+    // 2. Buscar si hay algún OBRERO o CABALLERO seleccionado cerca
+    bool alguienCerca = false;
+
+    // Buscar Obreros
+    if (recursosObreroCercaDePunto(j, vacaCentroX, vacaCentroY, 200.0f))
+      alguienCerca = true;
+
+    // Buscar Caballeros (con y sin escudo)
+    if (!alguienCerca) {
+      for (int i = 0; i < 4; i++) {
+        Unidad *u1 = &j->caballeros[i];
+        Unidad *u2 = &j->caballerosSinEscudo[i];
+        if ((u1->seleccionado && u1->x >= 0) ||
+            (u2->seleccionado && u2->x >= 0)) {
+          float dx1 = (u1->x + 32.0f) - vacaCentroX;
+          float dy1 = (u1->y + 32.0f) - vacaCentroY;
+          float dx2 = (u2->x + 32.0f) - vacaCentroX;
+          float dy2 = (u2->y + 32.0f) - vacaCentroY;
+          if ((u1->seleccionado && sqrtf(dx1 * dx1 + dy1 * dy1) < 200.0f) ||
+              (u2->seleccionado && sqrtf(dx2 * dx2 + dy2 * dy2) < 200.0f)) {
+            alguienCerca = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (alguienCerca) {
       // 3. Confirmación
       int respuesta = MessageBox(NULL, "¿Quieres cazar esta vaca por comida?",
                                  "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
@@ -1352,43 +1383,70 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 // LÓGICA DE TALAR ÁRBOLES
 // ============================================================================
 bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
-  // 1. Verificar qué objeto hay en el mapa (coordenadas mundo -> celda)
-  int f = (int)(mundoY / TILE_SIZE);
-  int c = (int)(mundoX / TILE_SIZE);
+  // 1. Verificar qué objeto hay en el mapa (Búsqueda en 2x2 celdas)
+  // El árbol visual es 128x128 (2x2 tiles) pero se registra en una celda.
+  // Buscamos en la celda clickeada y sus vecinas para mayor tolerancia.
+  int targets[4][2] = {{0, 0}, {0, -1}, {-1, 0}, {-1, -1}};
+  int tipoObjeto = 0;
+  int fArbol = -1, cArbol = -1;
 
-  // Validar límites
-  if (f < 0 || f >= GRID_SIZE || c < 0 || c >= GRID_SIZE)
-    return false;
+  for (int k = 0; k < 4; k++) {
+    int tf = (int)(mundoY / TILE_SIZE) + targets[k][0];
+    int tc = (int)(mundoX / TILE_SIZE) + targets[k][1];
 
-  int tipoObjeto = mapaObtenerTipoObjeto(f, c);
+    if (tf >= 0 && tf < GRID_SIZE && tc >= 0 && tc < GRID_SIZE) {
+      int t = mapaObtenerTipoObjeto(tf, tc);
+      if (t == SIMBOLO_ARBOL) {
+        tipoObjeto = t;
+        fArbol = tf;
+        cArbol = tc;
+        break;
+      }
+    }
+  }
 
   // Los árboles se identifican con SIMBOLO_ARBOL ('A')
   if (tipoObjeto == SIMBOLO_ARBOL) {
-    printf("[DEBUG] Talar: Click en arbol tipo %d en Celda[%d][%d]\n",
-           tipoObjeto, f, c);
+    printf("[DEBUG] Talar: Arbol detectado en Celda[%d][%d]\n", fArbol, cArbol);
 
-    // 2. Buscar si hay algún obrero SELECCIONADO cerca
-    Unidad *obreroCercano = NULL;
+    // 2. Buscar si hay algún OBRERO o GUERRERO SELECCIONADO cerca
+    // Usamos el CENTRO del árbol (un tile de 64px) para la distancia
+    float centroArbolX = (float)(cArbol * TILE_SIZE) + 32.0f;
+    float centroArbolY = (float)(fArbol * TILE_SIZE) + 32.0f;
+
+    Unidad *recortadorCercano = NULL;
     float distMinima = 9999.0f;
-    const float DISTANCIA_MAXIMA = 150.0f; // Aprox 4-5 celdas
+    const float DISTANCIA_MAXIMA = 180.0f;
 
+    // Buscar Obreros
     for (int i = 0; i < 6; i++) {
       Unidad *o = &j->obreros[i];
       if (!o->seleccionado)
         continue;
-
-      // Distancia Euclídea
-      float dx = (o->x + 32.0f) - mundoX;
-      float dy = (o->y + 32.0f) - mundoY;
+      float dx = (o->x + 32.0f) - centroArbolX;
+      float dy = (o->y + 32.0f) - centroArbolY;
       float dist = sqrtf(dx * dx + dy * dy);
-
       if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
         distMinima = dist;
-        obreroCercano = o;
+        recortadorCercano = o;
       }
     }
 
-    if (obreroCercano != NULL) {
+    // Buscar Guerreros
+    for (int i = 0; i < 4; i++) {
+      Unidad *u = &j->guerreros[i];
+      if (!u->seleccionado || u->x < 0)
+        continue;
+      float dx = (u->x + 32.0f) - centroArbolX;
+      float dy = (u->y + 32.0f) - centroArbolY;
+      float dist = sqrtf(dx * dx + dy * dy);
+      if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
+        distMinima = dist;
+        recortadorCercano = u;
+      }
+    }
+
+    if (recortadorCercano != NULL) {
       // 3. Confirmación del usuario
       int respuesta =
           MessageBox(NULL, "¿Quieres talar este arbol y obtener madera?",
@@ -1396,7 +1454,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
 
       if (respuesta == IDYES) {
         // ... ejecutar accion ...
-        mapaEliminarObjeto(f, c);
+        mapaEliminarObjeto(fArbol, cArbol);
         j->Madera += 50;
         MessageBox(NULL, "Arbol talado! +50 Madera", "Recursos",
                    MB_OK | MB_ICONINFORMATION);
@@ -1404,9 +1462,9 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
       return true; // Accion manejada (confirmada o cancelada)
     }
 
-    // Si no hay obrero cerca, retornamos FALSE para que el click
-    // pase a la logica de movimiento y el obrero camine hacia el arbol
-    return false;
+    // Si no hay obrero cerca, mandamos caminar al CENTRO del arbol
+    rtsComandarMovimiento(j, centroArbolX, centroArbolY);
+    return true; // Click manejado
   }
 
   // No era un árbol, permitir que el click pase a la lógica de movimiento
@@ -1429,18 +1487,21 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
       return true; // Click manejado
     }
 
-    // 3. Buscar obrero seleccionado cerca
+    // 3. Buscar obrero seleccionado cerca del CENTRO de la mina
+    float minaCentroX = e->x + 64.0f;
+    float minaCentroY = e->y + 64.0f;
+
     Unidad *obreroCercano = NULL;
     float distMinima = 9999.0f;
-    const float DISTANCIA_MAXIMA = 200.0f;
+    const float DISTANCIA_MAXIMA = 250.0f; // Mayor rango para edificios grandes
 
     for (int i = 0; i < 6; i++) {
       Unidad *o = &j->obreros[i];
       if (!o->seleccionado)
         continue;
 
-      float dx = (o->x + 32.0f) - mundoX;
-      float dy = (o->y + 32.0f) - mundoY;
+      float dx = (o->x + 32.0f) - minaCentroX;
+      float dy = (o->y + 32.0f) - minaCentroY;
       float dist = sqrtf(dx * dx + dy * dy);
 
       if (dist < DISTANCIA_MAXIMA && dist < distMinima) {

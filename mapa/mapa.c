@@ -63,8 +63,9 @@
 
 static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
 static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
-static HBITMAP hCaballeroSinEscudoBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
-static HBITMAP hBarcoBmp[4] = {NULL};     // Front, Back, Left, Right (192x192)
+static HBITMAP hCaballeroSinEscudoBmp[4] = {
+    NULL};                            // Front, Back, Left, Right (NUEVO)
+static HBITMAP hBarcoBmp[4] = {NULL}; // Front, Back, Left, Right (192x192)
 
 static HBITMAP hGuerreroBmp[4] = {NULL}; // Front, Back, Left, Right
 
@@ -166,9 +167,7 @@ void mapaLimpiarObjetosYColision(void) {
   }
 }
 
-void mapaSetGenerarRecursos(bool habilitar) {
-  gGenerarRecursos = habilitar;
-}
+void mapaSetGenerarRecursos(bool habilitar) { gGenerarRecursos = habilitar; }
 
 int **mapaObtenerCollisionMap(void) {
   collisionMapAllocIfNeeded();
@@ -690,38 +689,36 @@ void generarBosqueAutomatico() {
   // Los edificios se inicializan en WM_CREATE DESPUÉS de esta función,
   // pero las posiciones son fijas. Reservamos las celdas para evitar que
   // árboles o vacas se coloquen en las posiciones de los edificios.
+  // NUEVO: Reservar un margen de 2 celdas alrededor para evitar confusión.
   // ============================================================================
 
-  // Ayuntamiento: (960, 960) = 1024-64, tamaño 128x128 (2x2 celdas)
-  // Celda inicio: fila=15, col=15 (960/64=15)
-  int ayuntFila = (int)((1024.0f - 64.0f) / TILE_SIZE);
-  int ayuntCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
-  *(*(ptrMatriz + ayuntFila) + ayuntCol) = SIMBOLO_EDIFICIO;
-  *(*(ptrMatriz + ayuntFila) + ayuntCol + 1) = SIMBOLO_EDIFICIO;
-  *(*(ptrMatriz + ayuntFila + 1) + ayuntCol) = SIMBOLO_EDIFICIO;
-  *(*(ptrMatriz + ayuntFila + 1) + ayuntCol + 1) = SIMBOLO_EDIFICIO;
+  // Función local temporal para marcar zonas de exclusión
+  int edificios_coords[3][2] = {
+      {(int)((1024.0f - 64.0f) / TILE_SIZE),
+       (int)((1024.0f - 64.0f) / TILE_SIZE)}, // Ayuntamiento
+      {(int)(450.0f / TILE_SIZE), (int)((1024.0f - 64.0f) / TILE_SIZE)}, // Mina
+      {(int)(1600.0f / TILE_SIZE),
+       (int)((1024.0f - 64.0f) / TILE_SIZE)} // Cuartel
+  };
 
-  // Mina: (960, 450) = 1024-64, tamaño 128x128 (2x2 celdas)
-  // Celda inicio: fila=7, col=15 (450/64=7, 960/64=15)
-  int minaFila = (int)(450.0f / TILE_SIZE);
-  int minaCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
-  *(*(ptrMatriz + minaFila) + minaCol) = SIMBOLO_MINA;
-  *(*(ptrMatriz + minaFila) + minaCol + 1) = SIMBOLO_MINA;
-  *(*(ptrMatriz + minaFila + 1) + minaCol) = SIMBOLO_MINA;
-  *(*(ptrMatriz + minaFila + 1) + minaCol + 1) = SIMBOLO_MINA;
+  for (int e = 0; e < 3; e++) {
+    int baseF = edificios_coords[e][0];
+    int baseC = edificios_coords[e][1];
+    // Marcar 2x2 del edificio + margen de 2 tiles en todas direcciones
+    // Total: bloque de 6x6 celdas centrado en el edificio
+    for (int df = -2; df <= 3; df++) {
+      for (int dc = -2; dc <= 3; dc++) {
+        int nf = baseF + df;
+        int nc = baseC + dc;
+        if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+          *(*(ptrMatriz + nf) + nc) = SIMBOLO_EDIFICIO;
+        }
+      }
+    }
+  }
 
-  // Cuartel: (960, 1600), tamaño 128x128 (2x2 celdas)
-  // Celda inicio: fila=25, col=15 (1600/64=25)
-  int cuartelFila = (int)(1600.0f / TILE_SIZE);
-  int cuartelCol = (int)((1024.0f - 64.0f) / TILE_SIZE);
-  *(*(ptrMatriz + cuartelFila) + cuartelCol) = SIMBOLO_CUARTEL;
-  *(*(ptrMatriz + cuartelFila) + cuartelCol + 1) = SIMBOLO_CUARTEL;
-  *(*(ptrMatriz + cuartelFila + 1) + cuartelCol) = SIMBOLO_CUARTEL;
-  *(*(ptrMatriz + cuartelFila + 1) + cuartelCol + 1) = SIMBOLO_CUARTEL;
-
-  printf("[DEBUG] Edificios reservados en mapaObjetos: Ayunt[%d,%d] "
-         "Mina[%d,%d] Cuartel[%d,%d]\n",
-         ayuntFila, ayuntCol, minaFila, minaCol, cuartelFila, cuartelCol);
+  printf("[DEBUG] Edificios y perímetros de seguridad reservados en "
+         "mapaObjetos.\n");
 
   // REQUISITO CRÍTICO: Colocar exactamente 20 árboles (no por probabilidad)
   const int NUM_ARBOLES_EXACTO = 20;
@@ -902,7 +899,6 @@ void cargarRecursosGraficos() {
 
   const char *rutasCab[] = {caballero_front, caballero_back, caballero_left,
                             caballero_right};
-  
 
   for (int i = 0; i < 4; i++) {
     hCaballeroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCab[i], IMAGE_BITMAP, 64,
@@ -915,15 +911,15 @@ void cargarRecursosGraficos() {
     }
   }
 
-  //Caballero sin escudo
+  // Caballero sin escudo
 
-  const char *rutasCabSinEscudo[] = {caballeroSinEscudo_front, caballeroSinEscudo_back, caballeroSinEscudo_left,
-                               caballeroSinEscudo_right};
+  const char *rutasCabSinEscudo[] = {
+      caballeroSinEscudo_front, caballeroSinEscudo_back,
+      caballeroSinEscudo_left, caballeroSinEscudo_right};
 
   for (int i = 0; i < 4; i++) {
-    hCaballeroSinEscudoBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCabSinEscudo[i], IMAGE_BITMAP, 64,
-                                           64, LR_LOADFROMFILE);
-
+    hCaballeroSinEscudoBmp[i] = (HBITMAP)LoadImageA(
+        NULL, rutasCabSinEscudo[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
 
     if (!hCaballeroSinEscudoBmp[i]) {
       printf("[ERROR] No se pudo cargar caballero[%d]\n", i);

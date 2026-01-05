@@ -1,3 +1,4 @@
+#include "batallas/batallas.h"
 #include "edificios/edificios.h"
 #include "mapa/mapa.h"
 #include "mapa/menu.h"
@@ -6,12 +7,12 @@
 #include "recursos/ui_compra.h"
 #include "recursos/ui_embarque.h"
 #include "recursos/ui_entrena.h"
-#include "batallas/batallas.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
+
 
 // --- CONFIGURACIÓN ---
 #define ZOOM_MAXIMO 6.0f
@@ -171,7 +172,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Inicializar recursos del jugador y obreros
     IniciacionRecursos(&jugador1, "Jugador 1");
     batallasInicializar();
-    
+
     // NUEVO: Guardar isla inicial seleccionada
     jugador1.islaActual = menuObtenerIsla(); // 1, 2, o 3
     navegacionRegistrarIslaInicial(jugador1.islaActual);
@@ -248,7 +249,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         batallasActualizar(0.016f);
       } else {
         actualizarPersonajes(&jugador1);
-        mapaActualizarVacas();           // NUEVO: Actualizar vacas (movimiento automático)
+        mapaActualizarVacas(); // NUEVO: Actualizar vacas (movimiento
+                               // automático)
         menuCompraActualizar(&menuCompra);
 
         // Actualizar mina si existe
@@ -289,28 +291,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       // Verificar si se hizo click sobre el ayuntamiento
       else if (edificioContienePunto(&ayuntamiento, mundoX, mundoY)) {
         // RESTRICCIÓN: Solo obreros pueden interactuar con el ayuntamiento
-        if (recursosObreroCercaDePunto(&jugador1, mundoX, mundoY, 150.0f)) {
+        // Usamos el centro del ayuntamiento para medir proximidad
+        if (recursosObreroCercaDePunto(&jugador1, ayuntamiento.x + 64.0f,
+                                       ayuntamiento.y + 64.0f, 200.0f)) {
           // Abrir menú de compra
           GetClientRect(hwnd, &rect);
           menuCompraAbrir(&menuCompra, rect.right - rect.left,
                           rect.bottom - rect.top);
         } else {
-          // No hay obrero cerca O no es obrero, mandarlo a caminar
-          rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+          // No hay obrero cerca, mandarlos al centro
+          rtsComandarMovimiento(&jugador1, ayuntamiento.x + 64.0f,
+                                ayuntamiento.y + 64.0f);
         }
       }
       // Verificar si se hizo click sobre el cuartel
       else if (edificioContienePunto(&cuartel, mundoX, mundoY)) {
         // RESTRICCIÓN: Todos pueden interactuar con el cuartel
-        if (recursosCualquierTropaCercaDePunto(&jugador1, mundoX, mundoY,
-                                               150.0f)) {
+        // Usamos el centro del cuartel para medir proximidad
+        if (recursosCualquierTropaCercaDePunto(&jugador1, cuartel.x + 64.0f,
+                                               cuartel.y + 64.0f, 200.0f)) {
           // Abrir menú de entrenamiento
           GetClientRect(hwnd, &rect);
           menuEntrenamientoAbrir(&menuEntrenamiento, rect.right - rect.left,
                                  rect.bottom - rect.top);
         } else {
-          // Mandar a caminar
-          rtsComandarMovimiento(&jugador1, mundoX, mundoY);
+          // Mandar al centro
+          rtsComandarMovimiento(&jugador1, cuartel.x + 64.0f,
+                                cuartel.y + 64.0f);
         }
       }
       // Intentar recoger recursos de la mina
@@ -458,7 +465,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     if (batallasEnCurso()) {
       batallasRender(hdc, rect, camara);
     } else {
-      dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque, 
+      dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque,
                    mouseFilaHover, mouseColHover);
     }
 

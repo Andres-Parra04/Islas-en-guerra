@@ -154,9 +154,9 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
   // Recursos
   char buffer[100];
   SetTextColor(hdc, RGB(255, 255, 255));
-  sprintf(buffer, "Oro: %d  |  Comida: %d  |  Madera: %d", jugador->Oro,
-          jugador->Comida, jugador->Madera);
-  TextOut(hdc, menu->pantallaX + 40, menu->pantallaY + 70, buffer,
+  sprintf(buffer, "Oro: %d  |  Comida: %d  |  Madera: %d  |  Hierro: %d",
+          jugador->Oro, jugador->Comida, jugador->Madera, jugador->Hierro);
+  TextOut(hdc, menu->pantallaX + 20, menu->pantallaY + 70, buffer,
           strlen(buffer));
 
   // Separador
@@ -175,8 +175,9 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
       "Unidad b\xE1sica para recolecci\xF3n de recursos.");
 
   // Botón Entrenar Caballero con Escudo
-  sprintf(costo, "Costo: %d Oro, %d Comida, %d Madera", COSTO_CABALLERO_ORO,
-          COSTO_CABALLERO_COMIDA, COSTO_CABALLERO_MADERA);
+  sprintf(costo, "Costo: %d Oro, %d Comida, %d Madera, %d Hierro",
+          COSTO_CABALLERO_ORO, COSTO_CABALLERO_COMIDA, COSTO_CABALLERO_MADERA,
+          COSTO_CABALLERO_HIERRO);
   sprintf(stats,
           "Vida:%d | Da\xF1o:%d | Cr\xEDtico:%d%% | Def:%d | Alcance:Cuerpo a "
           "cuerpo",
@@ -197,8 +198,9 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
                             "Entrenar Caballero sin Escudo", costo, stats);
 
   // Botón Entrenar Guerrero
-  sprintf(costo, "Costo: %d Oro, %d Comida, %d Madera", COSTO_GUERRERO_ORO,
-          COSTO_GUERRERO_COMIDA, COSTO_GUERRERO_MADERA);
+  sprintf(costo, "Costo: %d Oro, %d Comida, %d Madera, %d Hierro",
+          COSTO_GUERRERO_ORO, COSTO_GUERRERO_COMIDA, COSTO_GUERRERO_MADERA,
+          COSTO_GUERRERO_HIERRO);
   sprintf(stats,
           "Vida:%d | Da\xF1o:%d | Cr\xEDtico:%d%% | Def:%d | Alcance:Cuerpo a "
           "cuerpo",
@@ -332,12 +334,14 @@ bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
       pantallaY <= menu->botonGuerrero.bottom) {
     if (jugador->Oro >= COSTO_GUERRERO_ORO &&
         jugador->Comida >= COSTO_GUERRERO_COMIDA &&
-        jugador->Madera >= COSTO_GUERRERO_MADERA) {
+        jugador->Madera >= COSTO_GUERRERO_MADERA &&
+        jugador->Hierro >= COSTO_GUERRERO_HIERRO) {
       extern bool entrenarGuerrero(struct Jugador * j, float x, float y);
       if (entrenarGuerrero(jugador, 0, 0)) {
         jugador->Oro -= COSTO_GUERRERO_ORO;
         jugador->Comida -= COSTO_GUERRERO_COMIDA;
         jugador->Madera -= COSTO_GUERRERO_MADERA;
+        jugador->Hierro -= COSTO_GUERRERO_HIERRO;
       } else {
         strcpy(menu->mensajeError, "No hay espacio para mas guerreros!");
         menu->tiempoError = 60;
