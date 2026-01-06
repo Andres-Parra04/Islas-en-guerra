@@ -22,11 +22,5 @@ void navegacionRegistrarIslaInicial(int isla);
 void navegacionProcesarResultadoBatalla(struct Jugador* j, BatallaResultado r,
 										int islaDestino);
 
-// Enemigos pasivos por isla
-Unidad* navegacionObtenerEnemigosActivos(int* cantidad);
-
-// Actualiza lógica de combate automático entre tropas y enemigos en isla
-void navegacionActualizarCombateAuto(struct Jugador* j, float dt);
-
 #endif
 
