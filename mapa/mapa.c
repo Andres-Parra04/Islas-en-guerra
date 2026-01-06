@@ -1298,11 +1298,20 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
   HDC hdcSprites = CreateCompatibleDC(hdc);
 
+  // Nota: Dibujamos árboles por fila para preservar Y-sorting con unidades.
+
   int enemigosActivosCount = 0;
   Unidad *enemigosActivos =
       navegacionObtenerEnemigosActivos(&enemigosActivosCount);
   static int frameAtaque = 0;
-  frameAtaque = (frameAtaque + 1) % 6;
+  {
+    static ULONGLONG sUltimoAtkMs = 0;
+    ULONGLONG ahora = GetTickCount64();
+    if (sUltimoAtkMs == 0 || (ahora > sUltimoAtkMs && (ahora - sUltimoAtkMs) >= 1000ULL)) {
+      frameAtaque = (frameAtaque + 1) % 6;
+      sUltimoAtkMs = ahora;
+    }
+  }
 
   Unidad *aliadosLista[12];
   int numAliadosLista = 0;
@@ -1343,31 +1352,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
   // Recorrer cada fila del mapa (0 a GRID_SIZE-1)
   for (int f = 0; f < GRID_SIZE; f++) {
-    // ================================================================
-    // A) DIBUJAR ÁRBOLES DE ESTA FILA
-    // ================================================================
-    for (int c = 0; c < GRID_SIZE; c++) {
-      // Obtener el contenido de la celda usando aritmética de punteros
-      char celdaContenido = *(*(ptrMatriz + f) + c);
-
-      // Si hay un árbol en esta celda, dibujarlo
-      if (celdaContenido == SIMBOLO_ARBOL) {
-        int mundoX = c * TILE_SIZE;
-        int mundoY = f * TILE_SIZE;
-
-        int pantX = (int)((mundoX - cam.x) * cam.zoom);
-        int pantY = (int)((mundoY - cam.y) * cam.zoom);
-        int tamZoom = (int)(SPRITE_ARBOL * cam.zoom);
-
-        if (pantX + tamZoom > 0 && pantX < anchoP && pantY + tamZoom > 0 &&
-            pantY < altoP) {
-          // Usar el primer sprite de árbol (índice 0)
-          SelectObject(hdcSprites, hArboles[0]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom, hdcSprites,
-                         0, 0, SPRITE_ARBOL, SPRITE_ARBOL, RGB(255, 255, 255));
-        }
-      }
-    }
+    // A) Árboles se dibujan al final de la fila para quedar encima.
 
     // ================================================================
     // B) DIBUJAR OBREROS CUYA BASE (y + 64) COINCIDE CON ESTA FILA
@@ -1420,6 +1405,25 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
           Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
                   pantY + tam + 5);
           DeleteObject(verde);
+        }
+      }
+    }
+
+    // ================================================================
+    // Z) DIBUJAR ÁRBOLES DE ESTA FILA (AL FINAL PARA ESTAR ENCIMA)
+    // ================================================================
+    for (int c = 0; c < GRID_SIZE; c++) {
+      char celdaContenido = *(*(ptrMatriz + f) + c);
+      if (celdaContenido == SIMBOLO_ARBOL) {
+        int mundoX = c * TILE_SIZE;
+        int mundoY = f * TILE_SIZE;
+        int pantX = (int)((mundoX - cam.x) * cam.zoom);
+        int pantY = (int)((mundoY - cam.y) * cam.zoom);
+        int tamZoom = (int)(SPRITE_ARBOL * cam.zoom);
+        if (pantX + tamZoom > 0 && pantX < anchoP && pantY + tamZoom > 0 && pantY < altoP) {
+          SelectObject(hdcSprites, hArboles[0]);
+          TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom, hdcSprites,
+                         0, 0, SPRITE_ARBOL, SPRITE_ARBOL, RGB(255, 255, 255));
         }
       }
     }
@@ -1848,12 +1852,18 @@ void mapaMoverObjeto(float viejoX, float viejoY, float nuevoX, float nuevoY,
   if (viejaFila != nuevaFila || viejaCol != nuevaCol) {
     if (viejaFila >= 0 && viejaFila < GRID_SIZE && viejaCol >= 0 &&
         viejaCol < GRID_SIZE) {
-      mapaObjetos[viejaFila][viejaCol] = SIMBOLO_VACIO;
+      // Solo limpiar si el contenido coincide con el simbolo móvil
+      if (mapaObjetos[viejaFila][viejaCol] == simbolo) {
+        mapaObjetos[viejaFila][viejaCol] = SIMBOLO_VACIO;
+      }
     }
 
     if (nuevaFila >= 0 && nuevaFila < GRID_SIZE && nuevaCol >= 0 &&
         nuevaCol < GRID_SIZE) {
-      mapaObjetos[nuevaFila][nuevaCol] = simbolo;
+      // Evitar sobreescribir contenido estático (ej: árboles)
+      if (mapaObjetos[nuevaFila][nuevaCol] == SIMBOLO_VACIO) {
+        mapaObjetos[nuevaFila][nuevaCol] = simbolo;
+      }
     }
   }
 }
