@@ -1,5 +1,6 @@
 #include "batallas/batallas.h"
 #include "edificios/edificios.h"
+#include "guardado/guardado.h"
 #include "mapa/mapa.h"
 #include "mapa/menu.h"
 #include "recursos/navegacion.h"
@@ -10,6 +11,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <windows.h>
 #include <windowsx.h>
 
@@ -33,6 +35,10 @@ Edificio mina;                       // Edificio de la mina
 int mouseFilaHover = -1; // Fila de la celda bajo el cursor (-1 = ninguna)
 int mouseColHover = -1;  // Columna de la celda bajo el cursor
 Edificio cuartel;        // Edificio del cuartel
+
+// Sistema de guardado/pausa
+MenuPausa menuPausa;     // Menú de pausa con opciones de guardar/cargar
+bool partidaCargada = false; // Indica si se está cargando una partida guardada
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
 void corregirLimitesCamara(RECT rect) {
@@ -209,18 +215,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Inicializar menú de embarque
     menuEmbarqueInicializar(&menuEmbarque);
 
-    // Detectar orilla y colocar barco (192x192)
+    // Obtener posición fija del barco según la isla actual
     float barcoX, barcoY;
     int barcoDir;
-    mapaDetectarOrilla(&barcoX, &barcoY, &barcoDir);
+    navegacionObtenerPosicionBarcoIsla(jugador1.islaActual, &barcoX, &barcoY, &barcoDir);
     jugador1.barco.x = barcoX;
     jugador1.barco.y = barcoY;
     jugador1.barco.dir = (Direccion)barcoDir;
     jugador1.barco.activo = true;
     jugador1.barco.numTropas = 0;
 
-    printf("[DEBUG] Barco colocado en orilla: (%.1f, %.1f), dir=%d\n", barcoX,
-           barcoY, barcoDir);
+    printf("[DEBUG] Barco colocado en isla %d: (%.1f, %.1f), dir=%d\n", 
+           jugador1.islaActual, barcoX, barcoY, barcoDir);
 
     // Registrar barco en mapaObjetos
     mapaRegistrarObjeto(jugador1.barco.x, jugador1.barco.y, SIMBOLO_BARCO);
@@ -239,12 +245,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Inicializar menú de entrenamiento
     menuEntrenamientoInicializar(&menuEntrenamiento);
 
+    // Inicializar menú de pausa/guardado
+    menuPausaInicializar(&menuPausa);
+    
+    // Si el usuario eligió cargar partida desde el menú principal,
+    // abrir automáticamente el menú de pausa en modo carga
+    if (partidaCargada) {
+      menuPausaAbrir(&menuPausa);
+      menuPausa.modo = MODO_CARGAR;
+      menuPausa.partidaSeleccionada = 0;
+      menuPausa.numPartidas = obtenerPartidasGuardadas(menuPausa.partidas);
+    }
+
     // Timer para actualizar física a 60 FPS (16ms)
     SetTimer(hwnd, IDT_TIMER_JUEGO, 16, NULL);
     return 0;
 
   case WM_TIMER:
     if (wParam == IDT_TIMER_JUEGO) {
+      // Actualizar menú de pausa (timers de mensajes)
+      menuPausaActualizar(&menuPausa);
+      
+      // Si el menú de pausa está activo, solo actualizar ese menú
+      if (menuPausa.activo) {
+        InvalidateRect(hwnd, NULL, FALSE);
+        return 0;
+      }
+      
       if (batallasEnCurso()) {
         batallasActualizar(0.016f);
       } else {
@@ -337,6 +364,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
   }
 
   case WM_KEYDOWN:
+    // Primero procesar teclas del menú de pausa (incluye ESC para abrir)
+    if (menuPausaProcesarTecla(&menuPausa, wParam, &jugador1, &camara,
+                                &ayuntamiento, &mina, &cuartel)) {
+      // Verificar si el usuario quiere volver al menú principal
+      if (menuPausa.volverAlMenu) {
+        // Cerrar la ventana de juego para volver al menú
+        DestroyWindow(hwnd);
+      }
+      InvalidateRect(hwnd, NULL, FALSE);
+      return 0;
+    }
+    
     if (wParam == 'C') {
       // Centrar cámara en el Ayuntamiento (1024, 1024)
       // Restamos la mitad de la pantalla (aprox 640x360) para que quede al
@@ -349,6 +388,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Tecla 'M' para mostrar matriz en consola (debug)
     if (wParam == 'M') {
       mostrarMapa(mapaObjetos);
+    }
+    break;
+
+  case WM_CHAR:
+    // Procesar entrada de caracteres para el nombre del jugador
+    if (menuPausaProcesarCaracter(&menuPausa, wParam)) {
+      InvalidateRect(hwnd, NULL, FALSE);
+      return 0;
     }
     break;
 
@@ -468,6 +515,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque,
                    mouseFilaHover, mouseColHover);
     }
+    
+    // Dibujar menú de pausa como overlay (si está activo)
+    if (menuPausa.activo) {
+      menuPausaDibujar(hdc, rect, &menuPausa);
+    }
 
     EndPaint(hwnd, &ps);
     return 0;
@@ -486,12 +538,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 }
 
 int main() {
-  mostrarMenu(); //
-  if (menuObtenerAccion() == 3)
-    return 0; // Salir si el usuario lo pide
-
-  mapaSeleccionarIsla(menuObtenerIsla());
-
+  // Registrar clase de ventana una sola vez
   WNDCLASSA wc = {0};
   wc.lpfnWndProc = WindowProc;
   wc.hInstance = GetModuleHandle(NULL);
@@ -500,23 +547,75 @@ int main() {
   wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
   RegisterClassA(&wc);
 
-  // IMPORTANTE: Cargar sprites ANTES de crear la ventana
-  // para que estén disponibles en WM_CREATE
-  cargarRecursosGraficos(); // Carga BMPs de mapa, árboles y obreros
-  edificiosCargarSprites(); // Carga sprites de edificios
+  // Loop principal del juego (permite volver al menú)
+  bool continuar = true;
+  while (continuar) {
+    // Mostrar menú principal
+    mostrarMenu();
+    
+    int accion = menuObtenerAccion();
+    if (accion == 3) {
+      // Salir del juego
+      break;
+    }
 
-  HWND hwnd =
-      CreateWindowEx(0, wc.lpszClassName, "Islas en Guerra - Motor de Unidades",
-                     WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280,
-                     720, NULL, NULL, wc.hInstance, NULL);
+    // Reiniciar estado global para nueva partida
+    partidaCargada = false;
+    menuPausaInicializar(&menuPausa);
+    
+    // CRITICO: Reiniciar TODOS los globals para que el juego comience desde cero
+    memset(&jugador1, 0, sizeof(jugador1));
+    camara.x = 0;
+    camara.y = 0;
+    camara.zoom = 1.0f;
+    memset(&ayuntamiento, 0, sizeof(ayuntamiento));
+    memset(&mina, 0, sizeof(mina));
+    memset(&cuartel, 0, sizeof(cuartel));
+    menuCompraInicializar(&menuCompra);
+    menuEmbarqueInicializar(&menuEmbarque);
+    menuEntrenamientoInicializar(&menuEntrenamiento);
+    arrastrandoCamara = false;
+    mouseFilaHover = -1;
+    mouseColHover = -1;
+    
+    // Verificar si el usuario eligió cargar partida
+    if (accion == 1) {
+      // Cargar partida: establecer flag global
+      partidaCargada = true;
+      // Seleccionar isla 1 por defecto, se actualizará al cargar
+      mapaSeleccionarIsla(1);
+    } else {
+      // Nueva partida: seleccionar isla normalmente
+      mapaSeleccionarIsla(menuObtenerIsla());
+    }
 
-  ShowWindow(hwnd, SW_SHOWMAXIMIZED);
-  UpdateWindow(hwnd);
+    // IMPORTANTE: Cargar sprites ANTES de crear la ventana
+    // para que estén disponibles en WM_CREATE
+    cargarRecursosGraficos(); // Carga BMPs de mapa, árboles y obreros
+    edificiosCargarSprites(); // Carga sprites de edificios
 
-  MSG msg;
-  while (GetMessage(&msg, NULL, 0, 0)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+    HWND hwnd =
+        CreateWindowEx(0, wc.lpszClassName, "Islas en Guerra - Motor de Unidades",
+                       WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280,
+                       720, NULL, NULL, wc.hInstance, NULL);
+
+    if (!hwnd) {
+      MessageBoxA(NULL, "Error al crear la ventana del juego", "Error", MB_OK | MB_ICONERROR);
+      continue;
+    }
+
+    ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+    UpdateWindow(hwnd);
+
+    // Loop de mensajes del juego
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+    
+    // Si se llegó aquí, se cerró la ventana del juego
+    // El loop continuará mostrando el menú de nuevo
   }
 
   return 0;
