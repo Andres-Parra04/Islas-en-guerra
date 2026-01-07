@@ -306,6 +306,11 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   j->barco.x = 0.0f;
   j->barco.y = 0.0f;
   j->barco.dir = DIR_FRONT;
+  j->barco.numTropas = 0;
+
+  // Inicializar sistema de mejoras (nivel 1 por defecto)
+  j->barco.nivelMejora = 1;
+  j->barco.capacidadMaxima = 6;
 
   printf("[DEBUG] Barco inicializado (pendiente de colocacion en orilla)\n");
 
@@ -2029,4 +2034,71 @@ bool entrenarCaballeroSinEscudo(struct Jugador *j, float x, float y) {
   }
 
   return false;
+}
+
+// ============================================================================
+// FUNCIÓN DE MEJORA DEL BARCO
+// ============================================================================
+// Incrementa el nivel de mejora del barco, ampliando su capacidad de tropas.
+// Niveles: 1 (6 tropas) → 2 (9 tropas) → 3 (12 tropas) → 4 (15 tropas)
+// Cada mejora requiere recursos significativos.
+// ============================================================================
+bool mejorarBarco(struct Jugador *j) {
+  if (!j)
+    return false;
+
+  int nivelActual = j->barco.nivelMejora;
+
+  // Verificar que aún se puede mejorar
+  if (nivelActual >= 4) {
+    printf("[MEJORA BARCO] El barco ya está al nivel máximo (%d)\n",
+           nivelActual);
+    return false;
+  }
+
+  int siguienteNivel = nivelActual + 1;
+  int oro, madera, piedra, hierro;
+
+  // Determinar costos según el siguiente nivel
+  if (siguienteNivel == 2) {
+    oro = 500;
+    madera = 400;
+    piedra = 300;
+    hierro = 200;
+  } else if (siguienteNivel == 3) {
+    oro = 1000;
+    madera = 800;
+    piedra = 600;
+    hierro = 400;
+  } else { // siguienteNivel == 4
+    oro = 1500;
+    madera = 1200;
+    piedra = 900;
+    hierro = 600;
+  }
+
+  // Verificar que el jugador tiene suficientes recursos
+  if (j->Oro < oro || j->Madera < madera || j->Piedra < piedra ||
+      j->Hierro < hierro) {
+    printf("[MEJORA BARCO] Recursos insuficientes. Requiere: %d Oro, %d "
+           "Madera, %d Piedra, %d Hierro\n",
+           oro, madera, piedra, hierro);
+    return false;
+  }
+
+  // Descontar recursos
+  j->Oro -= oro;
+  j->Madera -= madera;
+  j->Piedra -= piedra;
+  j->Hierro -= hierro;
+
+  // Incrementar nivel de mejora
+  j->barco.nivelMejora = siguienteNivel;
+  j->barco.capacidadMaxima = siguienteNivel * 3 + 3; // 9, 12, 15
+
+  printf(
+      "[MEJORA BARCO] ¡Barco mejorado a nivel %d! Nueva capacidad: %d tropas\n",
+      siguienteNivel, j->barco.capacidadMaxima);
+
+  return true;
 }
