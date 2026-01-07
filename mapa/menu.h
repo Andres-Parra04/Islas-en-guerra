@@ -80,4 +80,7 @@ int menuObtenerAccion();
 // Isla seleccionada para iniciar la partida (1-3).
 int menuObtenerIsla();
 
+// Nombre de la partida seleccionada para cargar (puede ser NULL si es nueva partida).
+const char* menuObtenerNombrePartida();
+
 #endif // MENU_H

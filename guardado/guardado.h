@@ -15,7 +15,7 @@
 // ============================================================================
 #define SAVE_MAGIC 0x49534C41          // "ISLA" en hex (identificador de archivo)
 #define SAVE_VERSION 1                 // Versión del formato de guardado
-#define SAVE_FOLDER "saves"            // Carpeta donde se guardan las partidas
+#define SAVE_FOLDER "../saves"            // Carpeta donde se guardan las partidas
 #define SAVE_EXTENSION ".isla"         // Extensión de archivos de guardado
 #define MAX_PARTIDAS 10                // Máximo de partidas guardadas a mostrar
 #define MAX_NOMBRE_JUGADOR 30          // Longitud máxima del nombre

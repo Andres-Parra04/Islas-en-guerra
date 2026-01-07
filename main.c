@@ -249,12 +249,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     menuPausaInicializar(&menuPausa);
 
     // Si el usuario eligió cargar partida desde el menú principal,
-    // abrir automáticamente el menú de pausa en modo carga
+    // cargar directamente la partida seleccionada
     if (partidaCargada) {
-      menuPausaAbrir(&menuPausa);
-      menuPausa.modo = MODO_CARGAR;
-      menuPausa.partidaSeleccionada = 0;
-      menuPausa.numPartidas = obtenerPartidasGuardadas(menuPausa.partidas);
+      const char* nombrePartida = menuObtenerNombrePartida();
+      if (nombrePartida && nombrePartida[0] != '\0') {
+        if (cargarPartidaPorNombre(nombrePartida, &jugador1, &camara, &ayuntamiento, &mina, &cuartel)) {
+          printf("[MAIN] Partida '%s' cargada correctamente\n", nombrePartida);
+        } else {
+          printf("[MAIN] Error al cargar la partida '%s'\n", nombrePartida);
+        }
+      }
     }
 
     // Timer para actualizar física a 60 FPS (16ms)
@@ -542,14 +546,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     if (batallasEnCurso()) {
       batallasRender(hdc, rect, camara);
     } else {
+      // Pasar el menú de pausa para que se dibuje DENTRO del buffer (sin parpadeo)
       dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque,
-                   mouseFilaHover, mouseColHover);
+                   mouseFilaHover, mouseColHover, &menuPausa);
     }
 
-    // Dibujar menú de pausa como overlay (si está activo)
-    if (menuPausa.activo) {
-      menuPausaDibujar(hdc, rect, &menuPausa);
-    }
+    // El menú de pausa ahora se dibuja dentro de dibujarMundo (en el buffer)
+    // Ya no se dibuja aquí para evitar parpadeo
 
     EndPaint(hwnd, &ps);
     return 0;

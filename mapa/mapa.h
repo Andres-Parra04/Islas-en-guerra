@@ -99,9 +99,10 @@ Vaca *mapaObtenerVacas(int *cantidad);
 // Dibuja el mundo (terreno, árboles, obreros) en el DC especificado
 // Ahora acepta el menú para dibujarlo dentro del mismo buffer (evitar parpadeo)
 // highlightFila/Col: celda a resaltar (-1 = ninguna)
+// menuPausa: puntero al menú de pausa (void* para evitar dependencia circular)
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                   struct MenuCompra *menu, MenuEmbarque *menuEmb,
-                  int highlightFila, int highlightCol);
+                  int highlightFila, int highlightCol, void *menuPausa);
 
 // Dibuja vista de mapa global (solo mapa y barco, sin zoom)
 void dibujarMapaGlobal(HDC hdc, RECT rect, struct Jugador *pJugador);
