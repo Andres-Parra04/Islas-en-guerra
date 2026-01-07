@@ -1,5 +1,6 @@
 #include "mapa.h"
 #include "../edificios/edificios.h"
+#include "../guardado/guardado.h"
 #include "../recursos/navegacion.h"
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
@@ -1289,7 +1290,7 @@ static void dibujarBarraVida(HDC hdc, int x, int y, int vida, int vidaMax,
 
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                   struct MenuCompra *menu, MenuEmbarque *menuEmb,
-                  int highlightFila, int highlightCol) {
+                  int highlightFila, int highlightCol, void *menuPausaPtr) {
   if (!hMapaBmp)
     return;
 
@@ -1735,6 +1736,12 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
     SelectObject(hdcBuffer, hOldBrush);
     DeleteObject(hPen);
     DeleteObject(hBrush);
+  }
+
+  // Dibujar menú de pausa DENTRO del buffer (evita parpadeo)
+  MenuPausa *menuPausa = (MenuPausa *)menuPausaPtr;
+  if (menuPausa != NULL && menuPausa->activo) {
+    menuPausaDibujar(hdcBuffer, rect, menuPausa);
   }
 
   // Copiar el buffer COMPLETO (Juego + UI) a la pantalla de una vez

@@ -444,9 +444,11 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             if (gFontTitulo) { DeleteObject(gFontTitulo); gFontTitulo = NULL; }
             if (gFontOpciones) { DeleteObject(gFontOpciones); gFontOpciones = NULL; }
             if (fondoIslasBmp) { DeleteObject(fondoIslasBmp); fondoIslasBmp = NULL; }
+            fondoIslasListo = false;  // CRÍTICO: Resetear flag para que se recargue
             for (int i = 0; i < 4; i++) {
                 if (hIslaBmp[i]) { DeleteObject(hIslaBmp[i]); hIslaBmp[i] = NULL; }
             }
+            islasCargadas = false;  // CRÍTICO: Resetear flag para que se recarguen las islas
             PostQuitMessage(0);
             return 0;
     }
@@ -485,6 +487,14 @@ int menuObtenerIsla() {
 void mostrarMenu() {
     // Crear una ventana GDI dedicada para el menú a pantalla completa
     ocultarCursor();
+
+    // CRÍTICO: Resetear estado del menú para comenzar desde el menú principal
+    // Esto asegura que al volver del juego se muestre el menú principal, no la selección de islas
+    gSeleccion = 0;
+    gMostrandoInstrucciones = false;
+    gMostrandoSeleccionIsla = false;
+    gSeleccionIsla = 0;
+    gMenuAccion = 0;
 
     HINSTANCE hInst = GetModuleHandle(NULL);
     WNDCLASSA wc = {0};

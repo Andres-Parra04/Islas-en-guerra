@@ -542,14 +542,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     if (batallasEnCurso()) {
       batallasRender(hdc, rect, camara);
     } else {
+      // Pasar el menú de pausa para que se dibuje DENTRO del buffer (sin parpadeo)
       dibujarMundo(hdc, rect, camara, &jugador1, &menuCompra, &menuEmbarque,
-                   mouseFilaHover, mouseColHover);
+                   mouseFilaHover, mouseColHover, &menuPausa);
     }
 
-    // Dibujar menú de pausa como overlay (si está activo)
-    if (menuPausa.activo) {
-      menuPausaDibujar(hdc, rect, &menuPausa);
-    }
+    // El menú de pausa ahora se dibuja dentro de dibujarMundo (en el buffer)
+    // Ya no se dibuja aquí para evitar parpadeo
 
     EndPaint(hwnd, &ps);
     return 0;

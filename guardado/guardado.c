@@ -877,9 +877,13 @@ bool menuPausaProcesarTecla(MenuPausa *menu, WPARAM tecla, struct Jugador *j,
         }
         
         if (tecla == VK_RETURN) {
-            if (menu->cursorPos > 0 && !menu->nombreExiste) {
-                // Guardar la partida
+            if (menu->cursorPos > 0) {
+                // Guardar la partida (permitir sobrescribir si ya existe)
                 if (guardarPartidaPorNombre(menu->nombreInput, j, cam)) {
+                    // Guardar el nombre en el jugador para futuras reescrituras
+                    strncpy(j->Nombre, menu->nombreInput, sizeof(j->Nombre) - 1);
+                    j->Nombre[sizeof(j->Nombre) - 1] = '\0';
+                    
                     snprintf(menu->mensaje, sizeof(menu->mensaje), "Partida guardada correctamente!");
                     obtenerRutaGuardado(menu->nombreInput, menu->rutaGuardado, sizeof(menu->rutaGuardado));
                     menu->timerMensaje = 180;  // 3 segundos
@@ -891,9 +895,6 @@ bool menuPausaProcesarTecla(MenuPausa *menu, WPARAM tecla, struct Jugador *j,
                     snprintf(menu->mensaje, sizeof(menu->mensaje), "Error al guardar");
                     menu->timerMensaje = 120;
                 }
-            } else if (menu->nombreExiste) {
-                snprintf(menu->mensaje, sizeof(menu->mensaje), "Elige otro nombre");
-                menu->timerMensaje = 60;
             }
             return true;
         }
@@ -932,8 +933,15 @@ bool menuPausaProcesarTecla(MenuPausa *menu, WPARAM tecla, struct Jugador *j,
                     break;
                 case 1:  // Guardar
                     menu->modo = MODO_GUARDAR;
-                    menu->nombreInput[0] = '\0';
-                    menu->cursorPos = 0;
+                    // Auto-rellenar con el nombre del jugador si ya guardó antes
+                    if (j->Nombre[0] != '\0') {
+                        strncpy(menu->nombreInput, j->Nombre, sizeof(menu->nombreInput) - 1);
+                        menu->nombreInput[sizeof(menu->nombreInput) - 1] = '\0';
+                        menu->cursorPos = (int)strlen(menu->nombreInput);
+                    } else {
+                        menu->nombreInput[0] = '\0';
+                        menu->cursorPos = 0;
+                    }
                     menu->nombreExiste = false;
                     break;
                 case 2:  // Cargar
