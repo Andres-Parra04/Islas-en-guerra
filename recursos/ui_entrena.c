@@ -433,10 +433,10 @@ bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
       extern bool mejorarBarco(struct Jugador * j);
       if (mejorarBarco(jugador)) {
         // mejorarBarco ya descuenta los recursos internamente
-        strcpy(menu->mensajeError, "\xA1Barco mejorado con éxito!");
+        strcpy(menu->mensajeError, "Barco mejorado con exito!");
         menu->tiempoError = 80;
       } else {
-        strcpy(menu->mensajeError, "\xA1Recursos insuficientes!");
+        strcpy(menu->mensajeError, "Recursos insuficientes!");
         menu->tiempoError = 60;
       }
     } else {
