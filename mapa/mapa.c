@@ -1584,7 +1584,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
           dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
                            cam.zoom);
 
-          // Círculo de selección (Cyan para distinguirlos)
+          // Círculo de selección (verde, igual que aliados)
           int idxCse = 4 + (int)(c - baseCSE);
           bool atacando = (idxCse >= 0 && idxCse < 12) ? ataqueAliados[idxCse]
                                                        : false;
@@ -1592,12 +1592,12 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                               false, atacando, frameAtaque);
           if (c->seleccionado) {
             HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN cyan = CreatePen(PS_SOLID, 2, RGB(0, 255, 255));
+            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
             SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, cyan);
+            SelectObject(hdcBuffer, verde);
             Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
                     pantY + tam + 5);
-            DeleteObject(cyan);
+            DeleteObject(verde);
           }
         }
       }
@@ -1626,16 +1626,15 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
           // Dibujar barra de vida
           dibujarBarraVida(hdcBuffer, pantX, pantY, g->vida, g->vidaMax,
                            cam.zoom);
-          // Círculo de selección (color diferente para distinguirlos)
+          // Círculo de selección (verde, unificado con aliados)
           if (g->seleccionado) {
             HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN amarillo = CreatePen(
-                PS_SOLID, 2, RGB(255, 255, 0)); // Amarillo para guerreros
+            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
             SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, amarillo);
+            SelectObject(hdcBuffer, verde);
             Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
                     pantY + tam + 5);
-            DeleteObject(amarillo);
+            DeleteObject(verde);
           }
         }
       }
