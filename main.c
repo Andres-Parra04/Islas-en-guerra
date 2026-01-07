@@ -249,12 +249,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     menuPausaInicializar(&menuPausa);
 
     // Si el usuario eligió cargar partida desde el menú principal,
-    // abrir automáticamente el menú de pausa en modo carga
+    // cargar directamente la partida seleccionada
     if (partidaCargada) {
-      menuPausaAbrir(&menuPausa);
-      menuPausa.modo = MODO_CARGAR;
-      menuPausa.partidaSeleccionada = 0;
-      menuPausa.numPartidas = obtenerPartidasGuardadas(menuPausa.partidas);
+      const char* nombrePartida = menuObtenerNombrePartida();
+      if (nombrePartida && nombrePartida[0] != '\0') {
+        if (cargarPartidaPorNombre(nombrePartida, &jugador1, &camara, &ayuntamiento, &mina, &cuartel)) {
+          printf("[MAIN] Partida '%s' cargada correctamente\n", nombrePartida);
+        } else {
+          printf("[MAIN] Error al cargar la partida '%s'\n", nombrePartida);
+        }
+      }
     }
 
     // Timer para actualizar física a 60 FPS (16ms)

@@ -5,6 +5,7 @@
 #include <conio.h>
 #include <windows.h>
 #include <windowsx.h>
+#include "../guardado/guardado.h"
 
 // --- CONSTANTES DE DIMENSIONES Y POSICIONAMIENTO ---
 #define ANCHO_CONSOLA 80
@@ -85,8 +86,13 @@ static bool fondoIslasListo = false;
 static int gSeleccion = 0;
 static HFONT gFontTitulo = NULL;
 static HFONT gFontOpciones = NULL;
-static const char *OPCIONES_MENU[] = { "Iniciar partida", "Cargar partida", "Instrucciones", "Salir" };
-static const int OPCIONES_TOTAL = 4;
+// Opciones fijas
+static const char *OPCIONES_CON_CARGAR[] = { "Iniciar partida", "Cargar partida", "Instrucciones", "Salir" };
+static const char *OPCIONES_SIN_CARGAR[] = { "Iniciar partida", "Instrucciones", "Salir" };
+// Opciones dinámicas
+static const char **OPCIONES_MENU = NULL;
+static int OPCIONES_TOTAL = 0;
+static bool gHayPartidasGuardadas = false;
 static bool gMostrandoInstrucciones = false;
 static HWND gMenuHwnd = NULL;
 static int gMenuAccion = 0; // 0 = nueva partida, 1 = cargar partida
@@ -99,6 +105,14 @@ static const int OPCIONES_ISLAS_TOTAL = 5;
 static HBITMAP hIslaBmp[4] = {NULL};
 static BITMAP infoIsla[4];
 static bool islasCargadas = false;
+
+// --- Estado del menú de carga de partidas ---
+static bool gMostrandoCargaPartidas = false;
+static InfoPartida gPartidasDisponibles[MAX_PARTIDAS];
+static int gNumPartidasDisponibles = 0;
+static int gSeleccionPartida = 0;
+static char gNombrePartidaSeleccionada[MAX_NOMBRE_JUGADOR] = {0};
+static HFONT gFontPequena = NULL;
 
 // --- Prototipos necesarios ---
 void mostrarInstrucciones();
@@ -350,6 +364,57 @@ static void renderMenu(HWND hwnd) {
         rcOpc.right = rc.left + (ancho / 2) - ancho / 20; // dejar aire con el preview
         dibujarOpciones(hdc, gFontOpciones, OPCIONES_ISLAS, OPCIONES_ISLAS_TOTAL, gSeleccionIsla, rcOpc);
         dibujarPreviewIsla(hdc, rc);
+    } else if (gMostrandoCargaPartidas) {
+        // Menú de carga de partidas con el mismo fondo que el menú principal
+        dibujarFondoBmp(hdc, rc);
+        dibujarTextoCentrado(hdc, gFontTitulo, "CARGAR PARTIDA", centroX, tituloY, RGB(240, 240, 240));
+        
+        if (gNumPartidasDisponibles == 0) {
+            // No hay partidas guardadas
+            dibujarTextoCentrado(hdc, gFontOpciones, "No hay partidas guardadas", centroX, alto / 2, RGB(200, 200, 200));
+            dibujarTextoCentrado(hdc, gFontPequena, "Presiona ESC para volver", centroX, alto / 2 + 60, RGB(255, 230, 120));
+        } else {
+            // Mostrar lista de partidas
+            SIZE medida = medirTexto(hdc, gFontOpciones, "Texto");
+            int alturaLinea = medida.cy + 20;
+            int bloqueAlto = alturaLinea * gNumPartidasDisponibles;
+            int inicioY = (alto - bloqueAlto) / 2;
+            
+            for (int i = 0; i < gNumPartidasDisponibles; i++) {
+                char lineaPartida[256];
+                snprintf(lineaPartida, sizeof(lineaPartida), "%s - Isla %d",
+                         gPartidasDisponibles[i].nombreJugador,
+                         gPartidasDisponibles[i].islaActual);
+                
+                COLORREF color = (i == gSeleccionPartida) ? RGB(120, 255, 150) : RGB(255, 255, 255);
+                int yPos = inicioY + i * alturaLinea;
+                
+                // Dibujar nombre de partida
+                dibujarTextoCentrado(hdc, gFontOpciones, lineaPartida, centroX, yPos, color);
+                
+                // Dibujar fecha (más pequeña, debajo)
+                if (i == gSeleccionPartida) {
+                    char fechaTexto[128];
+                    snprintf(fechaTexto, sizeof(fechaTexto), "Guardado: %s", gPartidasDisponibles[i].timestamp);
+                    dibujarTextoCentrado(hdc, gFontPequena, fechaTexto, centroX, yPos + 30, RGB(180, 180, 180));
+                    
+                    // Marco de selección
+                    SIZE medidaLinea = medirTexto(hdc, gFontOpciones, lineaPartida);
+                    int highlightPadding = 20;
+                    RECT highlight = {
+                        centroX - medidaLinea.cx / 2 - highlightPadding,
+                        yPos - 6,
+                        centroX + medidaLinea.cx / 2 + highlightPadding,
+                        yPos + medidaLinea.cy + 40};
+                    HBRUSH brush = CreateSolidBrush(RGB(20, 80, 30));
+                    FrameRect(hdc, &highlight, brush);
+                    DeleteObject(brush);
+                }
+            }
+            
+            // Instrucciones
+            dibujarTextoCentrado(hdc, gFontPequena, "ENTER: Cargar | ESC: Volver", centroX, alto - 80, RGB(255, 230, 120));
+        }
     } else {
         dibujarFondoBmp(hdc, rc);
         dibujarOpciones(hdc, gFontOpciones, OPCIONES_MENU, OPCIONES_TOTAL, gSeleccion, rc);
@@ -361,11 +426,13 @@ static void renderMenu(HWND hwnd) {
 static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CREATE: {
-            // Crear fuentes para título y opciones
+            // Crear fuentes para título, opciones y texto pequeño
             gFontTitulo = CreateFontA(48, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                                     OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, "Segoe UI");
             gFontOpciones = CreateFontA(28, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                                         OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, "Segoe UI");
+            gFontPequena = CreateFontA(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                                       OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, "Segoe UI");
             return 0;
         }
         case WM_PAINT:
@@ -377,6 +444,10 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                     if (gMostrandoInstrucciones) {
                         gMostrandoInstrucciones = false;
                         InvalidateRect(hwnd, NULL, FALSE);
+                    } else if (gMostrandoCargaPartidas) {
+                        // Volver del menú de carga al menú principal
+                        gMostrandoCargaPartidas = false;
+                        InvalidateRect(hwnd, NULL, FALSE);
                     } else if (gMostrandoSeleccionIsla) {
                         gMostrandoSeleccionIsla = false;
                         InvalidateRect(hwnd, NULL, FALSE);
@@ -387,7 +458,11 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 case VK_UP:
                 case 'W':
                 case 'w':
-                    if (gMostrandoSeleccionIsla) {
+                    if (gMostrandoCargaPartidas && gNumPartidasDisponibles > 0) {
+                        // Navegar en el menú de carga
+                        gSeleccionPartida = (gSeleccionPartida - 1 + gNumPartidasDisponibles) % gNumPartidasDisponibles;
+                        InvalidateRect(hwnd, NULL, FALSE);
+                    } else if (gMostrandoSeleccionIsla) {
                         gSeleccionIsla = (gSeleccionIsla - 1 + OPCIONES_ISLAS_TOTAL) % OPCIONES_ISLAS_TOTAL;
                         InvalidateRect(hwnd, NULL, FALSE);
                     } else if (!gMostrandoInstrucciones) {
@@ -398,7 +473,11 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 case VK_DOWN:
                 case 'S':
                 case 's':
-                    if (gMostrandoSeleccionIsla) {
+                    if (gMostrandoCargaPartidas && gNumPartidasDisponibles > 0) {
+                        // Navegar en el menú de carga
+                        gSeleccionPartida = (gSeleccionPartida + 1) % gNumPartidasDisponibles;
+                        InvalidateRect(hwnd, NULL, FALSE);
+                    } else if (gMostrandoSeleccionIsla) {
                         gSeleccionIsla = (gSeleccionIsla + 1) % OPCIONES_ISLAS_TOTAL;
                         InvalidateRect(hwnd, NULL, FALSE);
                     } else if (!gMostrandoInstrucciones) {
@@ -407,7 +486,15 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                     }
                     break;
                 case VK_RETURN:
-                    if (gMostrandoSeleccionIsla) {
+                    if (gMostrandoCargaPartidas) {
+                        // Cargar la partida seleccionada
+                        if (gNumPartidasDisponibles > 0) {
+                            strncpy(gNombrePartidaSeleccionada, gPartidasDisponibles[gSeleccionPartida].nombreJugador, MAX_NOMBRE_JUGADOR - 1);
+                            gNombrePartidaSeleccionada[MAX_NOMBRE_JUGADOR - 1] = '\0';
+                            gMenuAccion = 1;  // Indica que queremos cargar partida
+                            PostMessage(hwnd, WM_CLOSE, 0, 0);
+                        }
+                    } else if (gMostrandoSeleccionIsla) {
                         if (gSeleccionIsla >= 1 && gSeleccionIsla <= 3) {
                             gIslaSeleccionada = gSeleccionIsla;
                             gMenuAccion = 0;
@@ -420,16 +507,19 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                         }
                     } else if (!gMostrandoInstrucciones) {
                         if (gSeleccion == 0) {
+                            // Iniciar partida
                             gMostrandoSeleccionIsla = true;
                             gSeleccionIsla = gIslaSeleccionada;
                             InvalidateRect(hwnd, NULL, FALSE);
-                        } else if (gSeleccion == 1) {
-                            // Cargar partida
-                            gMenuAccion = 1;
-                            PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        } else if (gSeleccion == 2) {
+                        } else if (gHayPartidasGuardadas && gSeleccion == 1) {
+                            // Mostrar menú de carga de partidas
+                            gMostrandoCargaPartidas = true;
+                            gSeleccionPartida = 0;
+                            InvalidateRect(hwnd, NULL, FALSE);
+                        } else if ((gHayPartidasGuardadas && gSeleccion == 2) || (!gHayPartidasGuardadas && gSeleccion == 1)) {
+                            // Instrucciones
                             mostrarInstrucciones();
-                        } else if (gSeleccion == 3) {
+                        } else if ((gHayPartidasGuardadas && gSeleccion == 3) || (!gHayPartidasGuardadas && gSeleccion == 2)) {
                             // Salir
                             ExitProcess(0);
                         }
@@ -443,6 +533,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         case WM_DESTROY:
             if (gFontTitulo) { DeleteObject(gFontTitulo); gFontTitulo = NULL; }
             if (gFontOpciones) { DeleteObject(gFontOpciones); gFontOpciones = NULL; }
+            if (gFontPequena) { DeleteObject(gFontPequena); gFontPequena = NULL; }
             if (fondoIslasBmp) { DeleteObject(fondoIslasBmp); fondoIslasBmp = NULL; }
             fondoIslasListo = false;  // CRÍTICO: Resetear flag para que se recargue
             for (int i = 0; i < 4; i++) {
@@ -484,17 +575,37 @@ int menuObtenerIsla() {
     return gIslaSeleccionada;
 }
 
+const char* menuObtenerNombrePartida() {
+    return gNombrePartidaSeleccionada;
+}
+
 void mostrarMenu() {
     // Crear una ventana GDI dedicada para el menú a pantalla completa
     ocultarCursor();
+
+    // Verificar si hay partidas guardadas y copiarlas
+    gNumPartidasDisponibles = obtenerPartidasGuardadas(gPartidasDisponibles);
+    gHayPartidasGuardadas = (gNumPartidasDisponibles > 0);
+    
+    // Configurar opciones del menú según si hay partidas guardadas
+    if (gHayPartidasGuardadas) {
+        OPCIONES_MENU = OPCIONES_CON_CARGAR;
+        OPCIONES_TOTAL = 4;
+    } else {
+        OPCIONES_MENU = OPCIONES_SIN_CARGAR;
+        OPCIONES_TOTAL = 3;
+    }
 
     // CRÍTICO: Resetear estado del menú para comenzar desde el menú principal
     // Esto asegura que al volver del juego se muestre el menú principal, no la selección de islas
     gSeleccion = 0;
     gMostrandoInstrucciones = false;
     gMostrandoSeleccionIsla = false;
+    gMostrandoCargaPartidas = false;
     gSeleccionIsla = 0;
+    gSeleccionPartida = 0;
     gMenuAccion = 0;
+    gNombrePartidaSeleccionada[0] = '\0';
 
     HINSTANCE hInst = GetModuleHandle(NULL);
     WNDCLASSA wc = {0};
