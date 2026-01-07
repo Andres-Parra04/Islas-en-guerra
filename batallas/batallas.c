@@ -21,20 +21,11 @@ static const char *kCaballeroRutas[4] = {
 	"..\\assets\\caballero\\caballero_back.bmp"
 };
 
-static const char *kCaballeroRutasAlt[4] = {
-	"assets/caballero/caballero_front.bmp",
-	"assets/caballero/caballero_back.bmp"
-};
-
 static const char *kGuerreroRutas[4] = {
     "..\\assets\\guerrero\\guerrero_front.bmp",
     "..\\assets\\guerrero\\guerrero_back.bmp",
     "..\\assets\\guerrero\\guerrero_left.bmp",
     "..\\assets\\guerrero\\guerrero_right.bmp"};
-
-static const char *kGuerreroRutasAlt[4] = {
-    "assets/guerrero/guerrero_front.bmp", "assets/guerrero/guerrero_back.bmp",
-    "assets/guerrero/guerrero_left.bmp", "assets/guerrero/guerrero_right.bmp"};
 
 static HBITMAP hCaballeroBmp[4] = {NULL};
 static HBITMAP hGuerreroBmp[4] = {NULL};
@@ -103,14 +94,16 @@ static HBITMAP cargarBmp(const char *ruta1, const char *ruta2, int w, int h) {
 }
 
 static void asegurarSprites(void) {
-  for (int i = 0; i < 4; i++) {
+  // Caballero: solo 2 sprites básicos
+  for (int i = 0; i < 2; i++) {
     if (!hCaballeroBmp[i]) {
-      hCaballeroBmp[i] =
-          cargarBmp(kCaballeroRutas[i], kCaballeroRutasAlt[i], 64, 64);
+      hCaballeroBmp[i] = cargarBmp(kCaballeroRutas[i], NULL, 64, 64);
     }
+  }
+  // Guerrero: 4 direcciones
+  for (int i = 0; i < 4; i++) {
     if (!hGuerreroBmp[i]) {
-      hGuerreroBmp[i] =
-          cargarBmp(kGuerreroRutas[i], kGuerreroRutasAlt[i], 64, 64);
+      hGuerreroBmp[i] = cargarBmp(kGuerreroRutas[i], NULL, 64, 64);
     }
   }
 }
@@ -131,122 +124,84 @@ static void cargarSpriteDir(HBITMAP *dst, const char *pathL,
 
 static void cargarGuerreroAnim(void) {
 	// Idle
-	const char *idleL1 = "..\\assets\\guerrero\\guerrero_war_stand_left.bmp";
-	const char *idleR1 = "..\\assets\\guerrero\\guerrero_war_stand_right.bmp";
-	const char *idleL2 = "assets/guerrero/guerrero_war_stand_left.bmp";
-	const char *idleR2 = "assets/guerrero/guerrero_war_stand_right.bmp";
-	if (!gSprGuerrero.idle[0]) gSprGuerrero.idle[0] = cargarBmp(idleL1, idleL2, 64, 64);
-	if (!gSprGuerrero.idle[1]) gSprGuerrero.idle[1] = cargarBmp(idleR1, idleR2, 64, 64);
+  const char *idleL = "..\\assets\\guerrero\\guerrero_war_stand_left.bmp";
+  const char *idleR = "..\\assets\\guerrero\\guerrero_war_stand_right.bmp";
+  if (!gSprGuerrero.idle[0]) gSprGuerrero.idle[0] = cargarBmp(idleL, NULL, 64, 64);
+  if (!gSprGuerrero.idle[1]) gSprGuerrero.idle[1] = cargarBmp(idleR, NULL, 64, 64);
 
 	// Walk
-	const char *walkL1 = "..\\assets\\guerrero\\guerrero_war_walk_left.bmp";
-	const char *walkR1 = "..\\assets\\guerrero\\guerrero_war_walk_right.bmp";
-	const char *walkL2 = "assets/guerrero/guerrero_war_walk_left.bmp";
-	const char *walkR2 = "assets/guerrero/guerrero_war_walk_right.bmp";
-	if (!gSprGuerrero.walk[0]) gSprGuerrero.walk[0] = cargarBmp(walkL1, walkL2, 64, 64);
-	if (!gSprGuerrero.walk[1]) gSprGuerrero.walk[1] = cargarBmp(walkR1, walkR2, 64, 64);
+  const char *walkL = "..\\assets\\guerrero\\guerrero_war_walk_left.bmp";
+  const char *walkR = "..\\assets\\guerrero\\guerrero_war_walk_right.bmp";
+  if (!gSprGuerrero.walk[0]) gSprGuerrero.walk[0] = cargarBmp(walkL, NULL, 64, 64);
+  if (!gSprGuerrero.walk[1]) gSprGuerrero.walk[1] = cargarBmp(walkR, NULL, 64, 64);
 
 	// Attack (2 frames)
-	const char *atkL1[2] = {
-		"..\\assets\\guerrero\\guerrero_war_move_1_left.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_2_left.bmp"};
-	const char *atkR1[2] = {
-		"..\\assets\\guerrero\\guerrero_war_move_1_right.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_2_right.bmp"};
-	const char *atkL2[2] = {
-		"assets/guerrero/guerrero_war_move_1_left.bmp",
-		"assets/guerrero/guerrero_war_move_2_left.bmp"};
-	const char *atkR2[2] = {
-		"assets/guerrero/guerrero_war_move_1_right.bmp",
-		"assets/guerrero/guerrero_war_move_2_right.bmp"};
+  const char *atkL[2] = {
+    "..\\assets\\guerrero\\guerrero_war_move_1_left.bmp",
+    "..\\assets\\guerrero\\guerrero_war_move_2_left.bmp"};
+  const char *atkR[2] = {
+    "..\\assets\\guerrero\\guerrero_war_move_1_right.bmp",
+    "..\\assets\\guerrero\\guerrero_war_move_2_right.bmp"};
 	for (int i = 0; i < 2; i++) {
-		if (!gSprGuerrero.attack[0][i]) gSprGuerrero.attack[0][i] = cargarBmp(atkL1[i], atkL2[i], 64, 64);
-		if (!gSprGuerrero.attack[1][i]) gSprGuerrero.attack[1][i] = cargarBmp(atkR1[i], atkR2[i], 64, 64);
+    if (!gSprGuerrero.attack[0][i]) gSprGuerrero.attack[0][i] = cargarBmp(atkL[i], NULL, 64, 64);
+    if (!gSprGuerrero.attack[1][i]) gSprGuerrero.attack[1][i] = cargarBmp(atkR[i], NULL, 64, 64);
 	}
 
 	// Death (2 frames)
-	const char *dieL1[2] = {
-		"..\\assets\\guerrero\\guerrero_war_die_1_left.bmp",
-		"..\\assets\\guerrero\\guerrero_war_die_2_left.bmp"};
-	const char *dieR1[2] = {
-		"..\\assets\\guerrero\\guerrero_war_die_1_right.bmp",
-		"..\\assets\\guerrero\\guerrero_war_die_2_right.bmp"};
-	const char *dieL2[2] = {
-		"assets/guerrero/guerrero_war_die_1_left.bmp",
-		"assets/guerrero/guerrero_war_die_2_left.bmp"};
-	const char *dieR2[2] = {
-		"assets/guerrero/guerrero_war_die_1_right.bmp",
-		"assets/guerrero/guerrero_war_die_2_right.bmp"};
+  const char *dieL[2] = {
+    "..\\assets\\guerrero\\guerrero_war_die_1_left.bmp",
+    "..\\assets\\guerrero\\guerrero_war_die_2_left.bmp"};
+  const char *dieR[2] = {
+    "..\\assets\\guerrero\\guerrero_war_die_1_right.bmp",
+    "..\\assets\\guerrero\\guerrero_war_die_2_right.bmp"};
 	for (int i = 0; i < 2; i++) {
-		if (!gSprGuerrero.death[0][i]) gSprGuerrero.death[0][i] = cargarBmp(dieL1[i], dieL2[i], 64, 64);
-		if (!gSprGuerrero.death[1][i]) gSprGuerrero.death[1][i] = cargarBmp(dieR1[i], dieR2[i], 64, 64);
+    if (!gSprGuerrero.death[0][i]) gSprGuerrero.death[0][i] = cargarBmp(dieL[i], NULL, 64, 64);
+    if (!gSprGuerrero.death[1][i]) gSprGuerrero.death[1][i] = cargarBmp(dieR[i], NULL, 64, 64);
 	}
 }
 
 static void cargarCaballeroAnim(void) {
 	// Idle
-	const char *idleL1 = "..\\assets\\caballero\\caballero_war_stand_left.bmp";
-	const char *idleR1 = "..\\assets\\caballero\\caballero_war_stand_right.bmp";
-	const char *idleL2 = "assets/caballero/caballero_war_stand_left.bmp";
-	const char *idleR2 = "assets/caballero/caballero_war_stand_right.bmp";
-	if (!gSprCaballero.idle[0]) gSprCaballero.idle[0] = cargarBmp(idleL1, idleL2, 64, 64);
-	if (!gSprCaballero.idle[1]) gSprCaballero.idle[1] = cargarBmp(idleR1, idleR2, 64, 64);
+  const char *idleL = "..\\assets\\caballero\\caballero_war_stand_left.bmp";
+  const char *idleR = "..\\assets\\caballero\\caballero_war_stand_right.bmp";
+  if (!gSprCaballero.idle[0]) gSprCaballero.idle[0] = cargarBmp(idleL, NULL, 64, 64);
+  if (!gSprCaballero.idle[1]) gSprCaballero.idle[1] = cargarBmp(idleR, NULL, 64, 64);
 
 	// Attack (3 frames)
-	const char *atkL1[3] = {
-		"..\\assets\\caballero\\caballero_war_move_1_left.bmp",
-		"..\\assets\\caballero\\caballero_war_move_2_left.bmp",
-		"..\\assets\\caballero\\caballero_war_move_3_left.bmp"};
-	const char *atkR1[3] = {
-		"..\\assets\\caballero\\caballero_war_move_1_right.bmp",
-		"..\\assets\\caballero\\caballero_war_move_2_right.bmp",
-		"..\\assets\\caballero\\caballero_war_move_3_right.bmp"};
-	const char *atkL2[3] = {
-		"assets/caballero/caballero_war_move_1_left.bmp",
-		"assets/caballero/caballero_war_move_2_left.bmp",
-		"assets/caballero/caballero_war_move_3_left.bmp"};
-	const char *atkR2[3] = {
-		"assets/caballero/caballero_war_move_1_right.bmp",
-		"assets/caballero/caballero_war_move_2_right.bmp",
-		"assets/caballero/caballero_war_move_3_right.bmp"};
+  const char *atkL[3] = {
+    "..\\assets\\caballero\\caballero_war_move_1_left.bmp",
+    "..\\assets\\caballero\\caballero_war_move_2_left.bmp",
+    "..\\assets\\caballero\\caballero_war_move_3_left.bmp"};
+  const char *atkR[3] = {
+    "..\\assets\\caballero\\caballero_war_move_1_right.bmp",
+    "..\\assets\\caballero\\caballero_war_move_2_right.bmp",
+    "..\\assets\\caballero\\caballero_war_move_3_right.bmp"};
 	for (int i = 0; i < 3; i++) {
-		if (!gSprCaballero.attack[0][i]) gSprCaballero.attack[0][i] = cargarBmp(atkL1[i], atkL2[i], 64, 64);
-		if (!gSprCaballero.attack[1][i]) gSprCaballero.attack[1][i] = cargarBmp(atkR1[i], atkR2[i], 64, 64);
+    if (!gSprCaballero.attack[0][i]) gSprCaballero.attack[0][i] = cargarBmp(atkL[i], NULL, 64, 64);
+    if (!gSprCaballero.attack[1][i]) gSprCaballero.attack[1][i] = cargarBmp(atkR[i], NULL, 64, 64);
 	}
 
 	// Death (2 frames)
-	const char *dieL1[2] = {
-		"..\\assets\\caballero\\caballero_die_1_left.bmp",
-		"..\\assets\\caballero\\caballero_die_2_left.bmp"};
-	const char *dieR1[2] = {
-		"..\\assets\\caballero\\caballero_die_1_right.bmp",
-		"..\\assets\\caballero\\caballero_die_2_right.bmp"};
-	const char *dieL2[2] = {
-		"assets/caballero/caballero_die_1_left.bmp",
-		"assets/caballero/caballero_die_2_left.bmp"};
-	const char *dieR2[2] = {
-		"assets/caballero/caballero_die_1_right.bmp",
-		"assets/caballero/caballero_die_2_right.bmp"};
+  const char *dieL[2] = {
+    "..\\assets\\caballero\\caballero_die_1_left.bmp",
+    "..\\assets\\caballero\\caballero_die_2_left.bmp"};
+  const char *dieR[2] = {
+    "..\\assets\\caballero\\caballero_die_1_right.bmp",
+    "..\\assets\\caballero\\caballero_die_2_right.bmp"};
 	for (int i = 0; i < 2; i++) {
-		if (!gSprCaballero.death[0][i]) gSprCaballero.death[0][i] = cargarBmp(dieL1[i], dieL2[i], 64, 64);
-		if (!gSprCaballero.death[1][i]) gSprCaballero.death[1][i] = cargarBmp(dieR1[i], dieR2[i], 64, 64);
+    if (!gSprCaballero.death[0][i]) gSprCaballero.death[0][i] = cargarBmp(dieL[i], NULL, 64, 64);
+    if (!gSprCaballero.death[1][i]) gSprCaballero.death[1][i] = cargarBmp(dieR[i], NULL, 64, 64);
 	}
 }
 
 static void cargarFondoIsla(int islaDestino) {
   if (hFondoIsla)
     return;
-  char ruta1[MAX_PATH];
-  char ruta2[MAX_PATH];
-  char ruta3[MAX_PATH];
-  snprintf(ruta1, sizeof(ruta1), "..\\assets\\islas\\isla%d.bmp", islaDestino);
-  snprintf(ruta2, sizeof(ruta2), "assets/islas/isla%d.bmp", islaDestino);
-  snprintf(ruta3, sizeof(ruta3), ".\\assets\\islas\\isla%d.bmp", islaDestino);
-  hFondoIsla = cargarBmp(ruta1, ruta2, 0, 0);
-  if (!hFondoIsla)
-    hFondoIsla = cargarBmp(ruta3, NULL, 0, 0);
-  printf("[BATALLA] Carga fondo isla %d: %s %s %s -> %s\n", islaDestino, ruta1,
-         ruta2, ruta3, hFondoIsla ? "OK" : "FAIL");
+  char ruta[MAX_PATH];
+  snprintf(ruta, sizeof(ruta), "..\\assets\\islas\\isla%d.bmp", islaDestino);
+  hFondoIsla = cargarBmp(ruta, NULL, 0, 0);
+  printf("[BATALLA] Carga fondo isla %d: %s -> %s\n", islaDestino, ruta,
+         hFondoIsla ? "OK" : "FAIL");
 }
 
 static void statsPorTipo(TipoUnidad t, int *hp, int *danio, int *def, int *crit) {
