@@ -1287,6 +1287,44 @@ static void dibujarBarraVida(HDC hdc, int x, int y, int vida, int vidaMax,
   DeleteObject(hPen);
 }
 
+// Variante con color configurable para la barra de vida (usado por enemigos)
+static void dibujarBarraVidaColor(HDC hdc, int x, int y, int vida, int vidaMax,
+                                  float zoom, COLORREF colorVida) {
+  if (vidaMax <= 0)
+    return;
+
+  int anchoBarra = (int)(50 * zoom);
+  int altoBarra = (int)(5 * zoom);
+
+  int barraX = x + (int)((64 * zoom - anchoBarra) / 2);
+  int barraY = y - (int)(8 * zoom);
+
+  HBRUSH hBrushFondo = CreateSolidBrush(RGB(50, 0, 0));
+  RECT rFondo = {barraX, barraY, barraX + anchoBarra, barraY + altoBarra};
+  FillRect(hdc, &rFondo, hBrushFondo);
+  DeleteObject(hBrushFondo);
+
+  float porcentaje = (float)vida / (float)vidaMax;
+  if (porcentaje < 0) porcentaje = 0;
+  if (porcentaje > 1) porcentaje = 1;
+
+  int anchoVida = (int)(anchoBarra * porcentaje);
+  if (anchoVida > 0) {
+    HBRUSH hBrushVida = CreateSolidBrush(colorVida);
+    RECT rVida = {barraX, barraY, barraX + anchoVida, barraY + altoBarra};
+    FillRect(hdc, &rVida, hBrushVida);
+    DeleteObject(hBrushVida);
+  }
+
+  HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+  HPEN oldPen = (HPEN)SelectObject(hdc, hPen);
+  HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
+  Rectangle(hdc, barraX, barraY, barraX + anchoBarra, barraY + altoBarra);
+  SelectObject(hdc, oldPen);
+  SelectObject(hdc, oldBrush);
+  DeleteObject(hPen);
+}
+
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                   struct MenuCompra *menu, MenuEmbarque *menuEmb,
                   int highlightFila, int highlightCol) {
@@ -1619,6 +1657,8 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                 bool atacando = (idx >= 0 && idx < 8) ? ataqueEnemigos[idx] : false;
                 dibujarUnidadCombat(hdcBuffer, hdcSprites, e, cam, anchoP, altoP,
                   true, atacando, frameAtaque);
+                // Barra de vida enemiga (rojo)
+                dibujarBarraVidaColor(hdcBuffer, pantX, pantY, e->vida, e->vidaMax, cam.zoom, RGB(200, 60, 60));
                 HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
                 HPEN rojo = CreatePen(PS_SOLID, 2, RGB(200, 60, 60));
                 SelectObject(hdcBuffer, nullBrush);

@@ -257,6 +257,9 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
     j->obreros[i].rutaCeldas = NULL;
     j->obreros[i].tipo = TIPO_OBRERO; // Asignar tipo
     j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
+    // Inicializar vida para mostrar barra de salud desde el inicio
+    j->obreros[i].vidaMax = OBRERO_VIDA_MAX;
+    j->obreros[i].vida = OBRERO_VIDA_MAX;
   }
 
   // No generar guerreros ni caballeros al inicio
