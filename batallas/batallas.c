@@ -13,21 +13,17 @@
 #define BATTLE_ROWS          8
 #define BATTLE_STEP_PIXELS   36.0f
 #define BATTLE_RANGE_PIXELS  60.0f
-#define BATTLE_ANIM_STEP_SEC 1.00f
+#define BATTLE_ANIM_STEP_SEC 0.25f
 
 // Rutas locales de sprites (reutilizamos los mismos BMP con carga propia)
 static const char *kCaballeroRutas[4] = {
 	"..\\assets\\caballero\\caballero_front.bmp",
-	"..\\assets\\caballero\\caballero_back.bmp",
-	"..\\assets\\caballero\\caballero_walkLeft3.bmp",
-	"..\\assets\\caballero\\caballero_walkRight3.bmp"
+	"..\\assets\\caballero\\caballero_back.bmp"
 };
 
 static const char *kCaballeroRutasAlt[4] = {
 	"assets/caballero/caballero_front.bmp",
-	"assets/caballero/caballero_back.bmp",
-	"assets/caballero/caballero_walkLeft3.bmp",
-	"assets/caballero/caballero_walkRight3.bmp"
+	"assets/caballero/caballero_back.bmp"
 };
 
 static const char *kGuerreroRutas[4] = {
@@ -131,65 +127,106 @@ static void cargarSpriteDir(HBITMAP *dst, const char *pathL, const char *pathR) 
 }
 
 static void cargarGuerreroAnim(void) {
-	cargarSpriteDir(gSprGuerrero.idle,
-									"..\\assets\\guerrero\\guerrero_war_stand_left.bmp",
-									"..\\assets\\guerrero\\guerrero_war_stand_right.bmp");
-	cargarSpriteDir(gSprGuerrero.walk,
-									"..\\assets\\guerrero\\guerrero_war_walk_left.bmp",
-									"..\\assets\\guerrero\\guerrero_war_walk_right.bmp");
-	const char *atkL[3] = {
+	// Idle
+	const char *idleL1 = "..\\assets\\guerrero\\guerrero_war_stand_left.bmp";
+	const char *idleR1 = "..\\assets\\guerrero\\guerrero_war_stand_right.bmp";
+	const char *idleL2 = "assets/guerrero/guerrero_war_stand_left.bmp";
+	const char *idleR2 = "assets/guerrero/guerrero_war_stand_right.bmp";
+	if (!gSprGuerrero.idle[0]) gSprGuerrero.idle[0] = cargarBmp(idleL1, idleL2, 64, 64);
+	if (!gSprGuerrero.idle[1]) gSprGuerrero.idle[1] = cargarBmp(idleR1, idleR2, 64, 64);
+
+	// Walk
+	const char *walkL1 = "..\\assets\\guerrero\\guerrero_war_walk_left.bmp";
+	const char *walkR1 = "..\\assets\\guerrero\\guerrero_war_walk_right.bmp";
+	const char *walkL2 = "assets/guerrero/guerrero_war_walk_left.bmp";
+	const char *walkR2 = "assets/guerrero/guerrero_war_walk_right.bmp";
+	if (!gSprGuerrero.walk[0]) gSprGuerrero.walk[0] = cargarBmp(walkL1, walkL2, 64, 64);
+	if (!gSprGuerrero.walk[1]) gSprGuerrero.walk[1] = cargarBmp(walkR1, walkR2, 64, 64);
+
+	// Attack (2 frames)
+	const char *atkL1[2] = {
 		"..\\assets\\guerrero\\guerrero_war_move_1_left.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_2_left.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_3_left.bmp"};
-	const char *atkR[3] = {
+		"..\\assets\\guerrero\\guerrero_war_move_2_left.bmp"};
+	const char *atkR1[2] = {
 		"..\\assets\\guerrero\\guerrero_war_move_1_right.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_2_right.bmp",
-		"..\\assets\\guerrero\\guerrero_war_move_3_right.bmp"};
-	for (int i = 0; i < 3; i++) {
-		if (!gSprGuerrero.attack[0][i]) gSprGuerrero.attack[0][i] = cargarBmp(atkL[i], NULL, 64, 64);
-		if (!gSprGuerrero.attack[1][i]) gSprGuerrero.attack[1][i] = cargarBmp(atkR[i], NULL, 64, 64);
+		"..\\assets\\guerrero\\guerrero_war_move_2_right.bmp"};
+	const char *atkL2[2] = {
+		"assets/guerrero/guerrero_war_move_1_left.bmp",
+		"assets/guerrero/guerrero_war_move_2_left.bmp"};
+	const char *atkR2[2] = {
+		"assets/guerrero/guerrero_war_move_1_right.bmp",
+		"assets/guerrero/guerrero_war_move_2_right.bmp"};
+	for (int i = 0; i < 2; i++) {
+		if (!gSprGuerrero.attack[0][i]) gSprGuerrero.attack[0][i] = cargarBmp(atkL1[i], atkL2[i], 64, 64);
+		if (!gSprGuerrero.attack[1][i]) gSprGuerrero.attack[1][i] = cargarBmp(atkR1[i], atkR2[i], 64, 64);
 	}
-	const char *dieL[2] = {
+
+	// Death (2 frames)
+	const char *dieL1[2] = {
 		"..\\assets\\guerrero\\guerrero_war_die_1_left.bmp",
 		"..\\assets\\guerrero\\guerrero_war_die_2_left.bmp"};
-	const char *dieR[2] = {
+	const char *dieR1[2] = {
 		"..\\assets\\guerrero\\guerrero_war_die_1_right.bmp",
 		"..\\assets\\guerrero\\guerrero_war_die_2_right.bmp"};
+	const char *dieL2[2] = {
+		"assets/guerrero/guerrero_war_die_1_left.bmp",
+		"assets/guerrero/guerrero_war_die_2_left.bmp"};
+	const char *dieR2[2] = {
+		"assets/guerrero/guerrero_war_die_1_right.bmp",
+		"assets/guerrero/guerrero_war_die_2_right.bmp"};
 	for (int i = 0; i < 2; i++) {
-		if (!gSprGuerrero.death[0][i]) gSprGuerrero.death[0][i] = cargarBmp(dieL[i], NULL, 64, 64);
-		if (!gSprGuerrero.death[1][i]) gSprGuerrero.death[1][i] = cargarBmp(dieR[i], NULL, 64, 64);
+		if (!gSprGuerrero.death[0][i]) gSprGuerrero.death[0][i] = cargarBmp(dieL1[i], dieL2[i], 64, 64);
+		if (!gSprGuerrero.death[1][i]) gSprGuerrero.death[1][i] = cargarBmp(dieR1[i], dieR2[i], 64, 64);
 	}
 }
 
 static void cargarCaballeroAnim(void) {
-	cargarSpriteDir(gSprCaballero.idle,
-									"..\\assets\\caballero\\caballero_war_stand_left.bmp",
-									"..\\assets\\caballero\\caballero_war_stand_right.bmp");
-	// El usuario indicó usar walk de guerrero para movimiento de caballero
-	cargarSpriteDir(gSprCaballero.walk,
-									"..\\assets\\guerrero\\guerrero_war_walk_left.bmp",
-									"..\\assets\\guerrero\\guerrero_war_walk_right.bmp");
-	const char *atkL[3] = {
+	// Idle
+	const char *idleL1 = "..\\assets\\caballero\\caballero_war_stand_left.bmp";
+	const char *idleR1 = "..\\assets\\caballero\\caballero_war_stand_right.bmp";
+	const char *idleL2 = "assets/caballero/caballero_war_stand_left.bmp";
+	const char *idleR2 = "assets/caballero/caballero_war_stand_right.bmp";
+	if (!gSprCaballero.idle[0]) gSprCaballero.idle[0] = cargarBmp(idleL1, idleL2, 64, 64);
+	if (!gSprCaballero.idle[1]) gSprCaballero.idle[1] = cargarBmp(idleR1, idleR2, 64, 64);
+
+	// Attack (3 frames)
+	const char *atkL1[3] = {
 		"..\\assets\\caballero\\caballero_war_move_1_left.bmp",
 		"..\\assets\\caballero\\caballero_war_move_2_left.bmp",
 		"..\\assets\\caballero\\caballero_war_move_3_left.bmp"};
-	const char *atkR[3] = {
+	const char *atkR1[3] = {
 		"..\\assets\\caballero\\caballero_war_move_1_right.bmp",
 		"..\\assets\\caballero\\caballero_war_move_2_right.bmp",
 		"..\\assets\\caballero\\caballero_war_move_3_right.bmp"};
+	const char *atkL2[3] = {
+		"assets/caballero/caballero_war_move_1_left.bmp",
+		"assets/caballero/caballero_war_move_2_left.bmp",
+		"assets/caballero/caballero_war_move_3_left.bmp"};
+	const char *atkR2[3] = {
+		"assets/caballero/caballero_war_move_1_right.bmp",
+		"assets/caballero/caballero_war_move_2_right.bmp",
+		"assets/caballero/caballero_war_move_3_right.bmp"};
 	for (int i = 0; i < 3; i++) {
-		if (!gSprCaballero.attack[0][i]) gSprCaballero.attack[0][i] = cargarBmp(atkL[i], NULL, 64, 64);
-		if (!gSprCaballero.attack[1][i]) gSprCaballero.attack[1][i] = cargarBmp(atkR[i], NULL, 64, 64);
+		if (!gSprCaballero.attack[0][i]) gSprCaballero.attack[0][i] = cargarBmp(atkL1[i], atkL2[i], 64, 64);
+		if (!gSprCaballero.attack[1][i]) gSprCaballero.attack[1][i] = cargarBmp(atkR1[i], atkR2[i], 64, 64);
 	}
-	const char *dieL[2] = {
+
+	// Death (2 frames)
+	const char *dieL1[2] = {
 		"..\\assets\\caballero\\caballero_die_1_left.bmp",
 		"..\\assets\\caballero\\caballero_die_2_left.bmp"};
-	const char *dieR[2] = {
+	const char *dieR1[2] = {
 		"..\\assets\\caballero\\caballero_die_1_right.bmp",
 		"..\\assets\\caballero\\caballero_die_2_right.bmp"};
+	const char *dieL2[2] = {
+		"assets/caballero/caballero_die_1_left.bmp",
+		"assets/caballero/caballero_die_2_left.bmp"};
+	const char *dieR2[2] = {
+		"assets/caballero/caballero_die_1_right.bmp",
+		"assets/caballero/caballero_die_2_right.bmp"};
 	for (int i = 0; i < 2; i++) {
-		if (!gSprCaballero.death[0][i]) gSprCaballero.death[0][i] = cargarBmp(dieL[i], NULL, 64, 64);
-		if (!gSprCaballero.death[1][i]) gSprCaballero.death[1][i] = cargarBmp(dieR[i], NULL, 64, 64);
+		if (!gSprCaballero.death[0][i]) gSprCaballero.death[0][i] = cargarBmp(dieL1[i], dieL2[i], 64, 64);
+		if (!gSprCaballero.death[1][i]) gSprCaballero.death[1][i] = cargarBmp(dieR1[i], dieR2[i], 64, 64);
 	}
 }
 
@@ -210,11 +247,27 @@ static void statsPorTipo(TipoUnidad t, int *hp, int *danio, int *def, int *crit)
 	switch (t) {
 	case TIPO_CABALLERO:
 		*hp = 150; *danio = 35; *def = 25; *crit = 15; return;
+	case TIPO_CABALLERO_SIN_ESCUDO:
+		// Valores alineados con recursos.h
+		*hp = 100; *danio = 35; *def = 5; *crit = 20; return;
 	case TIPO_GUERRERO:
 		*hp = 120; *danio = 30; *def = 20; *crit = 10; return;
 	case TIPO_OBRERO: // Obrero no es tropa de combate, pero lo soportamos con stats bajos
 	default:
 		*hp = 60; *danio = 8; *def = 2; *crit = 0; return;
+	}
+}
+
+static SpriteSet *spriteSetPorTipo(TipoUnidad t) {
+	switch (t) {
+	case TIPO_GUERRERO:
+		return &gSprGuerrero;
+	case TIPO_CABALLERO:
+		return &gSprCaballero;
+	case TIPO_CABALLERO_SIN_ESCUDO:
+		return &gSprCaballero;
+	default:
+		return &gSprCaballero; // caballero y variantes comparten animaciones
 	}
 }
 
@@ -242,6 +295,14 @@ static float dist2(const BattleUnit *a, const BattleUnit *b) {
 	float dx = a->x - b->x;
 	float dy = a->y - b->y;
 	return dx * dx + dy * dy;
+}
+
+static int cmpBattleUnitPtr(const void *lhs, const void *rhs) {
+	const BattleUnit *a = *(const BattleUnit *const *)lhs;
+	const BattleUnit *b = *(const BattleUnit *const *)rhs;
+	if (a->y < b->y) return -1;
+	if (a->y > b->y) return 1;
+	return (a->x < b->x) ? -1 : 1;
 }
 static void marcarBajasAliadas(void) {
 	if (!gBatalla.jugador) return;
@@ -355,6 +416,7 @@ static void resolverTick(void) {
 	for (int a = 0; a < gBatalla.numAliados; a++) {
 		BattleUnit *u = &gBatalla.aliados[a];
 		if (!u->vivo) continue;
+		AnimState prevAnim = u->animState;
 		u->animState = ANIM_IDLE;
 		u->animFrameMax = 1;
 
@@ -381,7 +443,7 @@ static void resolverTick(void) {
 			u->animFrameMax = 1; // se ajusta en render con walk (loop en dibujar)
 		} else {
 			u->animState = ANIM_ATTACK;
-			u->animFrame = 0;
+			if (prevAnim != ANIM_ATTACK) u->animFrame = 0; // solo reiniciar al entrar
 			u->animFrameMax = 3;
 			int raw = u->danio;
 			if ((rand() % 100) < u->crit) raw *= 2;
@@ -398,6 +460,7 @@ static void resolverTick(void) {
 	for (int e = 0; e < gBatalla.numEnemigos; e++) {
 		BattleUnit *u = &gBatalla.enemigos[e];
 		if (!u->vivo) continue;
+		AnimState prevAnim = u->animState;
 		u->animState = ANIM_IDLE;
 		u->animFrameMax = 1;
 
@@ -423,7 +486,7 @@ static void resolverTick(void) {
 			u->animFrameMax = 1;
 		} else {
 			u->animState = ANIM_ATTACK;
-			u->animFrame = 0;
+			if (prevAnim != ANIM_ATTACK) u->animFrame = 0;
 			u->animFrameMax = 3;
 			int raw = u->danio;
 			if ((rand() % 100) < u->crit) raw *= 2;
@@ -438,6 +501,54 @@ static void resolverTick(void) {
 	}
 
 	// Evaluar fin de batalla
+
+	// Ajustar posiciones para evitar solapamiento de celdas
+	{
+		BattleUnit *lista[BATTLE_MAX_UNITS * 2];
+		int n = 0;
+		for (int i = 0; i < gBatalla.numAliados; i++) {
+			if (gBatalla.aliados[i].vivo) lista[n++] = &gBatalla.aliados[i];
+		}
+		for (int i = 0; i < gBatalla.numEnemigos; i++) {
+			if (gBatalla.enemigos[i].vivo) lista[n++] = &gBatalla.enemigos[i];
+		}
+
+		const float minDist = BATTLE_TILE * 1.1f; // espacio completo de celda
+		const float minDist2 = minDist * minDist;
+		const float minX = 40.0f, minY = 40.0f;
+		const float maxX = (BATTLE_COLS * BATTLE_TILE) - 40.0f;
+		const float maxY = (BATTLE_ROWS * BATTLE_TILE) - 40.0f;
+
+		// Varias iteraciones para resolver empujes acumulados
+		for (int iter = 0; iter < 6; iter++) {
+			for (int i = 0; i < n; i++) {
+				for (int j = i + 1; j < n; j++) {
+					float dx = lista[j]->x - lista[i]->x;
+					float dy = lista[j]->y - lista[i]->y;
+					float d2 = dx * dx + dy * dy;
+					if (d2 < minDist2) {
+						float dist = sqrtf(d2);
+						if (dist < 0.001f) { dist = 0.001f; dx = 0.001f; dy = 0.0f; }
+						float overlap = (minDist - dist) * 0.5f;
+						float nx = dx / dist;
+						float ny = dy / dist;
+						lista[i]->x -= nx * overlap;
+						lista[i]->y -= ny * overlap;
+						lista[j]->x += nx * overlap;
+						lista[j]->y += ny * overlap;
+					}
+				}
+			}
+			// Clamp al área de batalla
+			for (int k = 0; k < n; k++) {
+				if (lista[k]->x < minX) lista[k]->x = minX;
+				if (lista[k]->x > maxX) lista[k]->x = maxX;
+				if (lista[k]->y < minY) lista[k]->y = minY;
+				if (lista[k]->y > maxY) lista[k]->y = maxY;
+			}
+		}
+	}
+
 	bool algunAliado = false, algunEnemigo = false;
 	for (int a = 0; a < gBatalla.numAliados; a++) if (gBatalla.aliados[a].vivo) { algunAliado = true; break; }
 	for (int e = 0; e < gBatalla.numEnemigos; e++) if (gBatalla.enemigos[e].vivo) { algunEnemigo = true; break; }
@@ -533,13 +644,14 @@ void batallasActualizar(float dt) {
 
 static void dibujarUnidad(HDC hdc, BattleUnit *u, Camara cam) {
 	if (!u->vivo) return;
-	SpriteSet *spr = (u->tipo == TIPO_CABALLERO) ? &gSprCaballero : &gSprGuerrero;
+	SpriteSet *spr = spriteSetPorTipo(u->tipo);
 	int dirIdx = dirIndex(u->dir);
 	HBITMAP frame = NULL;
 
 	switch (u->animState) {
 	case ANIM_MOVE:
-		frame = spr->walk[dirIdx];
+		// Para caballero no hay walk: usar idle si falta
+		frame = spr->walk[dirIdx] ? spr->walk[dirIdx] : spr->idle[dirIdx];
 		break;
 	case ANIM_ATTACK:
 		frame = spr->attack[dirIdx][u->animFrame % 3];
@@ -626,8 +738,16 @@ void batallasRender(HDC hdc, RECT rect, Camara cam) {
 		DeleteObject(fondo);
 	}
 
-	for (int i = 0; i < gBatalla.numAliados; i++) dibujarUnidad(hdc, &gBatalla.aliados[i], cam);
-	for (int i = 0; i < gBatalla.numEnemigos; i++) dibujarUnidad(hdc, &gBatalla.enemigos[i], cam);
+	BattleUnit *ordenados[BATTLE_MAX_UNITS * 2];
+	int n = 0;
+	for (int i = 0; i < gBatalla.numAliados; i++) {
+		if (gBatalla.aliados[i].vivo) ordenados[n++] = &gBatalla.aliados[i];
+	}
+	for (int i = 0; i < gBatalla.numEnemigos; i++) {
+		if (gBatalla.enemigos[i].vivo) ordenados[n++] = &gBatalla.enemigos[i];
+	}
+	qsort(ordenados, n, sizeof(BattleUnit *), cmpBattleUnitPtr);
+	for (int i = 0; i < n; i++) dibujarUnidad(hdc, ordenados[i], cam);
 }
 
 bool batallasObtenerResultado(BatallaResultado *outResultado, int *outIslaDestino) {
@@ -637,4 +757,3 @@ bool batallasObtenerResultado(BatallaResultado *outResultado, int *outIslaDestin
 	gBatalla.resultadoPendiente = BATALLA_RESULTADO_NONE;
 	return true;
 }
-

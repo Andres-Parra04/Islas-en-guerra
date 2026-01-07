@@ -1400,7 +1400,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
   {
     static ULONGLONG sUltimoAtkMs = 0;
     ULONGLONG ahora = GetTickCount64();
-    if (sUltimoAtkMs == 0 || (ahora > sUltimoAtkMs && (ahora - sUltimoAtkMs) >= 1000ULL)) {
+    if (sUltimoAtkMs == 0 || (ahora > sUltimoAtkMs && (ahora - sUltimoAtkMs) >= 150ULL)) {
       frameAtaque = (frameAtaque + 1) % 6;
       sUltimoAtkMs = ahora;
     }
@@ -1542,9 +1542,6 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                                                        : false;
           dibujarUnidadCombat(hdcBuffer, hdcSprites, c, cam, anchoP, altoP,
                               false, atacando, frameAtaque);
-          SelectObject(hdcSprites, hCaballeroBmp[c->dir]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         64, 64, RGB(255, 255, 255));
 
           // Dibujar barra de vida
           dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
@@ -1577,8 +1574,6 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
         if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
             pantY < altoP) {
           SelectObject(hdcSprites, hCaballeroSinEscudoBmp[c->dir]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         64, 64, RGB(255, 255, 255));
 
           // Dibujar barra de vida
           dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
@@ -1619,9 +1614,6 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                                                    : false;
           dibujarUnidadCombat(hdcBuffer, hdcSprites, g, cam, anchoP, altoP,
                               false, atacando, frameAtaque);
-          SelectObject(hdcSprites, hGuerreroBmp[g->dir]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         64, 64, RGB(255, 255, 255));
 
           // Dibujar barra de vida
           dibujarBarraVida(hdcBuffer, pantX, pantY, g->vida, g->vidaMax,

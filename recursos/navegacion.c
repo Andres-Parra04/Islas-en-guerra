@@ -839,6 +839,7 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
           tropa->destinoX = tropa->x;
           tropa->destinoY = tropa->y;
           tropa->moviendose = false;
+          tropa->seleccionado = true; // mostrar círculo al llegar a la isla
 
           usados[colocadas][0] = cx;
           usados[colocadas][1] = cy;
