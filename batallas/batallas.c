@@ -210,14 +210,16 @@ void batallasActualizar(struct Jugador *j) {
 	// 3) Chequear victoria/derrota
 	int vivosEnemigos = 0; for (int e = 0; e < numEnemigos; e++) if (enemigos[e].vida > 0 && enemigos[e].x >= 0) vivosEnemigos++;
 	int vivosAliados = 0; for (int a = 0; a < nAliados; a++) if (aliados[a] && aliados[a]->vida > 0 && aliados[a]->x >= 0) vivosAliados++;
-	if (vivosAliados > 0) sHuboAliadoEnBatalla = true;
+	int tropasEmbarcadas = j ? j->barco.numTropas : 0;
+	int aliadosPresentes = vivosAliados + tropasEmbarcadas;
+	if (aliadosPresentes > 0) sHuboAliadoEnBatalla = true;
 
 	if (vivosEnemigos == 0) {
 		// Victoria
 		MessageBox(NULL, "Has conquistado la isla", "Batalla", MB_OK | MB_ICONINFORMATION);
 		sHuboAliadoEnBatalla = false;
 	}
-	if (vivosAliados == 0 && vivosEnemigos > 0 && sHuboAliadoEnBatalla) {
+	if (vivosAliados == 0 && vivosEnemigos > 0 && sHuboAliadoEnBatalla && tropasEmbarcadas == 0) {
 		// Derrota: regresar a isla inicial primero, luego mostrar mensaje
 		extern bool viajarAIsla(struct Jugador * j, int islaDestino);
 		extern int navegacionObtenerIslaInicial(void);
