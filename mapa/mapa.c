@@ -1646,7 +1646,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
   bool ataqueAliados[12] = {false};
   bool ataqueEnemigos[8] = {false};
-  const float rangoAtaque = 60.0f;
+  const float rangoAtaque = RANGO_GOLPE_MELEE; // compartido con batallas
   const float rangoAtaque2 = rangoAtaque * rangoAtaque;
   if (enemigosActivos && enemigosActivosCount > 0) {
     for (int a = 0; a < numAliadosLista; a++) {
