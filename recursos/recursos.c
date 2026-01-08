@@ -245,7 +245,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   j->Piedra = 100;
   j->Hierro = 0;
   j->CantidadEspadas = 0;
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     j->obreros[i].x = 900.0f + (i * 64.0f);
     j->obreros[i].y = 900.0f;
     j->obreros[i].destinoX = j->obreros[i].x;
@@ -263,7 +263,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   }
 
   // No generar guerreros ni caballeros al inicio
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     j->caballeros[i].x = -1000.0f;
     j->caballeros[i].y = -1000.0f;
     j->caballeros[i].destinoX = j->caballeros[i].x;
@@ -276,7 +276,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
     j->caballeros[i].tipo = TIPO_CABALLERO;
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     j->caballerosSinEscudo[i].x = -1000.0f;
     j->caballerosSinEscudo[i].y = -1000.0f;
     j->caballerosSinEscudo[i].destinoX = j->caballerosSinEscudo[i].x;
@@ -289,7 +289,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
     j->caballerosSinEscudo[i].tipo = TIPO_CABALLERO_SIN_ESCUDO;
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     j->guerreros[i].x = -1000.0f;
     j->guerreros[i].y = -1000.0f;
     j->guerreros[i].destinoX = j->guerreros[i].x;
@@ -323,7 +323,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   printf("[DEBUG] Registrando objetos en mapaObjetos...\n");
 
   // Registrar obreros
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
   }
   printf("[DEBUG] %d obreros registrados en matriz\n", 6);
@@ -331,7 +331,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   printf("[DEBUG] %d caballeros registrados en matriz\n", 4);
 
   // Registrar caballeros sin escudo
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     if (j->caballerosSinEscudo[i].x >= 0 && j->caballerosSinEscudo[i].y >= 0) {
       mapaRegistrarObjeto(j->caballerosSinEscudo[i].x,
                           j->caballerosSinEscudo[i].y, SIMBOLO_CABALLERO);
@@ -340,7 +340,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   printf("[DEBUG] %d caballeros sin escudo registrados en matriz\n", 4);
 
   // Registrar guerreros
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     if (j->guerreros[i].x >= 0 && j->guerreros[i].y >= 0) {
       mapaRegistrarObjeto(j->guerreros[i].x, j->guerreros[i].y,
                           SIMBOLO_GUERRERO);
@@ -358,7 +358,7 @@ void actualizarPersonajes(struct Jugador *j) {
     return;
 
   // Obreros
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     Unidad *o = &j->obreros[i];
 
     // 1. Sincronización inicial de la huella en la matriz (2x2 celdas)
@@ -501,7 +501,7 @@ void actualizarPersonajes(struct Jugador *j) {
   // ================================================================
   // ACTUALIZAR CABALLEROS (misma lógica)
   // ================================================================
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     Unidad *u = &j->caballeros[i];
 
     // Misma lógica que obreros
@@ -610,7 +610,7 @@ void actualizarPersonajes(struct Jugador *j) {
     }
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     Unidad *u = &j->caballerosSinEscudo[i];
     if (u->x < 0)
       continue;
@@ -661,7 +661,7 @@ void actualizarPersonajes(struct Jugador *j) {
     }
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     Unidad *u = &j->guerreros[i];
 
     // Sincronización inicial
@@ -893,7 +893,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   fflush(stdout);
 
   // Recorrer todas las unidades usando aritmética de punteros
-  for (Unidad *o = base; o < base + 6; o++) {
+  for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
     int idx = (int)(o - base);
     printf("[DEBUG] Obrero %d: seleccionado=%d\n", idx, o->seleccionado);
     fflush(stdout);
@@ -973,7 +973,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   }
 
   // --- COMANDAR CABALLEROS ---
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     Unidad *u = &j->caballeros[i];
     if (u->seleccionado && u->x >= 0) {
       // Buscar destino libre
@@ -1021,7 +1021,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   }
 
   // --- COMANDAR CABALLEROS SIN ESCUDO ---
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     Unidad *u = &j->caballerosSinEscudo[i];
     if (u->seleccionado && u->x >= 0) {
       // Buscar destino libre
@@ -1069,7 +1069,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   }
 
   // --- COMANDAR GUERREROS ---
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     Unidad *u = &j->guerreros[i];
     if (u->seleccionado && u->x >= 0) {
       // Buscar destino libre
@@ -1120,13 +1120,13 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
 }
 
 void rtsLiberarMovimientoJugador(struct Jugador *j) {
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < MAX_OBREROS; i++)
     obreroLiberarRuta(&j->obreros[i]);
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < MAX_CABALLEROS; i++)
     obreroLiberarRuta(&j->caballeros[i]);
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++)
     obreroLiberarRuta(&j->caballerosSinEscudo[i]);
-  for (int i = 0; i < 4; i++) // Guerreros tiene capacidad 4 segun struct
+  for (int i = 0; i < MAX_GUERREROS; i++) // Guerreros tiene capacidad 4 segun struct
     obreroLiberarRuta(&j->guerreros[i]);
 }
 
@@ -1136,7 +1136,7 @@ void rtsLiberarMovimientoJugador(struct Jugador *j) {
 
 bool entrenarObrero(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de obreros
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     // Si el obrero está fuera de pantalla, está libre
     if (j->obreros[i].x < 0) {
       // Obtener la posición del cuartel
@@ -1229,7 +1229,7 @@ bool entrenarObrero(struct Jugador *j, float x, float y) {
 
 bool entrenarCaballero(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de caballeros
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     // Si el caballero está fuera de pantalla, está libre
     if (j->caballeros[i].x < 0) {
       // Obtener la posición del cuartel
@@ -1322,7 +1322,7 @@ bool entrenarCaballero(struct Jugador *j, float x, float y) {
 
 bool entrenarGuerrero(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de guerreros
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     // Si el guerrero está fuera de pantalla, está libre
     if (j->guerreros[i].x < 0) {
       // Obtener la posición del cuartel
@@ -1495,7 +1495,7 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 
   // Buscar Caballeros (con y sin escudo)
   if (!alguienCerca) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < MAX_CABALLEROS; i++) {
       Unidad *u1 = &j->caballeros[i];
       Unidad *u2 = &j->caballerosSinEscudo[i];
       if ((u1->seleccionado && u1->x >= 0) ||
@@ -1515,14 +1515,14 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 
   if (alguienCerca) {
     // 3. Confirmación
-    int respuesta = MessageBox(NULL, "¿Quieres cazar esta vaca por comida?",
+    int respuesta = MessageBox(GetActiveWindow(), "¿Quieres cazar esta vaca por comida?",
                                "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
     if (respuesta == IDYES) {
       // Eliminar vaca de la matriz y del array
       mapaEliminarObjeto(vacaFila, vacaCol);
       j->Comida += 100;
-      MessageBox(NULL, "¡Vaca cazada! +100 Comida", "Recursos",
+      MessageBox(GetActiveWindow(), "¡Vaca cazada! +100 Comida", "Recursos",
                  MB_OK | MB_ICONINFORMATION);
     }
     return true; // Click manejado
@@ -1573,7 +1573,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     const float DISTANCIA_MAXIMA = 180.0f;
 
     // Buscar Obreros
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < MAX_OBREROS; i++) {
       Unidad *o = &j->obreros[i];
       if (!o->seleccionado)
         continue;
@@ -1587,7 +1587,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     }
 
     // Buscar Guerreros
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < MAX_GUERREROS; i++) {
       Unidad *u = &j->guerreros[i];
       if (!u->seleccionado || u->x < 0)
         continue;
@@ -1603,7 +1603,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     if (recortadorCercano != NULL) {
       // 3. Confirmación del usuario
       int respuesta =
-          MessageBox(NULL, "¿Quieres talar este arbol y obtener madera?",
+          MessageBox(GetActiveWindow(), "¿Quieres talar este arbol y obtener madera?",
                      "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
@@ -1634,7 +1634,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
   if (edificioContienePunto(e, mundoX, mundoY)) {
     // 1.5 Verificar si la mina está agotada
     if (e->agotada) {
-      MessageBox(NULL,
+      MessageBox(GetActiveWindow(),
                  "Esta mina está completamente agotada.\\n\\nYa no quedan "
                  "recursos por extraer.",
                  "Mina Agotada", MB_OK | MB_ICONWARNING);
@@ -1644,7 +1644,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
     // 2. Verificar si hay recursos acumulados
     if (e->oroAcumulado <= 0 && e->piedraAcumulada <= 0 &&
         e->hierroAcumulado <= 0) {
-      MessageBox(NULL, "La mina no tiene recursos acumulados aun.",
+      MessageBox(GetActiveWindow(), "La mina no tiene recursos acumulados aun.",
                  "Mina Vacia", MB_OK | MB_ICONINFORMATION);
       return true; // Click manejado
     }
@@ -1657,7 +1657,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
     float distMinima = 9999.0f;
     const float DISTANCIA_MAXIMA = 250.0f; // Mayor rango para edificios grandes
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < MAX_OBREROS; i++) {
       Unidad *o = &j->obreros[i];
       if (!o->seleccionado)
         continue;
@@ -1680,7 +1680,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
               e->oroAcumulado, e->piedraAcumulada, e->hierroAcumulado);
 
       int respuesta =
-          MessageBox(NULL, msg, "Recoger Recursos", MB_YESNO | MB_ICONQUESTION);
+          MessageBox(GetActiveWindow(), msg, "Recoger Recursos", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
         j->Oro += e->oroAcumulado;
@@ -1689,7 +1689,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
         e->oroAcumulado = 0;
         e->piedraAcumulada = 0;
         e->hierroAcumulado = 0;
-        MessageBox(NULL, "¡Recursos recogidos con exito!", "Recursos",
+        MessageBox(GetActiveWindow(), "¡Recursos recogidos con exito!", "Recursos",
                    MB_OK | MB_ICONINFORMATION);
       }
       return true;
@@ -1847,7 +1847,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
 
   // Contar obreros activos (posición x >= 0 y y >= 0)
   Unidad *ptrOb = j->obreros;
-  for (int i = 0; i < 6; i++, ptrOb++) {
+  for (int i = 0; i < MAX_OBREROS; i++, ptrOb++) {
     if (ptrOb->x >= 0 && ptrOb->y >= 0) {
       numObreros++;
     }
@@ -1855,7 +1855,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
 
   // Contar caballeros activos (posición x >= 0 y y >= 0)
   Unidad *ptrCab = j->caballeros;
-  for (int i = 0; i < 4; i++, ptrCab++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++, ptrCab++) {
     if (ptrCab->x >= 0 && ptrCab->y >= 0) {
       numCaballeros++;
     }
@@ -1864,7 +1864,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
   // Contar caballeros sin escudo activos
   int numCabSinEsc = 0;
   Unidad *ptrCS = j->caballerosSinEscudo;
-  for (int i = 0; i < 4; i++, ptrCS++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++, ptrCS++) {
     if (ptrCS->x >= 0 && ptrCS->y >= 0) {
       numCabSinEsc++;
     }
@@ -1872,7 +1872,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
 
   // Contar guerreros activos (posición x >= 0 y y >= 0)
   Unidad *ptrGue = j->guerreros;
-  for (int i = 0; i < 4; i++, ptrGue++) {
+  for (int i = 0; i < MAX_GUERREROS; i++, ptrGue++) {
     if (ptrGue->x >= 0 && ptrGue->y >= 0) {
       numGuerreros++;
     }
@@ -1894,7 +1894,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
 
 bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
                                 float distMax) {
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     Unidad *o = &j->obreros[i];
     if (!o->seleccionado)
       continue;
@@ -1917,7 +1917,7 @@ bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
     return true;
 
   // Caballeros
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     Unidad *u = &j->caballeros[i];
     if (!u->seleccionado)
       continue;
@@ -1929,7 +1929,7 @@ bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
   }
 
   // Caballeros sin escudo
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     Unidad *u = &j->caballerosSinEscudo[i];
     if (!u->seleccionado)
       continue;
@@ -1941,7 +1941,7 @@ bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
   }
 
   // Guerreros
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     Unidad *u = &j->guerreros[i];
     if (!u->seleccionado)
       continue;
@@ -1957,7 +1957,7 @@ bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
 
 bool entrenarCaballeroSinEscudo(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de caballeros sin escudo
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     if (j->caballerosSinEscudo[i].x < 0) {
       if (j->cuartel == NULL)
         return false;

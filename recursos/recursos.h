@@ -120,6 +120,12 @@ typedef struct {
   float velocidad;          // Velocidad de navegación (px/frame)
 } Barco;
 
+// --- CONSTANTES DE LIMITES ---
+#define MAX_OBREROS 100
+#define MAX_CABALLEROS 100
+#define MAX_CABALLEROS_SIN_ESCUDO 100
+#define MAX_GUERREROS 100
+
 struct Jugador {
   char Nombre[30];
   int Comida;
@@ -128,10 +134,10 @@ struct Jugador {
   int Piedra;
   int Hierro;
   struct Tropa *Ejercito;
-  Unidad obreros[6];             // Trabajadores
-  Unidad caballeros[4];          // Caballeros con escudo
-  Unidad caballerosSinEscudo[4]; // Caballeros sin escudo
-  Unidad guerreros[4];           // Guerreros
+  Unidad obreros[MAX_OBREROS];             // Trabajadores
+  Unidad caballeros[MAX_CABALLEROS];          // Caballeros con escudo
+  Unidad caballerosSinEscudo[MAX_CABALLEROS_SIN_ESCUDO]; // Caballeros sin escudo
+  Unidad guerreros[MAX_GUERREROS];           // Guerreros
   Barco barco;                   // Barco en la orilla (192x192px)
   int CantidadEspadas;
   int CantidadArqueros;

@@ -6,7 +6,7 @@
 void menuCompraInicializar(MenuCompra *menu) {
   menu->abierto = false;
   menu->ancho = 500; // Aumentar ancho
-  menu->alto = 550;  // Aumentar alto para caber 4 opciones
+  menu->alto = 560;  // Aumentar alto para mensaje error
   menu->mensajeError[0] = '\0';
   menu->tiempoError = 0;
 }
@@ -184,12 +184,24 @@ void menuCompraDibujar(HDC hdc, MenuCompra *menu, struct Jugador *jugador) {
   DeleteObject(brushCerrar);
 
   // Mensaje de Error
+  // Mensaje de Error
   if (menu->tiempoError > 0) {
     SetTextColor(hdc, RGB(255, 50, 50));
+    
+    // Fuente negrita para error
+    HFONT fontError =
+        CreateFont(20, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                   OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                   DEFAULT_PITCH | FF_SWISS, "Arial");
+    HFONT prevFont = (HFONT)SelectObject(hdc, fontError);
+
     RECT rErr = {menu->pantallaX, menu->pantallaY + 520,
-                 menu->pantallaX + menu->ancho, menu->pantallaY + 550};
+                 menu->pantallaX + menu->ancho, menu->pantallaY + 560};
     DrawText(hdc, menu->mensajeError, -1, &rErr,
              DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    SelectObject(hdc, prevFont);
+    DeleteObject(fontError);
   }
 
   SelectObject(hdc, oldBrush);

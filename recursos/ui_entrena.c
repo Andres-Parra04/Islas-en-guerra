@@ -292,12 +292,25 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
   DeleteObject(brushCerrar);
 
   // Mensaje de Error
+  // Mensaje de Error
   if (menu->tiempoError > 0) {
-    SetTextColor(hdc, RGB(255, 100, 100));
-    RECT rErr = {menu->pantallaX, menu->pantallaY + 420,
-                 menu->pantallaX + menu->ancho, menu->pantallaY + 450};
+    SetTextColor(hdc, RGB(255, 50, 50)); // Red brighter
+    
+    // Crear fuente para el error
+    HFONT fontError =
+        CreateFont(22, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                   OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                   DEFAULT_PITCH | FF_SWISS, "Arial");
+    HFONT prevFont = (HFONT)SelectObject(hdc, fontError);
+
+    // Posición inferior (entre el ultimo boton y boton cerrar)
+    RECT rErr = {menu->pantallaX, menu->pantallaY + 600,
+                 menu->pantallaX + menu->ancho, menu->pantallaY + 640};
     DrawText(hdc, menu->mensajeError, -1, &rErr,
              DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    SelectObject(hdc, prevFont);
+    DeleteObject(fontError);
   }
 
   SelectObject(hdc, oldBrush);

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-#define BATTLE_MAX_UNITS     14   // Máximo por bando
+#define BATTLE_MAX_UNITS     100   // Máximo por bando
 #define BATTLE_TILE          80   // Tamaño lógico de celda en la escena de batalla
 #define BATTLE_COLS          10
 #define BATTLE_ROWS          8
@@ -298,7 +298,7 @@ static void marcarBajasAliadas(void) {
       barco->tropas[writeIdx++] = ptr;
     }
   }
-  for (int k = writeIdx; k < 6; k++)
+  for (int k = writeIdx; k < 15; k++)
     barco->tropas[k] = NULL;
   barco->numTropas = writeIdx;
 }

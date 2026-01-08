@@ -1,0 +1,9 @@
+{
+    "c-cpp-compile-run.c-compiler": "C:\\Program Files (x86)\\Embarcadero\\Dev-Cpp\\TDM-GCC-64\\bin\\gcc.exe",
+    "c-cpp-compile-run.cpp-compiler": "C:\\Program Files (x86)\\Embarcadero\\Dev-Cpp\\TDM-GCC-64\\bin\\g++.exe",
+    "c-cpp-compile-run.run-in-external-terminal": false,
+    "c-cpp-compile-run.c-flags": "batallas/batallas.c edificios/edificios.c guardado/guardado.c mapa/mapa.c mapa/menu.c recursos/navegacion.c recursos/recursos.c recursos/ui_compra.c recursos/ui_embarque.c recursos/ui_entrena.c -lgdi32 -luser32 -lwinmm -lmsimg32",
+    "code-runner.executorMap": {
+        "c": "cd $dir && \"C:\\Program Files (x86)\\Embarcadero\\Dev-Cpp\\TDM-GCC-64\\bin\\gcc.exe\" main.c batallas/batallas.c edificios/edificios.c guardado/guardado.c mapa/mapa.c mapa/menu.c recursos/navegacion.c recursos/recursos.c recursos/ui_compra.c recursos/ui_embarque.c recursos/ui_entrena.c -o main.exe -lgdi32 -luser32 -lwinmm -lmsimg32 && main.exe"
+    }
+}
