@@ -902,7 +902,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     printf("[DEBUG] Obrero %d: seleccionado=%d\n", idx, o->seleccionado);
     fflush(stdout);
 
-    if (!o->seleccionado)
+    if (!o->seleccionado || o->vida <= 0)
       continue;
 
     // Buscar destino libre (el original o una celda adyacente)
@@ -979,7 +979,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   // --- COMANDAR CABALLEROS ---
   for (int i = 0; i < MAX_CABALLEROS; i++) {
     Unidad *u = &j->caballeros[i];
-    if (u->seleccionado && u->x >= 0) {
+    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
       // Buscar destino libre
       int destinoF = gF;
       int destinoC = gC;
@@ -1027,7 +1027,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   // --- COMANDAR CABALLEROS SIN ESCUDO ---
   for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     Unidad *u = &j->caballerosSinEscudo[i];
-    if (u->seleccionado && u->x >= 0) {
+    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
       // Buscar destino libre
       int destinoF = gF;
       int destinoC = gC;
@@ -1075,7 +1075,7 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   // --- COMANDAR GUERREROS ---
   for (int i = 0; i < MAX_GUERREROS; i++) {
     Unidad *u = &j->guerreros[i];
-    if (u->seleccionado && u->x >= 0) {
+    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
       // Buscar destino libre
       int destinoF = gF;
       int destinoC = gC;

@@ -88,6 +88,10 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
 
   // Solo cambiar el estado del que se clickeó
   for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
+    if (o->x < 0 || o->vida <= 0) {
+      o->seleccionado = false;
+      continue;
+    }
     // ================================================================
     // PUNTO EN RECTÁNGULO (Hitbox 64x64)
     // ================================================================
@@ -113,8 +117,10 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
   // SELECCIONAR CABALLEROS CON ESCUDO
   Unidad *baseCaballeros = pJugador->caballeros;
   for (Unidad *c = baseCaballeros; c < baseCaballeros + MAX_CABALLEROS; c++) {
-    if (c->x < 0)
+    if (c->x < 0 || c->vida <= 0) {
+      c->seleccionado = false;
       continue;
+    }
     float mundoXUnit = c->x;
     float mundoYUnit = c->y;
 
@@ -131,8 +137,10 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
   // SELECCIONAR CABALLEROS SIN ESCUDO
   Unidad *baseCSE = pJugador->caballerosSinEscudo;
   for (Unidad *c = baseCSE; c < baseCSE + MAX_CABALLEROS_SIN_ESCUDO; c++) {
-    if (c->x < 0)
+    if (c->x < 0 || c->vida <= 0) {
+      c->seleccionado = false;
       continue;
+    }
     float mundoXUnit = c->x;
     float mundoYUnit = c->y;
 
@@ -149,8 +157,10 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
   // SELECCIONAR GUERREROS
   Unidad *baseGuerreros = pJugador->guerreros;
   for (Unidad *g = baseGuerreros; g < baseGuerreros + MAX_GUERREROS; g++) {
-    if (g->x < 0)
+    if (g->x < 0 || g->vida <= 0) {
+      g->seleccionado = false;
       continue;
+    }
     float mundoXUnit = g->x;
     float mundoYUnit = g->y;
     bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&

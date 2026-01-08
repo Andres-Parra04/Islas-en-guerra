@@ -12,6 +12,7 @@ static int sPairEnemyToAlly[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 static int sPairAllyToEnemy[12] = {-1};
 static ULONGLONG sLastAttackMsEnemy[8] = {0};
 static ULONGLONG sLastAttackMsAlly[12] = {0};
+static bool sHuboAliadoEnBatalla = false; // evita derrota falsa cuando no hay tropas desplegadas
 // Garantiza que una unidad tenga stats básicos asignados
 static void asegurarStatsUnidad(Unidad *u) {
 	if (!u) return;
@@ -89,7 +90,10 @@ void batallasActualizar(struct Jugador *j) {
 	// Obtener enemigos activos
 	int numEnemigos = 0;
 	Unidad *enemigos = navegacionObtenerEnemigosActivos(&numEnemigos);
-	if (!enemigos || numEnemigos <= 0) return;
+	if (!enemigos || numEnemigos <= 0) {
+		sHuboAliadoEnBatalla = false;
+		return;
+	}
 
 	// Asegurar stats de enemigos (por seguridad en restauraciones)
 	for (int e = 0; e < numEnemigos; e++) {
@@ -206,17 +210,20 @@ void batallasActualizar(struct Jugador *j) {
 	// 3) Chequear victoria/derrota
 	int vivosEnemigos = 0; for (int e = 0; e < numEnemigos; e++) if (enemigos[e].vida > 0 && enemigos[e].x >= 0) vivosEnemigos++;
 	int vivosAliados = 0; for (int a = 0; a < nAliados; a++) if (aliados[a] && aliados[a]->vida > 0 && aliados[a]->x >= 0) vivosAliados++;
+	if (vivosAliados > 0) sHuboAliadoEnBatalla = true;
 
 	if (vivosEnemigos == 0) {
 		// Victoria
 		MessageBox(NULL, "Has conquistado la isla", "Batalla", MB_OK | MB_ICONINFORMATION);
+		sHuboAliadoEnBatalla = false;
 	}
-	if (vivosAliados == 0) {
+	if (vivosAliados == 0 && vivosEnemigos > 0 && sHuboAliadoEnBatalla) {
 		// Derrota: regresar a isla inicial primero, luego mostrar mensaje
 		extern bool viajarAIsla(struct Jugador * j, int islaDestino);
 		extern int navegacionObtenerIslaInicial(void);
 		int islaInicial = navegacionObtenerIslaInicial();
 		viajarAIsla(j, islaInicial);
 		MessageBox(NULL, "Perdiste la batalla, todas tus tropas han muerto", "Batalla", MB_OK | MB_ICONWARNING);
+		sHuboAliadoEnBatalla = false;
 	}
 }
