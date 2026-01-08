@@ -87,7 +87,7 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
   Unidad *base = pJugador->obreros;
 
   // Solo cambiar el estado del que se clickeó
-  for (Unidad *o = base; o < base + 6; o++) {
+  for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
     // ================================================================
     // PUNTO EN RECTÁNGULO (Hitbox 64x64)
     // ================================================================
@@ -112,7 +112,7 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
 
   // SELECCIONAR CABALLEROS CON ESCUDO
   Unidad *baseCaballeros = pJugador->caballeros;
-  for (Unidad *c = baseCaballeros; c < baseCaballeros + 4; c++) {
+  for (Unidad *c = baseCaballeros; c < baseCaballeros + MAX_CABALLEROS; c++) {
     if (c->x < 0)
       continue;
     float mundoXUnit = c->x;
@@ -130,7 +130,7 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
 
   // SELECCIONAR CABALLEROS SIN ESCUDO
   Unidad *baseCSE = pJugador->caballerosSinEscudo;
-  for (Unidad *c = baseCSE; c < baseCSE + 4; c++) {
+  for (Unidad *c = baseCSE; c < baseCSE + MAX_CABALLEROS_SIN_ESCUDO; c++) {
     if (c->x < 0)
       continue;
     float mundoXUnit = c->x;
@@ -148,7 +148,7 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
 
   // SELECCIONAR GUERREROS
   Unidad *baseGuerreros = pJugador->guerreros;
-  for (Unidad *g = baseGuerreros; g < baseGuerreros + 4; g++) {
+  for (Unidad *g = baseGuerreros; g < baseGuerreros + MAX_GUERREROS; g++) {
     if (g->x < 0)
       continue;
     float mundoXUnit = g->x;
@@ -392,7 +392,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       // Lista de punteros a arrays de unidades para iterar
       Unidad *arrays[] = {j->obreros, j->caballeros, j->caballerosSinEscudo,
                           j->guerreros};
-      int tamanos[] = {6, 4, 4, 4};
+      int tamanos[] = {MAX_OBREROS, MAX_CABALLEROS, MAX_CABALLEROS_SIN_ESCUDO, MAX_GUERREROS};
 
       for (int a = 0; a < 4; a++) {
         for (int i = 0; i < tamanos[a]; i++) {

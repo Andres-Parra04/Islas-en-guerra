@@ -3,6 +3,7 @@
 #include "../mapa/mapa.h"
 #include <stdio.h>
 #include <string.h>
+#include <windows.h>
 
 #define imgAyuntamiento "../assets/ayuntamiento2.bmp"
 #define imgMina "../assets/mina.bmp"
@@ -52,9 +53,9 @@ void edificioInicializar(Edificio *e, TipoEdificio tipo, float x, float y) {
 
   // Inicializar recursos totales de la mina (solo para minas)
   if (tipo == EDIFICIO_MINA) {
-    e->oroRestante = 500;    // 500 oro total
-    e->piedraRestante = 500; // 500 piedra total
-    e->hierroRestante = 250; // 250 hierro total
+    e->oroRestante = 1500;    // Aumentado de 500 -> 1500
+    e->piedraRestante = 1500; // Aumentado de 500 -> 1500
+    e->hierroRestante = 800;  // Aumentado de 250 -> 800
     e->agotada = false;
     printf("[MINA] Inicializada con: %d Oro, %d Piedra, %d Hierro\n",
            e->oroRestante, e->piedraRestante, e->hierroRestante);
@@ -90,26 +91,26 @@ void edificioActualizar(Edificio *e) {
     // Generar recursos solo si hay reservas disponibles
     int oroGenerado = 0, piedraGenerada = 0, hierroGenerado = 0;
 
-    // Generar +20 de oro, hasta un tope de 100 acumulados Y sin exceder
+    // Generar +35 de oro, hasta un tope de 300 acumulados Y sin exceder
     // recursos restantes
-    if (e->oroAcumulado < 100 && e->oroRestante > 0) {
-      int cantidad = (e->oroRestante >= 20) ? 20 : e->oroRestante;
+    if (e->oroAcumulado < 300 && e->oroRestante > 0) {
+      int cantidad = (e->oroRestante >= 35) ? 35 : e->oroRestante;
       e->oroAcumulado += cantidad;
       e->oroRestante -= cantidad;
       oroGenerado = cantidad;
     }
 
-    // Generar +20 de piedra
-    if (e->piedraAcumulada < 100 && e->piedraRestante > 0) {
-      int cantidad = (e->piedraRestante >= 20) ? 20 : e->piedraRestante;
+    // Generar +35 de piedra
+    if (e->piedraAcumulada < 300 && e->piedraRestante > 0) {
+      int cantidad = (e->piedraRestante >= 35) ? 35 : e->piedraRestante;
       e->piedraAcumulada += cantidad;
       e->piedraRestante -= cantidad;
       piedraGenerada = cantidad;
     }
 
-    // Generar +10 de hierro (más escaso)
-    if (e->hierroAcumulado < 100 && e->hierroRestante > 0) {
-      int cantidad = (e->hierroRestante >= 10) ? 10 : e->hierroRestante;
+    // Generar +20 de hierro (más escaso)
+    if (e->hierroAcumulado < 300 && e->hierroRestante > 0) {
+      int cantidad = (e->hierroRestante >= 20) ? 20 : e->hierroRestante;
       e->hierroAcumulado += cantidad;
       e->hierroRestante -= cantidad;
       hierroGenerado = cantidad;
@@ -127,7 +128,7 @@ void edificioActualizar(Edificio *e) {
       mapaDesmarcarEdificio(e->x, e->y, e->ancho, e->alto);
 
       // Mostrar mensaje de evento
-      MessageBoxA(NULL,
+      MessageBoxA(GetActiveWindow(),
                   "¡UNA MINA HA EXPLOTADO!\n\nSe han agotado todas sus vetas y "
                   "la estructura ha colapsado.",
                   "Evento: Mina Agotada", MB_OK | MB_ICONWARNING);
@@ -217,18 +218,10 @@ void edificiosCargarSprites() {
             "'ayuntamiento2.bmp', 'mina.bmp' y 'cuartel.bmp'.\n\nRevisa la "
             "consola negra para mas detalles.",
             pathExe);
-    MessageBoxA(NULL, errorMsg, "Aviso de Carga", MB_OK | MB_ICONWARNING);
+    MessageBoxA(GetActiveWindow(), errorMsg, "Aviso de Carga", MB_OK | MB_ICONWARNING);
   }
 
-  // Cargar sprite de la mina
-  g_spriteMina = (HBITMAP)LoadImageA(NULL, imgMina, IMAGE_BITMAP, 128, 128,
-                                     LR_LOADFROMFILE);
 
-  if (!g_spriteMina) {
-    printf("[ERROR] No se pudo cargar mina desde: %s\n", imgMina);
-  } else {
-    printf("[OK] Mina BMP cargado correctamente.\n");
-  }
 }
 
 void edificioDibujar(HDC hdcBuffer, const Edificio *e, int camX, int camY,

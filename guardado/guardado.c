@@ -196,16 +196,16 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   datos.Hierro = j->Hierro;
 
   // --- Unidades (con aritmética de punteros) ---
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     unidadAGuardada(j->obreros + i, datos.obreros + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     unidadAGuardada(j->caballeros + i, datos.caballeros + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     unidadAGuardada(j->caballerosSinEscudo + i, datos.caballerosSinEscudo + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     unidadAGuardada(j->guerreros + i, datos.guerreros + i);
   }
 
@@ -230,7 +230,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
 
       switch (tropa->tipo) {
       case TIPO_OBRERO:
-        for (int k = 0; k < 6; k++) {
+        for (int k = 0; k < MAX_OBREROS; k++) {
           if (tropa == j->obreros + k) {
             datos.barco.indiceTropas[i] = k;
             break;
@@ -238,7 +238,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
         }
         break;
       case TIPO_CABALLERO:
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < MAX_CABALLEROS; k++) {
           if (tropa == j->caballeros + k) {
             datos.barco.indiceTropas[i] = k;
             break;
@@ -246,7 +246,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
         }
         break;
       case TIPO_CABALLERO_SIN_ESCUDO:
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < MAX_CABALLEROS_SIN_ESCUDO; k++) {
           if (tropa == j->caballerosSinEscudo + k) {
             datos.barco.indiceTropas[i] = k;
             break;
@@ -254,7 +254,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
         }
         break;
       case TIPO_GUERRERO:
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < MAX_GUERREROS; k++) {
           if (tropa == j->guerreros + k) {
             datos.barco.indiceTropas[i] = k;
             break;
@@ -354,16 +354,16 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   strncpy(j->Nombre, datos.header.nombreJugador, sizeof(j->Nombre) - 1);
 
   // --- Unidades ---
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     guardadaAUnidad(datos.obreros + i, j->obreros + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     guardadaAUnidad(datos.caballeros + i, j->caballeros + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     guardadaAUnidad(datos.caballerosSinEscudo + i, j->caballerosSinEscudo + i);
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     guardadaAUnidad(datos.guerreros + i, j->guerreros + i);
   }
 
@@ -392,19 +392,19 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
       int idx = datos.barco.indiceTropas[i];
       switch (datos.barco.tipoTropas[i]) {
       case TIPO_OBRERO:
-        if (idx < 6)
+        if (idx < MAX_OBREROS)
           j->barco.tropas[i] = j->obreros + idx;
         break;
       case TIPO_CABALLERO:
-        if (idx < 4)
+        if (idx < MAX_CABALLEROS)
           j->barco.tropas[i] = j->caballeros + idx;
         break;
       case TIPO_CABALLERO_SIN_ESCUDO:
-        if (idx < 4)
+        if (idx < MAX_CABALLEROS_SIN_ESCUDO)
           j->barco.tropas[i] = j->caballerosSinEscudo + idx;
         break;
       case TIPO_GUERRERO:
-        if (idx < 4)
+        if (idx < MAX_GUERREROS)
           j->barco.tropas[i] = j->guerreros + idx;
         break;
       default:

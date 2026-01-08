@@ -113,10 +113,11 @@ typedef struct {
   int Hierro;
 
   // --- Unidades ---
-  UnidadGuardada obreros[6];
-  UnidadGuardada caballeros[4];
-  UnidadGuardada caballerosSinEscudo[4];
-  UnidadGuardada guerreros[4];
+  // --- Unidades ---
+  UnidadGuardada obreros[MAX_OBREROS];
+  UnidadGuardada caballeros[MAX_CABALLEROS];
+  UnidadGuardada caballerosSinEscudo[MAX_CABALLEROS_SIN_ESCUDO];
+  UnidadGuardada guerreros[MAX_GUERREROS];
 
   // --- Barco ---
   BarcoGuardado barco;

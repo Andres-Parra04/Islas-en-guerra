@@ -166,19 +166,19 @@ void menuEmbarqueDibujar(HDC hdc, MenuEmbarque *menu, struct Jugador *j) {
   int caballerosDisponibles = 0;
   int guerrerosDisponibles = 0;
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     if (unidadListaParaEmbarcar(&j->obreros[i], &j->barco))
       obrerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     if (unidadListaParaEmbarcar(&j->caballeros[i], &j->barco))
       caballerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     if (unidadListaParaEmbarcar(&j->caballerosSinEscudo[i], &j->barco))
       caballerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     if (unidadListaParaEmbarcar(&j->guerreros[i], &j->barco))
       guerrerosDisponibles++;
   }
@@ -373,19 +373,19 @@ bool menuEmbarqueClick(MenuEmbarque *menu, struct Jugador *j, int x, int y) {
   int caballerosDisponibles = 0;
   int guerrerosDisponibles = 0;
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < MAX_OBREROS; i++) {
     if (unidadListaParaEmbarcar(&j->obreros[i], &j->barco))
       obrerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS; i++) {
     if (unidadListaParaEmbarcar(&j->caballeros[i], &j->barco))
       caballerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
     if (unidadListaParaEmbarcar(&j->caballerosSinEscudo[i], &j->barco))
       caballerosDisponibles++;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < MAX_GUERREROS; i++) {
     if (unidadListaParaEmbarcar(&j->guerreros[i], &j->barco))
       guerrerosDisponibles++;
   }
@@ -493,7 +493,7 @@ bool menuEmbarqueClick(MenuEmbarque *menu, struct Jugador *j, int x, int y) {
 void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
   // Embarcar obreros
   int obrerosEmbarcados = 0;
-  for (int i = 0; i < 6 && obrerosEmbarcados < menu->obrerosSeleccionados;
+  for (int i = 0; i < MAX_OBREROS && obrerosEmbarcados < menu->obrerosSeleccionados;
        i++) {
     if (unidadListaParaEmbarcar(&j->obreros[i], &j->barco) &&
         j->barco.numTropas < j->barco.capacidadMaxima) {
@@ -510,7 +510,7 @@ void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
 
   // Embarcar caballeros (con y sin escudo)
   int caballerosEmbarcados = 0;
-  for (int i = 0; i < 4 && caballerosEmbarcados < menu->caballerosSeleccionados;
+  for (int i = 0; i < MAX_CABALLEROS && caballerosEmbarcados < menu->caballerosSeleccionados;
        i++) {
     if (unidadListaParaEmbarcar(&j->caballeros[i], &j->barco) &&
         j->barco.numTropas < j->barco.capacidadMaxima) {
@@ -520,7 +520,7 @@ void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
       caballerosEmbarcados++;
     }
   }
-  for (int i = 0; i < 4 && caballerosEmbarcados < menu->caballerosSeleccionados;
+  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO && caballerosEmbarcados < menu->caballerosSeleccionados;
        i++) {
     if (unidadListaParaEmbarcar(&j->caballerosSinEscudo[i], &j->barco) &&
         j->barco.numTropas < j->barco.capacidadMaxima) {
@@ -533,7 +533,7 @@ void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
 
   // Embarcar guerreros
   int guerrerosEmbarcados = 0;
-  for (int i = 0; i < 4 && guerrerosEmbarcados < menu->guerrerosSeleccionados;
+  for (int i = 0; i < MAX_GUERREROS && guerrerosEmbarcados < menu->guerrerosSeleccionados;
        i++) {
     if (unidadListaParaEmbarcar(&j->guerreros[i], &j->barco) &&
         j->barco.numTropas < j->barco.capacidadMaxima) {
