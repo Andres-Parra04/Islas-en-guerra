@@ -42,6 +42,27 @@ static void asegurarStatsUnidad(Unidad *u) {
 
 static int clampIndex(int v, int lo, int hi) { return (v < lo) ? lo : (v > hi ? hi : v); }
 
+static bool aplicarMovimientoSuelo(Unidad *u, float nuevoX, float nuevoY, int **col) {
+	if (!u) return false;
+	if (!col) {
+		u->x = nuevoX; u->y = nuevoY;
+		return true;
+	}
+	int destinoCol = (int)(nuevoX / (float)TILE_SIZE);
+	int destinoFila = (int)(nuevoY / (float)TILE_SIZE);
+	if (destinoCol < 0 || destinoCol >= GRID_SIZE || destinoFila < 0 || destinoFila >= GRID_SIZE) return false;
+	int origenCol = (int)(u->x / (float)TILE_SIZE);
+	int origenFila = (int)(u->y / (float)TILE_SIZE);
+	bool mismaCelda = (destinoCol == origenCol && destinoFila == origenFila);
+	if (!mismaCelda && col[destinoFila][destinoCol] != 0) return false;
+	if (!mismaCelda && origenCol >= 0 && origenCol < GRID_SIZE && origenFila >= 0 && origenFila < GRID_SIZE) {
+		col[origenFila][origenCol] = 0;
+	}
+	u->x = nuevoX; u->y = nuevoY;
+	col[destinoFila][destinoCol] = 3;
+	return true;
+}
+
 // Calcula daño usando stats de recursos.h
 static int calcularDanio(const Unidad *atacante, const Unidad *defensor) {
 	int danoBase = atacante->damage;
@@ -66,26 +87,21 @@ static void moverHaciaObjetivo(Unidad *u, const Unidad *obj, float vel) {
 	u->moviendose = true;
 	float ux = u->x + vel * (dx / d);
 	float uy = u->y + vel * (dy / d);
-	// Evitar compartir casilla
 	int **col = mapaObtenerCollisionMap();
-	if (col) {
-		int nx = (int)(ux / (float)TILE_SIZE);
-		int ny = (int)(uy / (float)TILE_SIZE);
-		if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-			int cx = (int)(u->x / (float)TILE_SIZE);
-			int cy = (int)(u->y / (float)TILE_SIZE);
-			bool mismaCelda = (nx == cx && ny == cy);
-			// Permitir avanzar dentro de la misma celda aunque esté marcada como ocupada por la propia unidad
-			if (mismaCelda || col[ny][nx] == 0) {
-				if (!mismaCelda && cy >= 0 && cy < GRID_SIZE && cx >= 0 && cx < GRID_SIZE) col[cy][cx] = 0;
-				u->x = ux; u->y = uy;
-				col[ny][nx] = 3;
-			} else {
-				// celda ocupada, no mover
-				u->moviendose = false;
-			}
-		}
+	if (aplicarMovimientoSuelo(u, ux, uy, col)) return;
+	// Separación suave: intentar desplazamiento perpendicular cuando la celda está ocupada
+	float dirX = dx / d;
+	float dirY = dy / d;
+	float perpX = -dirY;
+	float perpY = dirX;
+	float separacion = (float)TILE_SIZE * 0.35f;
+	for (int signo = -1; signo <= 1; signo += 2) {
+		float offsetX = ux + perpX * separacion * (float)signo;
+		float offsetY = uy + perpY * separacion * (float)signo;
+		if (aplicarMovimientoSuelo(u, offsetX, offsetY, col)) return;
 	}
+	// Sin espacio libre
+	u->moviendose = false;
 }
 
 void simularBatalla(struct Jugador *j) {
