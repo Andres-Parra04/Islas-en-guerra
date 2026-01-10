@@ -298,7 +298,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       menuEntrenamientoActualizar(&menuEntrenamiento);
 
       // Actualizar batallas (enemigos y combates al viajar)
-      batallasActualizar(&jugador1);
+      simularBatalla(&jugador1);
 
       InvalidateRect(hwnd, NULL, FALSE);
     }

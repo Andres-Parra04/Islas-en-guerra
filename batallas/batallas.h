@@ -5,6 +5,6 @@
 #include "../recursos/recursos.h"
 
 // Actualiza la lógica de combate entre tropas aliadas y enemigos
-void batallasActualizar(struct Jugador *j);
+void simularBatalla(struct Jugador *j);
 
 #endif

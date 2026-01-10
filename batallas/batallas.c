@@ -87,7 +87,7 @@ static void moverHaciaObjetivo(Unidad *u, const Unidad *obj, float vel) {
 	}
 }
 
-void batallasActualizar(struct Jugador *j) {
+void simularBatalla(struct Jugador *j) {
 	// Obtener enemigos activos
 	int numEnemigos = 0;
 	Unidad *enemigos = navegacionObtenerEnemigosActivos(&numEnemigos);
