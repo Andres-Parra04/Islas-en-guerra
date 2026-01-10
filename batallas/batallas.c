@@ -14,6 +14,7 @@ static ULONGLONG sLastAttackMsEnemy[8] = {0};
 static ULONGLONG sLastAttackMsAlly[12] = {0};
 static bool sHuboAliadoEnBatalla = false; // evita derrota falsa cuando no hay tropas desplegadas
 static bool sMensajeVictoriaMostrado = false;
+static int sUltimoConteoEnemigos = -1;
 // Garantiza que una unidad tenga stats básicos asignados
 static void asegurarStatsUnidad(Unidad *u) {
 	if (!u) return;
@@ -101,12 +102,12 @@ void simularBatalla(struct Jugador *j) {
 		asegurarStatsUnidad(&enemigos[e]);
 	}
 
-	bool hayEnemigoVivo = false;
+	// Si reaparecen enemigos después de una victoria, permitir que se vuelva a mostrar el mensaje
 	for (int e = 0; e < numEnemigos; e++) {
-		if (enemigos[e].vida > 0 && enemigos[e].x >= 0) { hayEnemigoVivo = true; break; }
-	}
-	if (hayEnemigoVivo) {
-		sMensajeVictoriaMostrado = false;
+		if (enemigos[e].vida > 0 && enemigos[e].x >= 0) {
+			sMensajeVictoriaMostrado = false;
+			break;
+		}
 	}
 
 	// Asegurar emparejamientos limpios (evita estado inicial incorrecto)
@@ -224,7 +225,11 @@ void simularBatalla(struct Jugador *j) {
 	int aliadosPresentes = vivosAliados + tropasEmbarcadas;
 	if (aliadosPresentes > 0) sHuboAliadoEnBatalla = true;
 
-	if (vivosEnemigos == 0 && !sMensajeVictoriaMostrado) {
+	if (sUltimoConteoEnemigos < 0) sUltimoConteoEnemigos = vivosEnemigos;
+	bool todosEliminados = (vivosEnemigos == 0 && sUltimoConteoEnemigos > 0);
+	sUltimoConteoEnemigos = vivosEnemigos;
+
+	if (todosEliminados && !sMensajeVictoriaMostrado) {
 		// Victoria
 		MessageBox(NULL, "Has conquistado la isla", "Batalla", MB_OK | MB_ICONINFORMATION);
 		sHuboAliadoEnBatalla = false;
