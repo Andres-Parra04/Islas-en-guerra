@@ -64,6 +64,8 @@
 #define VACA_L_ALT "assets/vaca/vaca_left.bmp"
 #define VACA_R_ALT "assets/vaca/vaca_right.bmp"
 
+#define TIEMPO_DESAPARICION_CUERPO_MS 5000ULL
+
 static HBITMAP hObreroBmp[4] = {NULL};    // Front, Back, Left, Right
 static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
 static HBITMAP hCaballeroSinEscudoBmp[4] = {
@@ -91,6 +93,32 @@ static bool gEsIslaPrincipalActual = false; // controla stand de guerreros en is
 
 static HBITMAP hVacaBmp[4] = {NULL};
 static bool gGenerarRecursos = true;
+
+static bool unidadCuerpoDesaparecido(Unidad *u, ULONGLONG ahora,
+                                     ULONGLONG *outDt) {
+  if (!u)
+    return true;
+  if (u->vida > 0) {
+    if (outDt)
+      *outDt = 0;
+    return false;
+  }
+  if (u->tiempoMuerteMs == 0) {
+    u->tiempoMuerteMs = ahora;
+  }
+  ULONGLONG dt = ahora - u->tiempoMuerteMs;
+  if (outDt)
+    *outDt = dt;
+  return dt >= TIEMPO_DESAPARICION_CUERPO_MS;
+}
+
+static bool unidadBarraVisible(Unidad *u) {
+  if (!u)
+    return false;
+  if (u->vida > 0)
+    return true;
+  return !unidadCuerpoDesaparecido(u, GetTickCount64(), NULL);
+}
 
 // Definiciones para obrerro fallback
 #define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
@@ -1361,13 +1389,17 @@ static void dibujarUnidadCombat(HDC hdcBuffer, HDC hdcSprites, Unidad *u,
   HBITMAP sprite = NULL;
   int dirIdx = (u->dir == DIR_RIGHT) ? 1 : 0;
   bool muerto = (u->vida <= 0);
+  ULONGLONG dtMuerte = 0;
+  if (muerto) {
+    ULONGLONG ahora = GetTickCount64();
+    if (unidadCuerpoDesaparecido(u, ahora, &dtMuerte)) {
+      return; // Ocultar sprite tras 5s del deceso
+    }
+  }
   if (u->tipo == TIPO_CABALLERO) {
     if (muerto) {
       // Animar muerte con dos frames: die_1 luego die_2
-      ULONGLONG ahora = GetTickCount64();
-      if (u->tiempoMuerteMs == 0) u->tiempoMuerteMs = ahora;
-      ULONGLONG dt = ahora - u->tiempoMuerteMs;
-      if (dt < 350 && hCaballeroDie[dirIdx]) {
+      if (dtMuerte < 350 && hCaballeroDie[dirIdx]) {
         sprite = hCaballeroDie[dirIdx];
       } else if (hCaballeroDie2[dirIdx]) {
         sprite = hCaballeroDie2[dirIdx];
@@ -1385,10 +1417,7 @@ static void dibujarUnidadCombat(HDC hdcBuffer, HDC hdcSprites, Unidad *u,
     }
   } else if (u->tipo == TIPO_CABALLERO_SIN_ESCUDO) {
     if (muerto) {
-      ULONGLONG ahora = GetTickCount64();
-      if (u->tiempoMuerteMs == 0) u->tiempoMuerteMs = ahora;
-      ULONGLONG dt = ahora - u->tiempoMuerteMs;
-      if (dt < 350 && hCaballeroDie[dirIdx]) {
+      if (dtMuerte < 350 && hCaballeroDie[dirIdx]) {
         sprite = hCaballeroDie[dirIdx];
       } else if (hCaballeroDie2[dirIdx]) {
         sprite = hCaballeroDie2[dirIdx];
@@ -1407,10 +1436,7 @@ static void dibujarUnidadCombat(HDC hdcBuffer, HDC hdcSprites, Unidad *u,
     }
   } else { // GUERRERO
     if (muerto) {
-      ULONGLONG ahora = GetTickCount64();
-      if (u->tiempoMuerteMs == 0) u->tiempoMuerteMs = ahora;
-      ULONGLONG dt = ahora - u->tiempoMuerteMs;
-      if (dt < 350 && hGuerreroDie[dirIdx]) {
+      if (dtMuerte < 350 && hGuerreroDie[dirIdx]) {
         sprite = hGuerreroDie[dirIdx];
       } else if (hGuerreroDie2[dirIdx]) {
         sprite = hGuerreroDie2[dirIdx];
@@ -1718,8 +1744,10 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                          64, 64, RGB(255, 255, 255));
 
           // Dibujar barra de vida
-          dibujarBarraVida(hdcBuffer, pantX, pantY, o->vida, o->vidaMax,
-                           cam.zoom);
+          if (unidadBarraVisible(o)) {
+            dibujarBarraVida(hdcBuffer, pantX, pantY, o->vida, o->vidaMax,
+                             cam.zoom);
+          }
         }
 
         // Círculo de selección
@@ -1774,8 +1802,10 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                               permitirStand, false, atacando, frameAtaque);
 
           // Dibujar barra de vida
-          dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
-                           cam.zoom);
+          if (unidadBarraVisible(c)) {
+            dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
+                             cam.zoom);
+          }
 
           // Círculo de selección
           if (c->seleccionado) {
@@ -1806,8 +1836,10 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
           SelectObject(hdcSprites, hCaballeroSinEscudoBmp[c->dir]);
 
           // Dibujar barra de vida
-          dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
-                           cam.zoom);
+          if (unidadBarraVisible(c)) {
+            dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
+                             cam.zoom);
+          }
 
           // Círculo de selección (verde, igual que aliados)
           int idxCse = 4 + (int)(c - baseCSE);
@@ -1846,8 +1878,10 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                               permitirStandGuerrero, false, atacando, frameAtaque);
 
           // Dibujar barra de vida
-          dibujarBarraVida(hdcBuffer, pantX, pantY, g->vida, g->vidaMax,
-                           cam.zoom);
+          if (unidadBarraVisible(g)) {
+            dibujarBarraVida(hdcBuffer, pantX, pantY, g->vida, g->vidaMax,
+                             cam.zoom);
+          }
           // Círculo de selección (verde, unificado con aliados)
           if (g->seleccionado) {
             HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
@@ -1883,7 +1917,9 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
                 dibujarUnidadCombat(hdcBuffer, hdcSprites, e, cam, anchoP, altoP,
                   permitirStandEnemigo, true, atacando, frameAtaque);
                 // Barra de vida enemiga (rojo)
-                dibujarBarraVidaColor(hdcBuffer, pantX, pantY, e->vida, e->vidaMax, cam.zoom, RGB(200, 60, 60));
+                if (unidadBarraVisible(e)) {
+                  dibujarBarraVidaColor(hdcBuffer, pantX, pantY, e->vida, e->vidaMax, cam.zoom, RGB(200, 60, 60));
+                }
                 HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
                 HPEN rojo = CreatePen(PS_SOLID, 2, RGB(200, 60, 60));
                 SelectObject(hdcBuffer, nullBrush);
