@@ -414,6 +414,54 @@ static void statsBasicosEnemigo(Unidad *u, TipoUnidad tipo) {
   }
 }
 
+static bool celdaDisponibleParaEnemigo(int fila, int col) {
+  if (fila < 0 || col < 0 || fila >= GRID_SIZE || col >= GRID_SIZE)
+    return false;
+  if (!mapaCeldaEsTierra(fila, col))
+    return false;
+  char simbolo = mapaObjetos[fila][col];
+  if (simbolo != 0 && simbolo != SIMBOLO_VACIO)
+    return false;
+  return true;
+}
+
+static void reservarCeldaEnemigo(int fila, int col) {
+  mapaObjetos[fila][col] = SIMBOLO_ENEMIGO;
+  int **colision = mapaObtenerCollisionMap();
+  if (colision)
+    *(*(colision + fila) + col) = 3;
+}
+
+static bool ubicarEnemigoAleatorio(float *outX, float *outY) {
+  if (!outX || !outY)
+    return false;
+
+  const int maxIntentosAleatorios = 200;
+  for (int intento = 0; intento < maxIntentosAleatorios; intento++) {
+    int fila = rand() % GRID_SIZE;
+    int col = rand() % GRID_SIZE;
+    if (!celdaDisponibleParaEnemigo(fila, col))
+      continue;
+    reservarCeldaEnemigo(fila, col);
+    *outX = (float)(col * TILE_SIZE) + (float)(TILE_SIZE / 2);
+    *outY = (float)(fila * TILE_SIZE) + (float)(TILE_SIZE / 2);
+    return true;
+  }
+
+  for (int fila = 0; fila < GRID_SIZE; fila++) {
+    for (int col = 0; col < GRID_SIZE; col++) {
+      if (!celdaDisponibleParaEnemigo(fila, col))
+        continue;
+      reservarCeldaEnemigo(fila, col);
+      *outX = (float)(col * TILE_SIZE) + (float)(TILE_SIZE / 2);
+      *outY = (float)(fila * TILE_SIZE) + (float)(TILE_SIZE / 2);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static int clampIntLocal(int v, int lo, int hi) {
   if (v < lo)
     return lo;
@@ -1059,28 +1107,31 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
     vaciarUnidades(j); // Solo tropas desembarcadas estarán presentes
     inicializarEstructurasIslaBase(j, estadoDestino);
     estadoDestino->inicializado = true;
-    // Generar enemigos iniciales rodeando el ayuntamiento
+    // Generar enemigos iniciales distribuidos aleatoriamente en la isla
     if (!estadoDestino->enemigosGenerados) {
       int maxEnemigos = 6; // base
       int minutos = (int)(GetTickCount64() / 60000ULL);
-      if (minutos > 0) maxEnemigos += (minutos % 3); // ligera escala
-      if (maxEnemigos > 8) maxEnemigos = 8;
+      if (minutos > 0)
+        maxEnemigos += (minutos % 3); // ligera escala
+      if (maxEnemigos > 8)
+        maxEnemigos = 8;
 
-      estadoDestino->numEnemigos = maxEnemigos;
-      float baseX = estadoDestino->ayuntamiento.x + 64.0f;
-      float baseY = estadoDestino->ayuntamiento.y + 64.0f;
-      // Colocar en círculo alrededor del ayuntamiento
-      for (int i = 0; i < maxEnemigos; i++) {
-        Unidad *e = &estadoDestino->enemigos[i];
-        float ang = (float)(i * (360.0 / maxEnemigos));
-        float rad = 300.0f;
-        float ex = baseX + rad * cosf(ang * (3.1415926f / 180.0f));
-        float ey = baseY + rad * sinf(ang * (3.1415926f / 180.0f));
+      estadoDestino->numEnemigos = 0;
+      for (int i = 0; i < maxEnemigos && estadoDestino->numEnemigos < 8; i++) {
+        float ex = 0.0f;
+        float ey = 0.0f;
+        if (!ubicarEnemigoAleatorio(&ex, &ey)) {
+          printf("[NAV] Sin espacio libre para todos los enemigos\n");
+          break;
+        }
+
+        Unidad *e = &estadoDestino->enemigos[estadoDestino->numEnemigos];
         e->x = ex;
         e->y = ey;
         statsBasicosEnemigo(e, (i % 2 == 0) ? TIPO_CABALLERO : TIPO_GUERRERO);
+        estadoDestino->numEnemigos++;
       }
-      estadoDestino->enemigosGenerados = true;
+      estadoDestino->enemigosGenerados = (estadoDestino->numEnemigos > 0);
     }
     activarEnemigosDesdeEstado(estadoDestino);
     guardarEstadoIslaJugador(j); // Guardar snapshot inicial
