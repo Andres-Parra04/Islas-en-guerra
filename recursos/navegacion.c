@@ -491,7 +491,8 @@ int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo) {
   }
 
   for (int i = 0; i < maxLimit; i++) {
-    if (ptr[i].x >= 0 && ptr[i].y >= 0) total++;
+    if (ptr[i].x >= 0 && ptr[i].y >= 0 && ptr[i].vida > 0)
+      total++;
   }
 
   // 2. Sumar unidades de OTROS islas guardadas en sIslas
@@ -509,7 +510,8 @@ int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo) {
 
     if (ptrGuardado) {
         for (int i = 0; i < maxLimit; i++) {
-            if (ptrGuardado[i].x >= 0 && ptrGuardado[i].y >= 0) total++;
+          if (ptrGuardado[i].x >= 0 && ptrGuardado[i].y >= 0 && ptrGuardado[i].vida > 0)
+            total++;
         }
     }
   }
@@ -523,7 +525,8 @@ int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo) {
   
   if (j->barco.numTropas > 0) {
       for(int i=0; i<j->barco.numTropas; i++) {
-          if (j->barco.tropas[i] && j->barco.tropas[i]->tipo == tipo) {
+            if (j->barco.tropas[i] && j->barco.tropas[i]->tipo == tipo &&
+              j->barco.tropas[i]->vida > 0) {
               total++;
           }
       }
