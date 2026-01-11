@@ -1533,11 +1533,23 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
                                "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
     if (respuesta == IDYES) {
-      // Eliminar vaca de la matriz y del array
-      mapaEliminarObjeto(vacaFila, vacaCol);
-      j->Comida += 100;
-      MessageBox(GetActiveWindow(), "¡Vaca cazada! +100 Comida", "Recursos",
-                 MB_OK | MB_ICONINFORMATION);
+      // ================================================================
+      // CORRECCIÓN BUG DE SINCRONIZACIÓN:
+      // ================================================================
+      // Usamos el ÍNDICE de la vaca (vacaEncontrada) para eliminarla,
+      // no su posición anterior (vacaFila, vacaCol).
+      // Esto garantiza que aunque la vaca se haya movido mientras el
+      // usuario decidía en el MessageBox, se eliminará la vaca correcta.
+      // ================================================================
+      if (mapaEliminarVacaPorIndice(vacaEncontrada)) {
+        j->Comida += 100;
+        MessageBox(GetActiveWindow(), "¡Vaca cazada! +100 Comida", "Recursos",
+                   MB_OK | MB_ICONINFORMATION);
+      } else {
+        // La vaca ya no existe (índice inválido o fue eliminada por otra razón)
+        MessageBox(GetActiveWindow(), "La vaca ya no está disponible.", "Error",
+                   MB_OK | MB_ICONWARNING);
+      }
     }
     return true; // Click manejado
   }

@@ -98,6 +98,8 @@ void mapaSetGenerarRecursos(bool habilitar);
 void mapaActualizarVacas(void);
 // Obtiene el array de vacas para renderizado
 Vaca *mapaObtenerVacas(int *cantidad);
+// Elimina una vaca por su índice en el array (evita desincronización si la vaca se movió)
+bool mapaEliminarVacaPorIndice(int indice);
 
 // Dibuja el mundo (terreno, árboles, obreros) en el DC especificado
 // Ahora acepta el menú para dibujarlo dentro del mismo buffer (evitar parpadeo)

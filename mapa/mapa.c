@@ -230,6 +230,61 @@ Vaca *mapaObtenerVacas(int *cantidad) {
   return gVacas;
 }
 
+// ============================================================================
+// ELIMINAR VACA POR ÍNDICE (SOLUCIÓN A BUG DE SINCRONIZACIÓN)
+// ============================================================================
+// Esta función elimina una vaca usando su ÍNDICE en el array, no su posición
+// en el mapa. Esto evita el bug donde la vaca se mueve mientras el usuario
+// decide en el MessageBox de confirmación.
+// ============================================================================
+bool mapaEliminarVacaPorIndice(int indice) {
+  // Validar índice
+  if (indice < 0 || indice >= gNumVacas) {
+    printf("[ERROR] mapaEliminarVacaPorIndice: índice %d fuera de rango (0-%d)\n",
+           indice, gNumVacas - 1);
+    return false;
+  }
+
+  // Obtener la posición ACTUAL de la vaca (puede haber cambiado)
+  Vaca *pVaca = gVacas + indice;  // Aritmética de punteros
+  int vacaFila = (int)(pVaca->y / TILE_SIZE);
+  int vacaCol = (int)(pVaca->x / TILE_SIZE);
+
+  printf("[DEBUG] Eliminando vaca #%d en posición ACTUAL: Celda[%d][%d]\n",
+         indice, vacaFila, vacaCol);
+
+  // 1. Limpiar la celda en mapaObjetos (posición ACTUAL, no la original)
+  if (vacaFila >= 0 && vacaFila < GRID_SIZE && 
+      vacaCol >= 0 && vacaCol < GRID_SIZE) {
+    // Usar aritmética de punteros
+    char *ptrCelda = *(mapaObjetos + vacaFila) + vacaCol;
+    if (*ptrCelda == SIMBOLO_VACA) {
+      *ptrCelda = SIMBOLO_VACIO;
+    }
+
+    // 2. Limpiar también en gCollisionMap
+    if (gCollisionMap) {
+      int *ptrColision = *(gCollisionMap + vacaFila) + vacaCol;
+      if (*ptrColision == 3) {  // 3 = ocupado por unidad/vaca
+        *ptrColision = 0;  // Liberar
+      }
+    }
+  }
+
+  // 3. Desplazar el resto del array para llenar el hueco
+  // Usamos aritmética de punteros como requiere el proyecto
+  Vaca *ptrSrc = gVacas + indice + 1;  // Siguiente vaca
+  Vaca *ptrDst = gVacas + indice;       // Hueco a llenar
+  for (int k = indice; k < gNumVacas - 1; k++, ptrSrc++, ptrDst++) {
+    *ptrDst = *ptrSrc;
+  }
+
+  gNumVacas--;
+  printf("[DEBUG] Vaca eliminada por índice. Restan: %d vacas\n", gNumVacas);
+
+  return true;
+}
+
 void mapaSeleccionarIsla(int isla) {
   int seleccion = (isla >= 1 && isla <= 3) ? isla : 1;
     snprintf(gRutaMapaPrincipal, sizeof(gRutaMapaPrincipal), "..\\assets\\islas\\isla%d.bmp", seleccion);
