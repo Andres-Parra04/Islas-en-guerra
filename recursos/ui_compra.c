@@ -115,7 +115,7 @@ void menuCompraDibujar(HDC hdc, MenuCompra *menu, struct Jugador *jugador) {
 
   RECT rectTitulo = {menu->pantallaX + 20, menu->pantallaY + 20,
                      menu->pantallaX + menu->ancho - 20, menu->pantallaY + 60};
-  DrawText(hdc, "MERCADO DE ALIMENTOS", -1, &rectTitulo,
+  DrawText(hdc, "CASTILLO", -1, &rectTitulo,
            DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
   SelectObject(hdc, oldFont);

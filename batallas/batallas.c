@@ -213,7 +213,7 @@ void simularBatalla(struct Jugador *j) {
 		}
 
 		// Turnos: alternar según últimos tiempos
-		bool turnoEnemigo = (sLastAttackMsEnemy[e] <= sLastAttackMsAlly[a]);
+		bool turnoEnemigo = (sLastAttackMsEnemy[e] < sLastAttackMsAlly[a]);
 		if (turnoEnemigo) {
 			if (ahora - sLastAttackMsEnemy[e] >= cadenciaMs) {
 				int danio = calcularDanio(en, al);
