@@ -14,50 +14,50 @@
 #include <windows.h>
 
 // Definiciones manuales de rutas
-#define RUTA_MAPA "assets/islas/isla1.bmp"
+#define RUTA_MAPA "../assets/islas/isla1.bmp"
 #define RUTA_MAPA_ALT "assets/islas/isla1.bmp"
 
-#define ARBOL1 "assets/arboles/arbol1.bmp"
+#define ARBOL1 "../assets/arboles/arbol1.bmp"
 #define ARBOL1_ALT "assets/arboles/arbol1.bmp"
 
-#define ARBOL2 "assets/arboles/arbol2.bmp"
+#define ARBOL2 "../assets/arboles/arbol2.bmp"
 #define ARBOL2_ALT "assets/arboles/arbol2.bmp"
 
-#define ARBOL3 "assets/arboles/arbol3.bmp"
+#define ARBOL3 "../assets/arboles/arbol3.bmp"
 #define ARBOL3_ALT "assets/arboles/arbol3.bmp"
 
-#define ARBOL4 "assets/arboles/arbol4.bmp"
+#define ARBOL4 "../assets/arboles/arbol4.bmp"
 #define ARBOL4_ALT "assets/arboles/arbol4.bmp"
 
-#define obrero_front "assets/obrero/obrero_front.bmp"
-#define obrero_back "assets/obrero/obrero_back.bmp"
-#define obrero_left "assets/obrero/obrero_left.bmp"
-#define obrero_right "assets/obrero/obrero_right.bmp"
+#define obrero_front "../assets/obrero/obrero_front.bmp"
+#define obrero_back "../assets/obrero/obrero_back.bmp"
+#define obrero_left "../assets/obrero/obrero_left.bmp"
+#define obrero_right "../assets/obrero/obrero_right.bmp"
 
-#define caballero_front "assets/caballero/caballero_shield_front.bmp"
-#define caballero_back "assets/caballero/caballero_shield_back.bmp"
-#define caballero_left "assets/caballero/caballero_shield_left.bmp"
-#define caballero_right "assets/caballero/caballero_shield_right.bmp"
+#define caballero_front "../assets/caballero/caballero_shield_front.bmp"
+#define caballero_back "../assets/caballero/caballero_shield_back.bmp"
+#define caballero_left "../assets/caballero/caballero_shield_left.bmp"
+#define caballero_right "../assets/caballero/caballero_shield_right.bmp"
 
-#define caballeroSinEscudo_front "assets/caballero/caballero_front.bmp"
-#define caballeroSinEscudo_back "assets/caballero/caballero_back.bmp"
-#define caballeroSinEscudo_left "assets/caballero/caballero_left.bmp"
-#define caballeroSinEscudo_right "assets/caballero/caballero_right.bmp"
+#define caballeroSinEscudo_front "../assets/caballero/caballero_front.bmp"
+#define caballeroSinEscudo_back "../assets/caballero/caballero_back.bmp"
+#define caballeroSinEscudo_left "../assets/caballero/caballero_left.bmp"
+#define caballeroSinEscudo_right "../assets/caballero/caballero_right.bmp"
 
-#define guerrero_front "assets/guerrero/guerrero_front.bmp"
-#define guerrero_back "assets/guerrero/guerrero_back.bmp"
-#define guerrero_left "assets/guerrero/guerrero_left.bmp"
-#define guerrero_right "assets/guerrero/guerrero_right.bmp"
+#define guerrero_front "../assets/guerrero/guerrero_front.bmp"
+#define guerrero_back "../assets/guerrero/guerrero_back.bmp"
+#define guerrero_left "../assets/guerrero/guerrero_left.bmp"
+#define guerrero_right "../assets/guerrero/guerrero_right.bmp"
 
 #define GUERRERO_F_ALT "assets/guerrero/guerrero_front.bmp"
 #define GUERRERO_B_ALT "assets/guerrero/guerrero_back.bmp"
 #define GUERRERO_L_ALT "assets/guerrero/guerrero_left.bmp"
 #define GUERRERO_R_ALT "assets/guerrero/guerrero_right.bmp"
 
-#define VACA_F "assets/vaca/vaca_front.bmp"
-#define VACA_B "assets/vaca/vaca_back.bmp"
-#define VACA_L "assets/vaca/vaca_left.bmp"
-#define VACA_R "assets/vaca/vaca_right.bmp"
+#define VACA_F "../assets/vaca/vaca_front.bmp"
+#define VACA_B "../assets/vaca/vaca_back.bmp"
+#define VACA_L "../assets/vaca/vaca_left.bmp"
+#define VACA_R "../assets/vaca/vaca_right.bmp"
 
 #define VACA_F_ALT "assets/vaca/vaca_front.bmp"
 #define VACA_B_ALT "assets/vaca/vaca_back.bmp"
@@ -126,10 +126,15 @@ static bool unidadBarraVisible(Unidad *u) {
 #define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
 #define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
 
-#define BARCO_F_ALT "assets/barco/barco_front.bmp"
-#define BARCO_B_ALT "assets/barco/barco_back.bmp"
-#define BARCO_L_ALT "assets/barco/barco_left.bmp"
-#define BARCO_R_ALT "assets/barco/barco_right.bmp"
+#define BARCO_F_ALT "../assets/barco/barco_front.bmp"
+#define BARCO_B_ALT "../assets/barco/barco_back.bmp"
+#define BARCO_L_ALT "../assets/barco/barco_left.bmp"
+#define BARCO_R_ALT "../assets/barco/barco_right.bmp"
+
+#define BARCO_F_ALT "../assets/barco/barco_front.bmp"
+#define BARCO_B_ALT "../assets/barco/barco_back.bmp"
+#define BARCO_L_ALT "../assets/barco/barco_left.bmp"
+#define BARCO_R_ALT "../assets/barco/barco_right.bmp"
 
 static HBITMAP hMapaBmp =
     NULL; // Mapa de isla individual (isla1, isla2, o isla3)
@@ -1063,7 +1068,7 @@ void cargarRecursosGraficos() {
 
   // NUEVO: Cargar mapa global con las 3 islas (mapaDemo2.bmp)
   hMapaGlobalBmp =
-      (HBITMAP)LoadImageA(NULL, "assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0,
+      (HBITMAP)LoadImageA(NULL, "../assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0,
                           LR_LOADFROMFILE | LR_CREATEDIBSECTION);
   if (!hMapaGlobalBmp) {
     hMapaGlobalBmp =
@@ -1177,20 +1182,20 @@ void cargarRecursosGraficos() {
 
   // --- COMBATE: CABALLERO (stand, defense, die) ---
   const char *cabStandLR[2] = {
-      "assets/caballero/caballero_war_stand_left.bmp",
-      "assets/caballero/caballero_war_stand_right.bmp"};
+      "../assets/caballero/caballero_war_stand_left.bmp",
+      "../assets/caballero/caballero_war_stand_right.bmp"};
   const char *cabStandLRAlt[2] = {"assets/caballero/caballero_war_stand_left.bmp",
                                   "assets/caballero/caballero_war_stand_right.bmp"};
-  const char *cabDefLR[2] = {"assets/caballero/caballero_defense_left.bmp",
-                             "assets/caballero/caballero_defense_right.bmp"};
+  const char *cabDefLR[2] = {"../assets/caballero/caballero_defense_left.bmp",
+                             "../assets/caballero/caballero_defense_right.bmp"};
   const char *cabDefLRAlt[2] = {"assets/caballero/caballero_defense_left.bmp",
                                 "assets/caballero/caballero_defense_right.bmp"};
-  const char *cabDie1LR[2] = {"assets/caballero/caballero_die_1_left.bmp",
-                              "assets/caballero/caballero_die_1_right.bmp"};
+  const char *cabDie1LR[2] = {"../assets/caballero/caballero_die_1_left.bmp",
+                              "../assets/caballero/caballero_die_1_right.bmp"};
   const char *cabDie1LRAlt[2] = {"assets/caballero/caballero_die_1_left.bmp",
                                  "assets/caballero/caballero_die_1_right.bmp"};
-  const char *cabDie2LR[2] = {"assets/caballero/caballero_die_2_left.bmp",
-                              "assets/caballero/caballero_die_2_right.bmp"};
+  const char *cabDie2LR[2] = {"../assets/caballero/caballero_die_2_left.bmp",
+                              "../assets/caballero/caballero_die_2_right.bmp"};
   const char *cabDie2LRAlt[2] = {"assets/caballero/caballero_die_2_left.bmp",
                                  "assets/caballero/caballero_die_2_right.bmp"};
   for (int i = 0; i < 2; i++) {
@@ -1209,20 +1214,20 @@ void cargarRecursosGraficos() {
   }
 
   // --- COMBATE: GUERRERO (stand, walk, die) ---
-  const char *gueStandLR[2] = {"assets/guerrero/guerrero_war_stand_left.bmp",
-                               "assets/guerrero/guerrero_war_stand_right.bmp"};
+  const char *gueStandLR[2] = {"../assets/guerrero/guerrero_war_stand_left.bmp",
+                               "../assets/guerrero/guerrero_war_stand_right.bmp"};
   const char *gueStandLRAlt[2] = {"assets/guerrero/guerrero_war_stand_left.bmp",
                                   "assets/guerrero/guerrero_war_stand_right.bmp"};
-  const char *gueWalkLR[2] = {"assets/guerrero/guerrero_war_walk_left.bmp",
-                              "assets/guerrero/guerrero_war_walk_right.bmp"};
+  const char *gueWalkLR[2] = {"../assets/guerrero/guerrero_war_walk_left.bmp",
+                              "../assets/guerrero/guerrero_war_walk_right.bmp"};
   const char *gueWalkLRAlt[2] = {"assets/guerrero/guerrero_war_walk_left.bmp",
                                  "assets/guerrero/guerrero_war_walk_right.bmp"};
-  const char *gueDie1LR[2] = {"assets/guerrero/guerrero_war_die_1_left.bmp",
-                              "assets/guerrero/guerrero_war_die_1_right.bmp"};
+  const char *gueDie1LR[2] = {"../assets/guerrero/guerrero_war_die_1_left.bmp",
+                              "../assets/guerrero/guerrero_war_die_1_right.bmp"};
   const char *gueDie1LRAlt[2] = {"assets/guerrero/guerrero_war_die_1_left.bmp",
                                  "assets/guerrero/guerrero_war_die_1_right.bmp"};
-  const char *gueDie2LR[2] = {"assets/guerrero/guerrero_war_die_2_left.bmp",
-                              "assets/guerrero/guerrero_war_die_2_right.bmp"};
+  const char *gueDie2LR[2] = {"../assets/guerrero/guerrero_war_die_2_left.bmp",
+                              "../assets/guerrero/guerrero_war_die_2_right.bmp"};
   const char *gueDie2LRAlt[2] = {"assets/guerrero/guerrero_war_die_2_left.bmp",
                                  "assets/guerrero/guerrero_war_die_2_right.bmp"};
   for (int i = 0; i < 2; i++) {
@@ -1242,8 +1247,8 @@ void cargarRecursosGraficos() {
 
   // --- COMBATE: CABALLERO SIN ESCUDO (stand) ---
   const char *cseStandLR[2] = {
-      "assets/caballero/caballero_war_NO_stand_left.bmp",
-      "assets/caballero/caballero_war_NO_stand_right.bmp"};
+      "../assets/caballero/caballero_war_NO_stand_left.bmp",
+      "../assets/caballero/caballero_war_NO_stand_right.bmp"};
   const char *cseStandLRAlt[2] = {
       "assets/caballero/caballero_war_NO_stand_left.bmp",
       "assets/caballero/caballero_war_NO_stand_right.bmp"};
@@ -1259,13 +1264,13 @@ void cargarRecursosGraficos() {
 
   // Ataque caballero (left/right, 3 frames)
   const char *cabAtkL[3] = {
-      "assets/caballero/caballero_war_move_1_left.bmp",
-      "assets/caballero/caballero_war_move_2_left.bmp",
-      "assets/caballero/caballero_war_move_3_left.bmp"};
+      "../assets/caballero/caballero_war_move_1_left.bmp",
+      "../assets/caballero/caballero_war_move_2_left.bmp",
+      "../assets/caballero/caballero_war_move_3_left.bmp"};
   const char *cabAtkR[3] = {
-      "assets/caballero/caballero_war_move_1_right.bmp",
-      "assets/caballero/caballero_war_move_2_right.bmp",
-      "assets/caballero/caballero_war_move_3_right.bmp"};
+      "../assets/caballero/caballero_war_move_1_right.bmp",
+      "../assets/caballero/caballero_war_move_2_right.bmp",
+      "../assets/caballero/caballero_war_move_3_right.bmp"};
   const char *cabAtkLAlt[3] = {
       "assets/caballero/caballero_war_move_1_left.bmp",
       "assets/caballero/caballero_war_move_2_left.bmp",
@@ -1276,13 +1281,13 @@ void cargarRecursosGraficos() {
       "assets/caballero/caballero_war_move_3_right.bmp"};
     // Caballero sin escudo: nuevos sprites de ataque (NO_move)
     const char *cseAtkL[3] = {
-      "assets/caballero/caballero_war_NO_move_1_left.bmp",
-      "assets/caballero/caballero_war_NO_move_2_left.bmp",
-      "assets/caballero/caballero_war_NO_move_3_left.bmp"};
+      "../assets/caballero/caballero_war_NO_move_1_left.bmp",
+      "../assets/caballero/caballero_war_NO_move_2_left.bmp",
+      "../assets/caballero/caballero_war_NO_move_3_left.bmp"};
     const char *cseAtkR[3] = {
-      "assets/caballero/caballero_war_NO_move_1_right.bmp",
-      "assets/caballero/caballero_war_NO_move_2_right.bmp",
-      "assets/caballero/caballero_war_NO_move_3_right.bmp"};
+      "../assets/caballero/caballero_war_NO_move_1_right.bmp",
+      "../assets/caballero/caballero_war_NO_move_2_right.bmp",
+      "../assets/caballero/caballero_war_NO_move_3_right.bmp"};
     const char *cseAtkLAlt[3] = {
       "assets/caballero/caballero_war_NO_move_1_left.bmp",
       "assets/caballero/caballero_war_NO_move_2_left.bmp",
@@ -1320,8 +1325,8 @@ void cargarRecursosGraficos() {
   }
 
   // Ataque guerrero (left/right, 2 frames)
-  const char *gueAtkL[2] = {"assets/guerrero/guerrero_war_move_1_left.bmp",
-                            "assets/guerrero/guerrero_war_move_2_left.bmp"};
+  const char *gueAtkL[2] = {"../assets/guerrero/guerrero_war_move_1_left.bmp",
+                            "../assets/guerrero/guerrero_war_move_2_left.bmp"};
   const char *gueAtkR[2] = {"../assets/guerrero/guerrero_war_move_1_right.bmp",
                             "../assets/guerrero/guerrero_war_move_2_right.bmp"};
   const char *gueAtkLAlt[2] = {"assets/guerrero/guerrero_war_move_1_left.bmp",
