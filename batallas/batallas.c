@@ -15,6 +15,7 @@ static ULONGLONG sLastAttackMsAlly[12] = {0};
 static bool sHuboAliadoEnBatalla = false; // evita derrota falsa cuando no hay tropas desplegadas
 static bool sMensajeVictoriaMostrado = false;
 static int sUltimoConteoEnemigos = -1;
+static int sIslaUltimoConteo = -1;
 // Garantiza que una unidad tenga stats básicos asignados
 static void asegurarStatsUnidad(Unidad *u) {
 	if (!u) return;
@@ -78,10 +79,23 @@ static int calcularDanio(const Unidad *atacante, const Unidad *defensor) {
 	return neto;
 }
 
+static void orientarUnidadHaciaObjetivo(Unidad *u, float dx, float dy) {
+	if (!u) return;
+	float absDx = fabsf(dx);
+	float absDy = fabsf(dy);
+	if (absDx < 0.01f && absDy < 0.01f) return;
+	if (absDx > absDy) {
+		u->dir = (dx > 0.0f) ? DIR_RIGHT : DIR_LEFT;
+	} else {
+		u->dir = (dy > 0.0f) ? DIR_FRONT : DIR_BACK;
+	}
+}
+
 // Actualiza una pequeña persecución hacia el objetivo evitando solapamiento básico
 static void moverHaciaObjetivo(Unidad *u, const Unidad *obj, float vel) {
 	float dx = obj->x - u->x;
 	float dy = obj->y - u->y;
+	orientarUnidadHaciaObjetivo(u, dx, dy);
 	float d = sqrtf(dx * dx + dy * dy);
 	if (d < 1.0f) { u->moviendose = false; return; }
 	u->moviendose = true;
@@ -105,6 +119,11 @@ static void moverHaciaObjetivo(Unidad *u, const Unidad *obj, float vel) {
 }
 
 void simularBatalla(struct Jugador *j) {
+	if (!j) return;
+	if (j->islaActual != sIslaUltimoConteo) {
+		sIslaUltimoConteo = j->islaActual;
+		sUltimoConteoEnemigos = -1;
+	}
 	// Obtener enemigos activos
 	int numEnemigos = 0;
 	Unidad *enemigos = navegacionObtenerEnemigosActivos(&numEnemigos);
