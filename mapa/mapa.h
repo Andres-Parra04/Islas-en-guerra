@@ -106,6 +106,8 @@ void mapaSetGenerarRecursos(bool habilitar);
 void mapaActualizarVacas(void);
 // Obtiene el array de vacas para renderizado
 Vaca *mapaObtenerVacas(int *cantidad);
+// Elimina una vaca por su índice en el array (evita desincronización si la vaca se movió)
+bool mapaEliminarVacaPorIndice(int indice);
 void mapaRestaurarVacasExternas(const Vaca *vacas, int cantidad);
 void mapaExportarEstadosIsla(MapaEstadoSerializable estados[4]);
 void mapaImportarEstadosIsla(const MapaEstadoSerializable estados[4]);

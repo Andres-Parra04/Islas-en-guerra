@@ -410,7 +410,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
           if (u->seleccionado && u->x >= 0 && u->vida < u->vidaMax) {
             if (j->Comida >= COSTO_CURACION) {
               j->Comida -= COSTO_CURACION;
-              u->vida += CANTIDAD_CURACION;
+              u->vida += CANTIDAD_CURACION * u->vidaMax / 100;
               if (u->vida > u->vidaMax)
                 u->vida = u->vidaMax;
               alguienCurado = true;
