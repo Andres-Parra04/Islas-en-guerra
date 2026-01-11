@@ -1595,45 +1595,29 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
   // 1.5. DIBUJAR EDIFICIOS - antes del Y-sorting para que estén debajo de
   // unidades
+  // Se pasa pJugador->islaActual para determinar el sprite correcto del ayuntamiento
+  int islaActualParam = pJugador ? pJugador->islaActual : 1;
+  
   if (pJugador->ayuntamiento != NULL) {
     Edificio *edificio = (Edificio *)pJugador->ayuntamiento;
-    edificioDibujar(hdcBuffer, edificio, cam.x, cam.y, cam.zoom, anchoP, altoP);
+    edificioDibujar(hdcBuffer, edificio, cam.x, cam.y, cam.zoom, anchoP, altoP, islaActualParam);
   }
 
   // Dibujar mina
   if (pJugador->mina != NULL) {
     Edificio *edificioMina = (Edificio *)pJugador->mina;
     edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP,
-                    altoP);
+                    altoP, islaActualParam);
   }
 
   // Dibujar cuartel
   if (pJugador->cuartel != NULL) {
     Edificio *edificioCuartel = (Edificio *)pJugador->cuartel;
     edificioDibujar(hdcBuffer, edificioCuartel, cam.x, cam.y, cam.zoom, anchoP,
-                    altoP);
+                    altoP, islaActualParam);
   }
 
-  // Dibujar mina
-  if (pJugador->mina != NULL) {
-    Edificio *edificioMina = (Edificio *)pJugador->mina;
-    edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP,
-                    altoP);
-  }
-
-  // Dibujar cuartel
-  if (pJugador->cuartel != NULL) {
-    Edificio *edificioCuartel = (Edificio *)pJugador->cuartel;
-    edificioDibujar(hdcBuffer, edificioCuartel, cam.x, cam.y, cam.zoom, anchoP,
-                    altoP);
-  }
-
-  // Dibujar mina
-  if (pJugador->mina != NULL) {
-    Edificio *edificioMina = (Edificio *)pJugador->mina;
-    edificioDibujar(hdcBuffer, edificioMina, cam.x, cam.y, cam.zoom, anchoP,
-                    altoP);
-  }
+  // Nota: Eliminé código duplicado que dibujaba mina y cuartel múltiples veces
 
   HDC hdcSprites = CreateCompatibleDC(hdc);
 
