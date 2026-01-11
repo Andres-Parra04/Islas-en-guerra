@@ -1537,7 +1537,7 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 
   if (alguienCerca) {
     // 3. Confirmación
-    int respuesta = MessageBox(GetActiveWindow(), "¿Quieres cazar esta vaca por comida?",
+    int respuesta = MessageBox(GetActiveWindow(), "Quieres cazar esta vaca por comida?",
                                "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
     if (respuesta == IDYES) {
@@ -1551,7 +1551,7 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
       // ================================================================
       if (mapaEliminarVacaPorIndice(vacaEncontrada)) {
         j->Comida += 100;
-        MessageBox(GetActiveWindow(), "¡Vaca cazada! +100 Comida", "Recursos",
+        MessageBox(GetActiveWindow(), "Vaca cazada! +100 Comida", "Recursos",
                    MB_OK | MB_ICONINFORMATION);
       } else {
         // La vaca ya no existe (índice inválido o fue eliminada por otra razón)
@@ -1660,7 +1660,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     if (taladorCercano != NULL) {
       // 3. Confirmación del usuario
       int respuesta =
-          MessageBox(GetActiveWindow(), "¿Quieres talar este arbol y obtener madera?",
+          MessageBox(GetActiveWindow(), "Quieres talar este arbol y obtener madera?",
                      "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
@@ -1732,7 +1732,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
     if (obreroCercano != NULL) {
       char msg[256];
       sprintf(msg,
-              "¿Quieres recoger los recursos de la mina?\n\nOro: %d\nPiedra: "
+              "Quieres recoger los recursos de la mina?\n\nOro: %d\nPiedra: "
               "%d\nHierro: %d",
               e->oroAcumulado, e->piedraAcumulada, e->hierroAcumulado);
 
@@ -2102,20 +2102,20 @@ bool mejorarBarco(struct Jugador *j) {
 
   // Determinar costos según el siguiente nivel (Valores alineados con ui_entrena.h)
   if (siguienteNivel == 2) {
-    oro = 250;
-    madera = 200;
-    piedra = 150;
-    hierro = 100;
+    oro = COSTO_MEJORA_BARCO_2_ORO;
+    madera = COSTO_MEJORA_BARCO_2_MADERA;
+    piedra = COSTO_MEJORA_BARCO_2_PIEDRA;
+    hierro = COSTO_MEJORA_BARCO_2_HIERRO;
   } else if (siguienteNivel == 3) {
-    oro = 500;
-    madera = 450;
-    piedra = 350;
-    hierro = 250;
+    oro = COSTO_MEJORA_BARCO_3_ORO;
+    madera = COSTO_MEJORA_BARCO_3_MADERA;
+    piedra = COSTO_MEJORA_BARCO_3_PIEDRA;
+    hierro = COSTO_MEJORA_BARCO_3_HIERRO;
   } else { // siguienteNivel == 4
-    oro = 1000;
-    madera = 800;
-    piedra = 600;
-    hierro = 500;
+    oro = COSTO_MEJORA_BARCO_4_ORO;
+    madera = COSTO_MEJORA_BARCO_4_MADERA;
+    piedra = COSTO_MEJORA_BARCO_4_PIEDRA;
+    hierro = COSTO_MEJORA_BARCO_4_HIERRO;
   }
 
   // Verificar que el jugador tiene suficientes recursos

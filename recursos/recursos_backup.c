@@ -819,7 +819,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     if (obreroCercano != NULL) {
       // 3. Confirmación del usuario
       int respuesta =
-          MessageBox(NULL, "¿Quieres talar este arbol y obtener madera?",
+          MessageBox(NULL, "Quieres talar este arbol y obtener madera?",
                      "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
@@ -879,7 +879,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
     if (obreroCercano != NULL) {
       char msg[256];
       sprintf(msg,
-              "¿Quieres recoger los recursos de la mina?\n\nOro acumulado: "
+              "Quieres recoger los recursos de la mina?\n\nOro acumulado: "
               "%d\nPiedra acumulada: %d",
               e->oroAcumulado, e->piedraAcumulada);
 
@@ -891,7 +891,7 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
         j->Piedra += e->piedraAcumulada;
         e->oroAcumulado = 0;
         e->piedraAcumulada = 0;
-        MessageBox(NULL, "¡Recursos recogidos con exito!", "Recursos",
+        MessageBox(NULL, "Recursos recogidos con exito!", "Recursos",
                    MB_OK | MB_ICONINFORMATION);
       }
       return true;
@@ -1147,14 +1147,14 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 
     if (tropaCercana) {
       // 3. Confirmación
-      int respuesta = MessageBox(NULL, "¿Quieres cazar esta vaca por comida?",
+      int respuesta = MessageBox(NULL, "Quieres cazar esta vaca por comida?",
                                  "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
         // Eliminar objeto de la matriz
         mapaEliminarObjeto(f, c);
         j->Comida += 100;
-        MessageBox(NULL, "¡Vaca cazada! +100 Comida", "Recursos",
+        MessageBox(NULL, "Vaca cazada! +100 Comida", "Recursos",
                    MB_OK | MB_ICONINFORMATION);
       }
       return true; // Click manejado

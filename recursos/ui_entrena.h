@@ -27,22 +27,6 @@
 #define COSTO_GUERRERO_MADERA 25 // Sube madera (Era 15)
 #define COSTO_GUERRERO_HIERRO 40 // Sube hierro (Era 30)
 
-// Costos para mejorar el barco por nivel (muy altos)
-#define COSTO_MEJORA_BARCO_2_ORO 100 // Mantener Oro
-#define COSTO_MEJORA_BARCO_2_MADERA 250 // Sube madera (Era 200)
-#define COSTO_MEJORA_BARCO_2_PIEDRA 150
-#define COSTO_MEJORA_BARCO_2_HIERRO 300 // Sube hierro (Era 250)
-
-#define COSTO_MEJORA_BARCO_3_ORO 250 // Mantener Oro
-#define COSTO_MEJORA_BARCO_3_MADERA 550 // Sube madera (Era 450)
-#define COSTO_MEJORA_BARCO_3_PIEDRA 350
-#define COSTO_MEJORA_BARCO_3_HIERRO 600 // Sube hierro (Era 500)
-
-#define COSTO_MEJORA_BARCO_4_ORO 500 // Mantener Oro
-#define COSTO_MEJORA_BARCO_4_MADERA 1000 // Sube madera (Era 800)
-#define COSTO_MEJORA_BARCO_4_PIEDRA 600
-#define COSTO_MEJORA_BARCO_4_HIERRO 1200 // Sube hierro (Era 1000)
-
 // --- ESTRUCTURA DEL MENÚ DE ENTRENAMIENTO ---
 typedef struct MenuEntrenamiento {
   bool abierto;
