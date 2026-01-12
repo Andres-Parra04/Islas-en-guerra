@@ -649,8 +649,8 @@ void mostrarMenu() {
         DispatchMessageA(&msg);
     }
 
-    // Volver a mostrar la consola para el juego
-    if (hConsole) ShowWindow(hConsole, SW_SHOW);
+    // NOTA: No volver a mostrar la consola - debe permanecer oculta
+    // if (hConsole) ShowWindow(hConsole, SW_SHOW);
 }
 
 static void dibujarPreviewIsla(HDC hdc, RECT rc) {

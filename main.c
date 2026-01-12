@@ -566,6 +566,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 }
 
 int main() {
+
   // Registrar clase de ventana una sola vez
   WNDCLASSA wc = {0};
   wc.lpfnWndProc = WindowProc;
