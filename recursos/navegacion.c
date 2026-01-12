@@ -48,6 +48,17 @@ static void edificioASerializable(const Edificio *src,
 static void serializableAEdificio(const EdificioIslaSerializable *src,
                                   Edificio *dst);
 
+void navegacionReiniciarEstado(void) {
+  for (int isla = 0; isla < 4; isla++) {
+    EstadoIsla *estado = &sIslas[isla];
+    memset(estado, 0, sizeof(EstadoIsla)); // Guardado: limpiar snapshot per isla
+  }
+  limpiarEnemigosActivos(); // Guardado: borrar enemigos activos en memoria
+  memset(sEnemigosCooldownMs, 0, sizeof(sEnemigosCooldownMs));
+  sIslaInicial = 1;
+  sIslaInicialDefinida = false;
+}
+
 static void unidadASerializable(const Unidad *src,
                                 UnidadIslaSerializable *dst) {
   if (!dst || !src)

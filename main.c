@@ -184,6 +184,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
   switch (uMsg) {
   case WM_CREATE:
+    // Guardado: reiniciar navegación persistente para nueva sesión
+    navegacionReiniciarEstado();
     // Inicializar recursos del jugador y obreros
     IniciacionRecursos(&jugador1, "Jugador 1");
 
@@ -377,6 +379,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       if (menuPausa.volverAlMenu) {
         // Cerrar la ventana de juego para volver al menú
         batallasReiniciarEstado();
+        // Guardado: limpiar snapshots antes de volver al menú principal
+        navegacionReiniciarEstado();
         DestroyWindow(hwnd);
       }
       InvalidateRect(hwnd, NULL, FALSE);

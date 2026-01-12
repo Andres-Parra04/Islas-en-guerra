@@ -374,6 +374,9 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
     return false;
   }
 
+  // Guardado: resetear navegación antes de aplicar los datos cargados
+  navegacionReiniciarEstado();
+
   mapaImportarEstadosIsla(datos.estadosMapa);
   navegacionImportarEstadosIsla(datos.estadosIsla);
   navegacionRestaurarIslaInicial(datos.islaInicial,

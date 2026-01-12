@@ -107,6 +107,9 @@ void navegacionActivarEnemigosIsla(int isla);
 // Cuenta las unidades de un tipo en TODAS las islas (activas y guardadas)
 int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo);
 
+// Guardado: reinicia el snapshot persistente entre sesiones/menus
+void navegacionReiniciarEstado(void);
+
 
 #endif
 
