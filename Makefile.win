@@ -1,0 +1,23 @@
+# Project: Islas en guerra
+# Makefile customized for dev branch
+
+CC       = gcc.exe
+OBJ      = main.o mapa/mapa.o mapa/menu.o recursos/recursos.o recursos/navegacion.o recursos/ui_compra.o recursos/ui_embarque.o recursos/ui_entrena.o batallas/batallas.o edificios/edificios.o guardado/guardado.o
+LIBS     = -lgdi32 -lwinmm -lmsimg32 -mwindows
+INCS     = -I"."
+BIN      = "Project1.exe"
+CFLAGS   = $(INCS) -g3 -DUNICODE -D_UNICODE
+RM       = rm -f
+
+.PHONY: all clean
+
+all: $(BIN)
+
+clean:
+	$(RM) $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(OBJ) -o $(BIN) $(LIBS)
+
+%.o: %.c
+	$(CC) -c $< -o $@ $(CFLAGS)

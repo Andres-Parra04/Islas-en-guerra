@@ -1,14 +1,15 @@
 #include "recursos.h"
-#include "navegacion.h" // Incluir para navegacionContarUnidadesGlobal
 #include "../edificios/edificios.h"
 #include "../mapa/mapa.h"
 #include "../mapa/menu.h"
+#include "navegacion.h" // Incluir para navegacionContarUnidadesGlobal
 #include "stdbool.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
+
 
 // --- Animaciones Lógicas ---
 static const Animation gAnimFront = {DIR_FRONT, 4, 6};
@@ -248,11 +249,11 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   j->CantidadEspadas = 0;
   for (int i = 0; i < MAX_OBREROS; i++) {
     if (i < 6) {
-        j->obreros[i].x = 900.0f + (i * 64.0f);
-        j->obreros[i].y = 900.0f;
+      j->obreros[i].x = 900.0f + (i * 64.0f);
+      j->obreros[i].y = 900.0f;
     } else {
-        j->obreros[i].x = -1000.0f;
-        j->obreros[i].y = -1000.0f;
+      j->obreros[i].x = -1000.0f;
+      j->obreros[i].y = -1000.0f;
     }
     j->obreros[i].destinoX = j->obreros[i].x;
     j->obreros[i].destinoY = j->obreros[i].y;
@@ -335,7 +336,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   // Registrar obreros
   for (int i = 0; i < MAX_OBREROS; i++) {
     if (j->obreros[i].x >= 0) {
-        mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
+      mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
     }
   }
   printf("[DEBUG] %d obreros registrados en matriz\n", 6);
@@ -1145,7 +1146,8 @@ void rtsLiberarMovimientoJugador(struct Jugador *j) {
     obreroLiberarRuta(&j->caballeros[i]);
   for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++)
     obreroLiberarRuta(&j->caballerosSinEscudo[i]);
-  for (int i = 0; i < MAX_GUERREROS; i++) // Guerreros tiene capacidad 4 segun struct
+  for (int i = 0; i < MAX_GUERREROS;
+       i++) // Guerreros tiene capacidad 4 segun struct
     obreroLiberarRuta(&j->guerreros[i]);
 }
 
@@ -1537,8 +1539,9 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
 
   if (alguienCerca) {
     // 3. Confirmación
-    int respuesta = MessageBox(GetActiveWindow(), "Quieres cazar esta vaca por comida?",
-                               "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
+    int respuesta =
+        MessageBox(GetActiveWindow(), "Quieres cazar esta vaca por comida?",
+                   "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
     if (respuesta == IDYES) {
       // ================================================================
@@ -1551,8 +1554,7 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
       // ================================================================
       if (mapaEliminarVacaPorIndice(vacaEncontrada)) {
         j->Comida += 100;
-        MessageBox(GetActiveWindow(), "Vaca cazada! +100 Comida", "Recursos",
-                   MB_OK | MB_ICONINFORMATION);
+        // Se elimina el MessageBox de exito por solicitud del usuario
       } else {
         // La vaca ya no existe (índice inválido o fue eliminada por otra razón)
         MessageBox(GetActiveWindow(), "La vaca ya no está disponible.", "Error",
@@ -1606,7 +1608,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     // - Caballeros (con escudo): NO pueden talar (solo cazar vacas) ✗
     // - Caballeros sin escudo: NO pueden talar (solo cazar vacas) ✗
     // ================================================================
-    
+
     // Usamos el CENTRO del árbol (un tile de 64px) para la distancia
     float centroArbolX = (float)(cArbol * TILE_SIZE) + 32.0f;
     float centroArbolY = (float)(fArbol * TILE_SIZE) + 32.0f;
@@ -1622,12 +1624,12 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
       // Solo considerar obreros seleccionados y activos
       if (!ptrObrero->seleccionado || ptrObrero->x < 0 || ptrObrero->vida <= 0)
         continue;
-      
+
       // Calcular distancia desde el centro del obrero al centro del árbol
       float dx = (ptrObrero->x + 32.0f) - centroArbolX;
       float dy = (ptrObrero->y + 32.0f) - centroArbolY;
       float dist = sqrtf(dx * dx + dy * dy);
-      
+
       if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
         distMinima = dist;
         taladorCercano = ptrObrero;
@@ -1639,14 +1641,15 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     Unidad *ptrGuerrero = j->guerreros;
     for (int i = 0; i < MAX_GUERREROS; i++, ptrGuerrero++) {
       // Solo considerar guerreros seleccionados y activos
-      if (!ptrGuerrero->seleccionado || ptrGuerrero->x < 0 || ptrGuerrero->vida <= 0)
+      if (!ptrGuerrero->seleccionado || ptrGuerrero->x < 0 ||
+          ptrGuerrero->vida <= 0)
         continue;
-      
+
       // Calcular distancia desde el centro del guerrero al centro del árbol
       float dx = (ptrGuerrero->x + 32.0f) - centroArbolX;
       float dy = (ptrGuerrero->y + 32.0f) - centroArbolY;
       float dist = sqrtf(dx * dx + dy * dy);
-      
+
       if (dist < DISTANCIA_MAXIMA && dist < distMinima) {
         distMinima = dist;
         taladorCercano = ptrGuerrero;
@@ -1659,9 +1662,9 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
     // Permitir talar si hay un OBRERO o GUERRERO cerca
     if (taladorCercano != NULL) {
       // 3. Confirmación del usuario
-      int respuesta =
-          MessageBox(GetActiveWindow(), "Quieres talar este arbol y obtener madera?",
-                     "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
+      int respuesta = MessageBox(GetActiveWindow(),
+                                 "Quieres talar este arbol y obtener madera?",
+                                 "Talar Arbol", MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
         // ... ejecutar accion ...
@@ -1736,8 +1739,8 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
               "%d\nHierro: %d",
               e->oroAcumulado, e->piedraAcumulada, e->hierroAcumulado);
 
-      int respuesta =
-          MessageBox(GetActiveWindow(), msg, "Recoger Recursos", MB_YESNO | MB_ICONQUESTION);
+      int respuesta = MessageBox(GetActiveWindow(), msg, "Recoger Recursos",
+                                 MB_YESNO | MB_ICONQUESTION);
 
       if (respuesta == IDYES) {
         j->Oro += e->oroAcumulado;
@@ -1746,8 +1749,8 @@ bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX,
         e->oroAcumulado = 0;
         e->piedraAcumulada = 0;
         e->hierroAcumulado = 0;
-        MessageBox(GetActiveWindow(), "Recursos recogidos con exito!", "Recursos",
-                   MB_OK | MB_ICONINFORMATION);
+        MessageBox(GetActiveWindow(), "Recursos recogidos con exito!",
+                   "Recursos", MB_OK | MB_ICONINFORMATION);
       }
       return true;
     }
@@ -1775,8 +1778,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
   // CONFIGURACIÓN DEL PANEL
   // ================================================================
   const int PANEL_ANCHO = 230;
-  const int PANEL_ALTO =
-      230; // Aumentado para incluir Nivel de Barco
+  const int PANEL_ALTO = 230; // Aumentado para incluir Nivel de Barco
   const int MARGEN = 10;
   const int ESPACIADO_LINEA = 22;
 
@@ -1900,7 +1902,8 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
   // Contar unidades globales (Isla actual + Otras islas + Barco)
   int numObreros = navegacionContarUnidadesGlobal(j, TIPO_OBRERO);
   int numCaballeros = navegacionContarUnidadesGlobal(j, TIPO_CABALLERO);
-  int numCabSinEsc = navegacionContarUnidadesGlobal(j, TIPO_CABALLERO_SIN_ESCUDO);
+  int numCabSinEsc =
+      navegacionContarUnidadesGlobal(j, TIPO_CABALLERO_SIN_ESCUDO);
   int numGuerreros = navegacionContarUnidadesGlobal(j, TIPO_GUERRERO);
 
   // Mostrar conteo de unidades (color pergamino claro) - Acentos corregidos
@@ -2100,7 +2103,8 @@ bool mejorarBarco(struct Jugador *j) {
   int siguienteNivel = nivelActual + 1;
   int oro, madera, piedra, hierro;
 
-  // Determinar costos según el siguiente nivel (Valores alineados con ui_entrena.h)
+  // Determinar costos según el siguiente nivel (Valores alineados con
+  // ui_entrena.h)
   if (siguienteNivel == 2) {
     oro = COSTO_MEJORA_BARCO_2_ORO;
     madera = COSTO_MEJORA_BARCO_2_MADERA;
