@@ -112,6 +112,10 @@ static void guardadaAUnidad(const UnidadGuardada *src, Unidad *dst) {
     dst->y = -1000.0f;
     dst->celdaFila = -1;
     dst->celdaCol = -1;
+  } else {
+    // Asegurar que unidades vivas tengan estado de muerte limpio
+    dst->tiempoMuerteMs = 0;
+    dst->frameMuerte = 0;
   }
 }
 
