@@ -67,6 +67,8 @@ static void unidadAGuardada(const Unidad *src, UnidadGuardada *dst) {
   dst->critico = src->critico;
   dst->defensa = src->defensa;
   dst->alcance = src->alcance;
+  dst->tiempoMuerteMs = src->tiempoMuerteMs;
+  dst->frameMuerte = src->frameMuerte;
 }
 
 // Convierte UnidadGuardada a Unidad (restaura estructura)
@@ -100,20 +102,16 @@ static void guardadaAUnidad(const UnidadGuardada *src, Unidad *dst) {
   dst->defensa = src->defensa;
   dst->alcance = src->alcance;
   dst->recibiendoAtaque = false;
+  // Restaurar estado de muerte desde los datos guardados
+  dst->tiempoMuerteMs = src->tiempoMuerteMs;
+  dst->frameMuerte = src->frameMuerte;
+  // Si la unidad está muerta, asegurar posición fuera del mapa
   if (dst->vida <= 0) {
-    // Guardado: al restaurar una unidad muerta evitamos mostrar animaciones inesperadas
-    const ULONGLONG ahora = GetTickCount64();
-    const ULONGLONG desfase = 8000ULL;
-    dst->tiempoMuerteMs = (ahora > desfase) ? (ahora - desfase) : 1ULL;
-    dst->frameMuerte = 1;
     dst->moviendose = false;
     dst->x = -1000.0f;
     dst->y = -1000.0f;
     dst->celdaFila = -1;
     dst->celdaCol = -1;
-  } else {
-    dst->tiempoMuerteMs = 0;
-    dst->frameMuerte = 0;
   }
 }
 
