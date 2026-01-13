@@ -35,6 +35,9 @@ bool navegacionIsIslaConquistada(int isla);
 // True si la isla actual del jugador NO está conquistada
 bool navegacionIslaActualNoConquistada(const struct Jugador *j);
 
+// Guardado: sincroniza la isla activa para que el snapshot refleje muertes y tropas actuales
+void navegacionSincronizarIslaActual(struct Jugador *j);
+
 typedef struct {
 	float x, y;
 	float destinoX, destinoY;
@@ -103,6 +106,9 @@ void navegacionActivarEnemigosIsla(int isla);
 
 // Cuenta las unidades de un tipo en TODAS las islas (activas y guardadas)
 int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo);
+
+// Guardado: reinicia el snapshot persistente entre sesiones/menus
+void navegacionReiniciarEstado(void);
 
 
 #endif

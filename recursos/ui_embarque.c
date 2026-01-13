@@ -6,9 +6,13 @@
 #include <windows.h>
 
 
-// Una unidad disponible está visible en el mapa y no está ocupada moviéndose
+// Una unidad disponible está viva, visible en el mapa y no está ocupada
 static bool unidadDisponible(const Unidad *u) {
-  return u && u->x >= 0 && u->y >= 0 && !u->moviendose;
+  if (!u)
+    return false;
+  if (u->vida <= 0 || u->tiempoMuerteMs != 0)
+    return false; // Evitar contar unidades muertas como embarcables
+  return u->x >= 0 && u->y >= 0 && !u->moviendose;
 }
 
 // Requiere que la unidad esté en la orilla junto al barco (zona corta de
