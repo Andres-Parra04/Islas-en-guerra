@@ -54,6 +54,8 @@ typedef struct {
   int critico;
   int defensa;
   int alcance;
+  ULONGLONG tiempoMuerteMs; // Timestamp de muerte (0 si vivo)
+  int frameMuerte;          // Frame de animación de muerte
 } UnidadGuardada;
 
 // ============================================================================
