@@ -231,6 +231,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   datos.barco.y = j->barco.y;
   datos.barco.dir = (int)j->barco.dir;
   datos.barco.activo = j->barco.activo;
+  datos.barco.construido = j->barco.construido;
   datos.barco.numTropas = j->barco.numTropas;
 
   // Agregado para sistema de mejoras
@@ -410,6 +411,7 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   j->barco.y = datos.barco.y;
   j->barco.dir = (Direccion)datos.barco.dir;
   j->barco.activo = datos.barco.activo;
+  j->barco.construido = datos.barco.construido;
   j->barco.numTropas = datos.barco.numTropas;
 
   // Agregado para sistema de mejoras

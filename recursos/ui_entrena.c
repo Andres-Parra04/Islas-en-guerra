@@ -219,12 +219,26 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
   dibujarBotonEntrenamiento(hdc, menu->botonGuerrero, "Entrenar Guerrero",
                             costo, stats);
 
-  // Botón Mejorar Barco (NUEVO)
-  int nivelActual = jugador->barco.nivelMejora;
-  int capacidadActual = jugador->barco.capacidadMaxima;
+  // Botón Barco: Construir o Mejorar según estado
+  if (!jugador->barco.construido) {
+    // === BARCO NO CONSTRUIDO: Mostrar opción de CONSTRUIR ===
+    char tituloConstruir[] = "Construir Barco";
+    char costoConstruir[120];
+    char statsConstruir[] = "Repara el barco para poder navegar.";
 
-  if (nivelActual < 4) {
-    // Preparar texto de mejora
+    sprintf(costoConstruir, "Costo: %d Oro, %d Madera, %d Piedra, %d Hierro",
+            COSTO_CONSTRUIR_BARCO_ORO, COSTO_CONSTRUIR_BARCO_MADERA,
+            COSTO_CONSTRUIR_BARCO_PIEDRA, COSTO_CONSTRUIR_BARCO_HIERRO);
+
+    dibujarBotonEntrenamiento(hdc, menu->botonMejorarBarco, tituloConstruir,
+                              costoConstruir, statsConstruir);
+  } else {
+    // Variables para la lógica de mejora del barco
+    int nivelActual = jugador->barco.nivelMejora;
+    int capacidadActual = jugador->barco.capacidadMaxima;
+    
+    if (nivelActual < 4) {
+    // === BARCO CONSTRUIDO: Mostrar opción de MEJORAR ===
     char tituloBarco[80];
     char costoBarco[120];
     char statsBarco[100];
@@ -277,6 +291,7 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
     RECT rectTexto = menu->botonMejorarBarco;
     DrawText(hdc, "Barco al Nivel Máximo (15 tropas)", -1, &rectTexto,
              DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    }
   }
 
   SelectObject(hdc, oldFont);
@@ -437,16 +452,26 @@ bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
     return true;
   }
 
-  // --- MEJORAR BARCO ---
+  // --- BARCO (CONSTRUIR o MEJORAR) ---
   if (pantallaX >= menu->botonMejorarBarco.left &&
       pantallaX <= menu->botonMejorarBarco.right &&
       pantallaY >= menu->botonMejorarBarco.top &&
       pantallaY <= menu->botonMejorarBarco.bottom) {
-    // Solo permitir si no está al nivel máximo
-    if (jugador->barco.nivelMejora < 4) {
-      extern bool mejorarBarco(struct Jugador * j);
+    
+    if (!jugador->barco.construido) {
+      // Construir barco
+      extern bool construirBarco(struct Jugador *j);
+      if (construirBarco(jugador)) {
+        strcpy(menu->mensajeError, "Barco construido con exito!");
+        menu->tiempoError = 80;
+      } else {
+        strcpy(menu->mensajeError, "Recursos insuficientes!");
+        menu->tiempoError = 60;
+      }
+    } else if (jugador->barco.nivelMejora < 4) {
+      // Mejorar barco
+      extern bool mejorarBarco(struct Jugador *j);
       if (mejorarBarco(jugador)) {
-        // mejorarBarco ya descuenta los recursos internamente
         strcpy(menu->mensajeError, "Barco mejorado con exito!");
         menu->tiempoError = 80;
       } else {

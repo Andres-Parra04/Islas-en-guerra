@@ -324,8 +324,9 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   // Inicializar sistema de mejoras (nivel 1 por defecto)
   j->barco.nivelMejora = 1;
   j->barco.capacidadMaxima = 6;
+  j->barco.construido = false; // Barco comienza destruido
 
-  printf("[DEBUG] Barco inicializado (pendiente de colocacion en orilla)\n");
+  printf("[DEBUG] Barco inicializado (pendiente de colocacion en orilla)\\n");
 
   // ================================================================
   // REGISTRAR TODOS LOS OBJETOS EN mapaObjetos
@@ -2153,6 +2154,48 @@ bool mejorarBarco(struct Jugador *j) {
   printf(
       "[MEJORA BARCO] ¡Barco mejorado a nivel %d! Nueva capacidad: %d tropas\n",
       siguienteNivel, j->barco.capacidadMaxima);
+
+  return true;
+}
+
+// ============================================================================
+// FUNCIÓN DE CONSTRUCCIÓN DEL BARCO
+// ============================================================================
+// Construye el barco inicialmente destruido, permitiendo su uso para navegar.
+// Una vez construido, se pueden aplicar mejoras desde el cuartel.
+// ============================================================================
+bool construirBarco(struct Jugador *j) {
+  if (!j)
+    return false;
+
+  // Verificar que el barco no esté ya construido
+  if (j->barco.construido) {
+    printf("[CONSTRUIR BARCO] El barco ya está construido\n");
+    return false;
+  }
+
+  // Verificar recursos
+  if (j->Oro < COSTO_CONSTRUIR_BARCO_ORO ||
+      j->Madera < COSTO_CONSTRUIR_BARCO_MADERA ||
+      j->Piedra < COSTO_CONSTRUIR_BARCO_PIEDRA ||
+      j->Hierro < COSTO_CONSTRUIR_BARCO_HIERRO) {
+    printf("[CONSTRUIR BARCO] Recursos insuficientes. Requiere: %d Oro, "
+           "%d Madera, %d Piedra, %d Hierro\n",
+           COSTO_CONSTRUIR_BARCO_ORO, COSTO_CONSTRUIR_BARCO_MADERA,
+           COSTO_CONSTRUIR_BARCO_PIEDRA, COSTO_CONSTRUIR_BARCO_HIERRO);
+    return false;
+  }
+
+  // Descontar recursos
+  j->Oro -= COSTO_CONSTRUIR_BARCO_ORO;
+  j->Madera -= COSTO_CONSTRUIR_BARCO_MADERA;
+  j->Piedra -= COSTO_CONSTRUIR_BARCO_PIEDRA;
+  j->Hierro -= COSTO_CONSTRUIR_BARCO_HIERRO;
+
+  // Marcar como construido
+  j->barco.construido = true;
+
+  printf("[CONSTRUIR BARCO] ¡Barco construido! Ahora puede usarse para navegar.\n");
 
   return true;
 }

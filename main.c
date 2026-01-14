@@ -318,10 +318,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 
       // Verificar si se hizo click sobre el barco
       if (barcoContienePunto(&jugador1.barco, mundoX, mundoY)) {
-        // Abrir menú de embarque
-        GetClientRect(hwnd, &rect);
-        menuEmbarqueAbrir(&menuEmbarque, rect.right - rect.left,
-                          rect.bottom - rect.top);
+        // Solo abrir menú de embarque si el barco está construido
+        if (jugador1.barco.construido) {
+          GetClientRect(hwnd, &rect);
+          menuEmbarqueAbrir(&menuEmbarque, rect.right - rect.left,
+                            rect.bottom - rect.top);
+        }
+        // Si está destruido, no hacer nada (el jugador debe construirlo primero)
       }
       // Verificar si se hizo click sobre el ayuntamiento
       else if (edificioContienePunto(&ayuntamiento, mundoX, mundoY)) {

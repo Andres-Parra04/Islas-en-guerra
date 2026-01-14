@@ -82,6 +82,7 @@ typedef struct {
   float x, y;
   int dir; // Direccion (guardada como int)
   bool activo;
+  bool construido; // Si el barco ha sido construido (false = destruido)
   int numTropas;
   int indiceTropas[15]; // Índices de las tropas embarcadas (-1 si vacío)
   int tipoTropas[15];   // Tipo de cada tropa embarcada

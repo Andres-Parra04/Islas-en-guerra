@@ -71,6 +71,7 @@ static HBITMAP hCaballeroBmp[4] = {NULL}; // Front, Back, Left, Right (NUEVO)
 static HBITMAP hCaballeroSinEscudoBmp[4] = {
     NULL};                            // Front, Back, Left, Right (NUEVO)
 static HBITMAP hBarcoBmp[4] = {NULL}; // Front, Back, Left, Right (192x192)
+static HBITMAP hBarcoDestruidoBmp = NULL; // Barco destruido (192x192)
 
 static HBITMAP hGuerreroBmp[4] = {NULL};       // Front, Back, Left, Right
 static HBITMAP hCaballeroAtk[2][3] = {{NULL}}; // dir (0=left,1=right) x frames
@@ -135,6 +136,8 @@ static bool unidadBarraVisible(Unidad *u) {
 #define BARCO_B_ALT "../assets/barco/barco_back.bmp"
 #define BARCO_L_ALT "../assets/barco/barco_left.bmp"
 #define BARCO_R_ALT "../assets/barco/barco_right.bmp"
+#define BARCO_DESTRUIDO "../assets/barco/barco_destruido.bmp"
+#define BARCO_DESTRUIDO_ALT "assets/barco/barco_destruido.bmp"
 
 static HBITMAP hMapaBmp =
     NULL; // Mapa de isla individual (isla1, isla2, o isla3)
@@ -1357,6 +1360,19 @@ void cargarRecursosGraficos() {
     }
   }
 
+  // Cargar sprite del barco destruido
+  hBarcoDestruidoBmp = (HBITMAP)LoadImageA(NULL, BARCO_DESTRUIDO, IMAGE_BITMAP,
+                                           192, 192, LR_LOADFROMFILE);
+  if (!hBarcoDestruidoBmp) {
+    hBarcoDestruidoBmp = (HBITMAP)LoadImageA(NULL, BARCO_DESTRUIDO_ALT, IMAGE_BITMAP,
+                                             192, 192, LR_LOADFROMFILE);
+  }
+  if (hBarcoDestruidoBmp) {
+    printf("[OK] Barco destruido cargado correctamente (192x192).\n");
+  } else {
+    printf("[ERROR] No se pudo cargar barco_destruido.bmp\n");
+  }
+
   const char *rutasVaca[] = {VACA_F, VACA_B, VACA_L, VACA_R};
   const char *rutasVacaAlt[] = {VACA_F_ALT, VACA_B_ALT, VACA_L_ALT, VACA_R_ALT};
   for (int i = 0; i < 4; i++) {
@@ -2096,7 +2112,12 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
         if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
             pantY < altoP) {
-          SelectObject(hdcSprites, hBarcoBmp[b->dir]);
+          // Seleccionar sprite: destruido o construido según estado
+          if (b->construido) {
+            SelectObject(hdcSprites, hBarcoBmp[b->dir]);
+          } else {
+            SelectObject(hdcSprites, hBarcoDestruidoBmp);
+          }
           TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
                          192, 192, RGB(255, 255, 255));
         }

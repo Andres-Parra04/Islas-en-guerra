@@ -34,6 +34,11 @@
 #define COSTO_MEJORA_BARCO_4_PIEDRA 600
 #define COSTO_MEJORA_BARCO_4_HIERRO 1200
 
+#define COSTO_CONSTRUIR_BARCO_ORO 50
+#define COSTO_CONSTRUIR_BARCO_MADERA 150
+#define COSTO_CONSTRUIR_BARCO_PIEDRA 150
+#define COSTO_CONSTRUIR_BARCO_HIERRO 160
+
 #define COSTO_CURACION 100
 #define CANTIDAD_CURACION 25
 #define OBRERO_VIDA_MAX 100
@@ -126,6 +131,7 @@ typedef struct {
   float x, y;    // Posición en el mapa
   Direccion dir; // Orientación del barco
   bool activo;   // Si el barco está colocado
+  bool construido; // Si el barco ha sido construido (false = destruido)
 
   // === Sistema de tropas ===
   Unidad *tropas[15]; // Punteros a las tropas embarcadas (máximo 15)
@@ -204,6 +210,9 @@ bool entrenarGuerrero(struct Jugador *j, float x, float y);
 
 // Función para mejorar la capacidad del barco
 bool mejorarBarco(struct Jugador *j);
+
+// Función para construir el barco (reparar desde estado destruido)
+bool construirBarco(struct Jugador *j);
 
 // Verifica si hay algun obrero seleccionado cerca de un punto
 bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
