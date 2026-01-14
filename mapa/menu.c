@@ -67,8 +67,14 @@
 #define RUTA_ISLA2_ALT "assets/islas/isla2.bmp"
 #define RUTA_ISLA3 "..\\assets\\islas\\isla3.bmp"
 #define RUTA_ISLA3_ALT "assets/islas/isla3.bmp"
+#define RUTA_ISLA4 "..\\assets\\islas\\isla4.bmp"
+#define RUTA_ISLA4_ALT "assets/islas/isla4.bmp"
+#define RUTA_ISLA5 "..\\assets\\islas\\isla5.bmp"
+#define RUTA_ISLA5_ALT "assets/islas/isla5.bmp"
 #define RUTA_MAPA_COMPLETO "..\\assets\\mapa_islas_guerra.bmp"
 #define RUTA_MAPA_COMPLETO_ALT "assets/mapa_islas_guerra.bmp"
+#define RUTA_MAPA2 "..\\assets\\mapa2.bmp"
+#define RUTA_MAPA2_ALT "assets/mapa2.bmp"
 
 static HBITMAP fondoBmp = NULL;
 static BITMAP infoFondo;
@@ -99,11 +105,32 @@ static int gMenuAccion = 0; // 0 = nueva partida, 1 = cargar partida
 static bool gMostrandoSeleccionIsla = false;
 static int gSeleccionIsla = 0;
 static int gIslaSeleccionada = 1;
-static const char *OPCIONES_ISLAS[] = { "Mapa completo", "Isla 1", "Isla 2", "Isla 3", "Volver" };
-static const int OPCIONES_ISLAS_TOTAL = 5;
+static const char *OPCIONES_ISLAS[] = { 
+    "Mapa 3 Islas",        // 0 - Preview del mapa completo original
+    "Isla 1",              // 1 - Seleccionable
+    "Isla 2",              // 2 - Seleccionable
+    "Isla 3",              // 3 - Seleccionable
+    "Mapa 2 Islas",        // 4 - Preview del nuevo mapa (mapa2.bmp)
+    "Isla 4 [Bloqueada]",  // 5 - Visible pero NO seleccionable
+    "Isla 5 [Bloqueada]",  // 6 - Visible pero NO seleccionable
+    "Volver"               // 7
+};
+static const int OPCIONES_ISLAS_TOTAL = 8;
 
-static HBITMAP hIslaBmp[4] = {NULL};
-static BITMAP infoIsla[4];
+// Array de flags para indicar qué opciones están bloqueadas
+static const bool ISLAS_BLOQUEADAS[] = { 
+    false, // Mapa 3 Islas
+    false, // Isla 1
+    false, // Isla 2
+    false, // Isla 3
+    false, // Mapa 2 Islas (solo preview)
+    true,  // Isla 4 - BLOQUEADA
+    true,  // Isla 5 - BLOQUEADA
+    false  // Volver
+};
+
+static HBITMAP hIslaBmp[7] = {NULL};  // 0=mapa3, 1-3=isla1-3, 4=mapa2, 5-6=isla4-5
+static BITMAP infoIsla[7];
 static bool islasCargadas = false;
 
 // --- Estado del menú de carga de partidas ---
@@ -172,10 +199,16 @@ static bool cargarIslas(void) {
         return true;
     }
 
-    const char *rutas[] = { RUTA_MAPA_COMPLETO, RUTA_ISLA1, RUTA_ISLA2, RUTA_ISLA3 };
-    const char *rutasAlt[] = { RUTA_MAPA_COMPLETO_ALT, RUTA_ISLA1_ALT, RUTA_ISLA2_ALT, RUTA_ISLA3_ALT };
+    const char *rutas[] = { 
+        RUTA_MAPA_COMPLETO, RUTA_ISLA1, RUTA_ISLA2, RUTA_ISLA3,
+        RUTA_MAPA2, RUTA_ISLA4, RUTA_ISLA5
+    };
+    const char *rutasAlt[] = { 
+        RUTA_MAPA_COMPLETO_ALT, RUTA_ISLA1_ALT, RUTA_ISLA2_ALT, RUTA_ISLA3_ALT,
+        RUTA_MAPA2_ALT, RUTA_ISLA4_ALT, RUTA_ISLA5_ALT
+    };
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 7; i++) {
         hIslaBmp[i] = (HBITMAP)LoadImageA(NULL, rutas[i], IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
         if (!hIslaBmp[i]) {
             hIslaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasAlt[i], IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
@@ -185,6 +218,7 @@ static bool cargarIslas(void) {
         }
     }
 
+    // Considerar cargado si al menos las primeras 4 están OK (las originales)
     islasCargadas = (hIslaBmp[0] && hIslaBmp[1] && hIslaBmp[2] && hIslaBmp[3]);
     return islasCargadas;
 }
@@ -317,6 +351,54 @@ static void dibujarOpciones(HDC hdc, HFONT font, const char *opciones[], int tot
     }
 }
 
+// Función especializada para dibujar opciones de islas con soporte para bloqueadas
+static void dibujarOpcionesIslas(HDC hdc, HFONT font, RECT rc) {
+    int ancho = rc.right - rc.left;
+    int alto = rc.bottom - rc.top;
+    int centroX = ancho / 4; // Opciones a la izquierda
+
+    SIZE size = medirTexto(hdc, font, "Isla 1");
+    int alturaLinea = size.cy + 12;
+    int bloqueAlto = alturaLinea * OPCIONES_ISLAS_TOTAL;
+    int inicioY = (alto - bloqueAlto) / 2;
+
+    for (int i = 0; i < OPCIONES_ISLAS_TOTAL; i++) {
+        const char *texto = OPCIONES_ISLAS[i];
+        SIZE medida = medirTexto(hdc, font, texto);
+        
+        COLORREF color;
+        if (ISLAS_BLOQUEADAS[i]) {
+            // Islas bloqueadas: gris oscuro
+            color = RGB(120, 120, 120);
+        } else if (i == gSeleccionIsla) {
+            // Seleccionado: verde brillante
+            color = RGB(120, 255, 150);
+        } else {
+            // Normal: blanco
+            color = RGB(255, 255, 255);
+        }
+        
+        dibujarTextoCentrado(hdc, font, texto, centroX, inicioY + i * alturaLinea, color);
+
+        // Marco de selección (incluso para bloqueadas, para indicar posición)
+        if (i == gSeleccionIsla) {
+            int highlightPadding = 18;
+            RECT highlight = {
+                centroX - medida.cx / 2 - highlightPadding,
+                inicioY + i * alturaLinea - 4,
+                centroX + medida.cx / 2 + highlightPadding,
+                inicioY + i * alturaLinea + medida.cy + 6
+            };
+            
+            // Color del borde: rojo si bloqueada, verde si normal
+            COLORREF bordeColor = ISLAS_BLOQUEADAS[i] ? RGB(100, 50, 50) : RGB(20, 80, 30);
+            HBRUSH brush = CreateSolidBrush(bordeColor);
+            FrameRect(hdc, &highlight, brush);
+            DeleteObject(brush);
+        }
+    }
+}
+
 // Render del menú en la ventana GDI (usado desde WM_PAINT)
 static void renderMenu(HWND hwnd) {
     RECT rc;
@@ -362,7 +444,7 @@ static void renderMenu(HWND hwnd) {
         int ancho = rc.right - rc.left;
         rcOpc.left += ancho / 14;// padding izquierdo
         rcOpc.right = rc.left + (ancho / 2) - ancho / 20; // dejar aire con el preview
-        dibujarOpciones(hdc, gFontOpciones, OPCIONES_ISLAS, OPCIONES_ISLAS_TOTAL, gSeleccionIsla, rcOpc);
+        dibujarOpcionesIslas(hdc, gFontOpciones, rcOpc);
         dibujarPreviewIsla(hdc, rc);
     } else if (gMostrandoCargaPartidas) {
         // Menú de carga de partidas con el mismo fondo que el menú principal
@@ -536,7 +618,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             if (gFontPequena) { DeleteObject(gFontPequena); gFontPequena = NULL; }
             if (fondoIslasBmp) { DeleteObject(fondoIslasBmp); fondoIslasBmp = NULL; }
             fondoIslasListo = false;  // CRÍTICO: Resetear flag para que se recargue
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 7; i++) {
                 if (hIslaBmp[i]) { DeleteObject(hIslaBmp[i]); hIslaBmp[i] = NULL; }
             }
             islasCargadas = false;  // CRÍTICO: Resetear flag para que se recarguen las islas
@@ -663,10 +745,8 @@ static void dibujarPreviewIsla(HDC hdc, RECT rc) {
     }
 
     int idx = gSeleccionIsla;
-    if (idx < 0 || idx > 3) {
-        idx = gIslaSeleccionada;
-    }
-    if (idx < 0 || idx > 3 || !hIslaBmp[idx]) {
+    // Permitir índices 0-6 (7 imagenes)
+    if (idx < 0 || idx > 6 || !hIslaBmp[idx]) {
         return;
     }
 
@@ -693,6 +773,21 @@ static void dibujarPreviewIsla(HDC hdc, RECT rc) {
     int destY = rc.top + (alto / 2) - (previewH / 2);
 
     StretchBlt(hdc, destX, destY, previewW, previewH, mem, 0, 0, infoIsla[idx].bmWidth, infoIsla[idx].bmHeight, SRCCOPY);
+
+    // Si está bloqueada, dibujar texto "BLOQUEADA" sobre la imagen
+    if (ISLAS_BLOQUEADAS[gSeleccionIsla]) {
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(255, 80, 80)); // Rojo brillante
+        HFONT oldFont = (HFONT)SelectObject(hdc, gFontTitulo);
+        SIZE textSize;
+        const char *textoBloqueo = "BLOQUEADA";
+        GetTextExtentPoint32A(hdc, textoBloqueo, (int)strlen(textoBloqueo), &textSize);
+        // Centrar texto en el preview
+        int textX = destX + (previewW - textSize.cx) / 2;
+        int textY = destY + (previewH - textSize.cy) / 2;
+        TextOutA(hdc, textX, textY, textoBloqueo, (int)strlen(textoBloqueo));
+        SelectObject(hdc, oldFont);
+    }
 
     SelectObject(mem, old);
     DeleteDC(mem);
