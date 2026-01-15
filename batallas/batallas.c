@@ -6,13 +6,15 @@
 #include <windows.h>
 #include <math.h>
 
+#define MAX_ALIADOS_EN_BATALLA (MAX_CABALLEROS + MAX_CABALLEROS_SIN_ESCUDO + MAX_GUERREROS)
+
 // Emparejamientos 1 vs 1: índice del enemigo <-> índice del aliado
-// Aliados: 12 máximo (4 caballeros, 4 sin escudo, 4 guerreros)
+// Aliados: todas las tropas desplegadas (MAX_ALIADOS_EN_BATALLA)
 // Enemigos: 8 máximo
 static int sPairEnemyToAlly[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
-static int sPairAllyToEnemy[12] = {-1};
+static int sPairAllyToEnemy[MAX_ALIADOS_EN_BATALLA] = {-1};
 static ULONGLONG sLastAttackMsEnemy[8] = {0};
-static ULONGLONG sLastAttackMsAlly[12] = {0};
+static ULONGLONG sLastAttackMsAlly[MAX_ALIADOS_EN_BATALLA] = {0};
 static bool sHuboAliadoEnBatalla = false; // evita derrota falsa cuando no hay tropas desplegadas
 static bool sMensajeVictoriaMostrado = false;
 static int sUltimoConteoEnemigos = -1;
@@ -23,7 +25,7 @@ void batallasReiniciarEstado(void) {
 		sPairEnemyToAlly[i] = -1;
 		sLastAttackMsEnemy[i] = 0;
 	}
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < MAX_ALIADOS_EN_BATALLA; i++) {
 		sPairAllyToEnemy[i] = -1;
 		sLastAttackMsAlly[i] = 0;
 	}
@@ -165,16 +167,25 @@ void simularBatalla(struct Jugador *j) {
 	for (int i = 0; i < 8; i++) {
 		sPairEnemyToAlly[i] = -1;
 	}
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < MAX_ALIADOS_EN_BATALLA; i++) {
 		sPairAllyToEnemy[i] = -1;
 	}
 
-	// Construir lista de aliados (cab, cse, gue)
-	Unidad *aliados[12];
+	// Construir lista de aliados activos en el mapa (caballeros, sin escudo, guerreros)
+	Unidad *aliados[MAX_ALIADOS_EN_BATALLA];
 	int nAliados = 0;
-	for (int i = 0; i < 4; i++) aliados[nAliados++] = &j->caballeros[i];
-	for (int i = 0; i < 4; i++) aliados[nAliados++] = &j->caballerosSinEscudo[i];
-	for (int i = 0; i < 4; i++) aliados[nAliados++] = &j->guerreros[i];
+	for (int i = 0; i < MAX_CABALLEROS && nAliados < MAX_ALIADOS_EN_BATALLA; i++) {
+		if (j->caballeros[i].x < 0) continue;
+		aliados[nAliados++] = &j->caballeros[i];
+	}
+	for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO && nAliados < MAX_ALIADOS_EN_BATALLA; i++) {
+		if (j->caballerosSinEscudo[i].x < 0) continue;
+		aliados[nAliados++] = &j->caballerosSinEscudo[i];
+	}
+	for (int i = 0; i < MAX_GUERREROS && nAliados < MAX_ALIADOS_EN_BATALLA; i++) {
+		if (j->guerreros[i].x < 0) continue;
+		aliados[nAliados++] = &j->guerreros[i];
+	}
 
 	// Asegurar stats de aliados (entrenados o restaurados)
 	for (int a = 0; a < nAliados; a++) {
