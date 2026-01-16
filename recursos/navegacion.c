@@ -56,7 +56,7 @@ static void edificioASerializable(const Edificio *src,
                                   EdificioIslaSerializable *dst);
 static void serializableAEdificio(const EdificioIslaSerializable *src,
                                   Edificio *dst);
-static const bool sViajeLibreDebug = true;
+static const bool sViajeLibreDebug = false;
 
 bool navegacionViajeLibreDebug(void) { return sViajeLibreDebug; }
 
