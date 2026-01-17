@@ -9,6 +9,11 @@
 #include <string.h>
 #include <windows.h>
 
+#define BARCO_SIZE_PX 192.0f
+#define MIN_DIST_ARBOLES_ESTRUCTURAS_PX 256.0f // Batallas: evita spawns pegados a props (4 tiles)
+#define MIN_DIST_ZONA_DESEMBARCO_PX 320.0f // Batallas: despeja zona de llegada (5 tiles)
+#define MIN_DIST_ENTRE_ENEMIGOS_PX 256.0f // Batallas: separación entre enemigos (4 tiles)
+
 enum { MAX_TROPAS_DESEMBARCO = 15 };
 
 // Estado persistente por isla (1..3)
@@ -32,6 +37,7 @@ typedef struct {
   Unidad enemigos[8];
   int numEnemigos;
   bool enemigosGenerados;
+  bool margenesAjustados;
 } EstadoIsla;
 
 static EstadoIsla sIslas[6];
@@ -50,6 +56,9 @@ static void edificioASerializable(const Edificio *src,
                                   EdificioIslaSerializable *dst);
 static void serializableAEdificio(const EdificioIslaSerializable *src,
                                   Edificio *dst);
+static const bool sViajeLibreDebug = false;
+
+bool navegacionViajeLibreDebug(void) { return sViajeLibreDebug; }
 
 void navegacionReiniciarEstado(void) {
   for (int isla = 0; isla < 6; isla++) {
@@ -248,6 +257,7 @@ void navegacionImportarEstadosIsla(const EstadoIslaSerializable estados[6]) {
       serializableAUnidad(&src->enemigos[i], &dst->enemigos[i]);
     dst->numEnemigos = src->numEnemigos;
     dst->enemigosGenerados = src->enemigosGenerados;
+    dst->margenesAjustados = false; // Revalidar márgenes tras cargar
   }
 }
 
@@ -315,6 +325,11 @@ static void obtenerPosicionBarcoIsla(int isla, float *outX, float *outY,
   int fila = *(posIsla + 0);                 // Primera posición: fila
   int columna = *(posIsla + 1);              // Segunda posición: columna
   int direccion = *(posIsla + 2);            // Tercera posición: dirección
+
+  if (isla >= 4 && fila == 0 && columna == 0) {
+    mapaDetectarOrilla(outX, outY, outDir);
+    return;
+  }
 
   // Convertir coordenadas de matriz a píxeles
   *outX = (float)(columna * TILE_SIZE);
@@ -402,7 +417,13 @@ static void activarEnemigosDesdeEstado(EstadoIsla *estado) {
   marcarEnemigosEnMapa(sEnemigosActivos, sNumEnemigosActivos);
 }
 
-static void statsBasicosEnemigo(Unidad *u, TipoUnidad tipo) {
+static void statsBasicosEnemigo(Unidad *u, TipoUnidad tipo, int islaDestino) {
+  int factorStats = 1;
+  if (islaDestino == 4) {
+    factorStats = 2;
+  } else if (islaDestino == 5) {
+    factorStats = 3;
+  }
   u->tipo = tipo;
   u->moviendose = false;
   u->seleccionado = false;
@@ -418,18 +439,93 @@ static void statsBasicosEnemigo(Unidad *u, TipoUnidad tipo) {
   u->frameMuerte = 0;
 
   if (tipo == TIPO_CABALLERO) {
-    u->vida = CABALLERO_VIDA;
-    u->vidaMax = CABALLERO_VIDA;
-    u->damage = CABALLERO_DANO;
-    u->defensa = CABALLERO_DEFENSA;
-    u->critico = CABALLERO_CRITICO;
+    u->vida = CABALLERO_VIDA * factorStats;
+    u->vidaMax = CABALLERO_VIDA * factorStats;
+    u->damage = CABALLERO_DANO * factorStats;
+    u->defensa = CABALLERO_DEFENSA * factorStats;
+    u->critico = CABALLERO_CRITICO * factorStats;
   } else {
-    u->vida = GUERRERO_VIDA;
-    u->vidaMax = GUERRERO_VIDA;
-    u->damage = GUERRERO_DANO;
-    u->defensa = GUERRERO_DEFENSA;
-    u->critico = GUERRERO_CRITICO;
+    u->vida = GUERRERO_VIDA * factorStats;
+    u->vidaMax = GUERRERO_VIDA * factorStats;
+    u->damage = GUERRERO_DANO * factorStats;
+    u->defensa = GUERRERO_DEFENSA * factorStats;
+    u->critico = GUERRERO_CRITICO * factorStats;
   }
+}
+
+// Batallas: reutilizado por el generador de enemigos para separar estructuras
+static bool simboloEsEstructura(char simbolo) {
+  return simbolo == SIMBOLO_EDIFICIO || simbolo == SIMBOLO_MINA || simbolo == SIMBOLO_CUARTEL;
+}
+
+// Batallas: asegura que los enemigos no aparezcan sobre props defensivos
+static bool celdaLejosDeArbolesYEstructuras(int fila, int col) {
+  const float minDist2 = MIN_DIST_ARBOLES_ESTRUCTURAS_PX * MIN_DIST_ARBOLES_ESTRUCTURAS_PX;
+  int rango = (int)ceilf(MIN_DIST_ARBOLES_ESTRUCTURAS_PX / (float)TILE_SIZE);
+  if (rango < 1) rango = 1;
+  float centroX = ((float)col + 0.5f) * (float)TILE_SIZE;
+  float centroY = ((float)fila + 0.5f) * (float)TILE_SIZE;
+  for (int dy = -rango; dy <= rango; dy++) {
+    for (int dx = -rango; dx <= rango; dx++) {
+      int f = fila + dy;
+      int c = col + dx;
+      if (f < 0 || c < 0 || f >= GRID_SIZE || c >= GRID_SIZE) continue;
+      char simbolo = mapaObjetos[f][c];
+      if (simbolo != SIMBOLO_ARBOL && !simboloEsEstructura(simbolo)) continue;
+      float objX = ((float)c + 0.5f) * (float)TILE_SIZE;
+      float objY = ((float)f + 0.5f) * (float)TILE_SIZE;
+      float dxPx = centroX - objX;
+      float dyPx = centroY - objY;
+      if ((dxPx * dxPx + dyPx * dyPx) < minDist2) return false;
+    }
+  }
+  return true;
+}
+
+// Batallas: reserva espacio libre para que las tropas aliadas puedan desembarcar
+static bool celdaLejosDeZonaDesembarco(int fila, int col, float zonaX, float zonaY, float radioPx) {
+  if (radioPx <= 0.0f) return true;
+  float centroX = ((float)col + 0.5f) * (float)TILE_SIZE;
+  float centroY = ((float)fila + 0.5f) * (float)TILE_SIZE;
+  float dx = centroX - zonaX;
+  float dy = centroY - zonaY;
+  float dist2 = dx * dx + dy * dy;
+  return dist2 >= (radioPx * radioPx);
+}
+
+// Batallas: evita apilar enemigos en la misma región
+static bool celdaLejosDeOtrosEnemigos(int fila, int col, const Unidad *enemigos, int numEnemigos) {
+  if (!enemigos || numEnemigos <= 0) return true;
+  const float minDist2 = MIN_DIST_ENTRE_ENEMIGOS_PX * MIN_DIST_ENTRE_ENEMIGOS_PX;
+  float centroX = ((float)col + 0.5f) * (float)TILE_SIZE;
+  float centroY = ((float)fila + 0.5f) * (float)TILE_SIZE;
+  for (int i = 0; i < numEnemigos; i++) {
+    const Unidad *e = enemigos + i;
+    if (!e) continue;
+    if (e->x < 0 || e->y < 0) continue;
+    float ex = e->x + (float)(TILE_SIZE / 2);
+    float ey = e->y + (float)(TILE_SIZE / 2);
+    float dx = centroX - ex;
+    float dy = centroY - ey;
+    if ((dx * dx + dy * dy) < minDist2) return false;
+  }
+  return true;
+}
+
+static bool celdaDisponibleParaEnemigo(int fila, int col);
+
+static bool celdaRespetaMargenesCompletos(int fila, int col, float zonaX, float zonaY,
+    float radioDesembarcoPx, const Unidad *enemigos, int numEnemigos,
+    bool verificandoPosExistente) {
+  if (verificandoPosExistente) {
+    if (!celdaLejosDeArbolesYEstructuras(fila, col)) return false;
+    if (!mapaCeldaEsTierra(fila, col)) return false;
+  } else {
+    if (!celdaDisponibleParaEnemigo(fila, col)) return false;
+  }
+  if (!celdaLejosDeZonaDesembarco(fila, col, zonaX, zonaY, radioDesembarcoPx)) return false;
+  if (!celdaLejosDeOtrosEnemigos(fila, col, enemigos, numEnemigos)) return false;
+  return true;
 }
 
 static bool celdaDisponibleParaEnemigo(int fila, int col) {
@@ -440,7 +536,7 @@ static bool celdaDisponibleParaEnemigo(int fila, int col) {
   char simbolo = mapaObjetos[fila][col];
   if (simbolo != 0 && simbolo != SIMBOLO_VACIO)
     return false;
-  return true;
+  return celdaLejosDeArbolesYEstructuras(fila, col);
 }
 
 static void reservarCeldaEnemigo(int fila, int col) {
@@ -450,7 +546,18 @@ static void reservarCeldaEnemigo(int fila, int col) {
     *(*(colision + fila) + col) = 3;
 }
 
-static bool ubicarEnemigoAleatorio(float *outX, float *outY) {
+static void liberarCeldaEnemigo(int fila, int col) {
+  if (fila < 0 || col < 0 || fila >= GRID_SIZE || col >= GRID_SIZE) return;
+  mapaObjetos[fila][col] = SIMBOLO_VACIO;
+  int **colision = mapaObtenerCollisionMap();
+  if (colision)
+    *(*(colision + fila) + col) = 0;
+}
+
+// Batallas: generador de spawn que respeta zonas seguras
+static bool ubicarEnemigoAleatorio(float zonaDesembarcoX, float zonaDesembarcoY,
+		float radioDesembarcoPx, const Unidad *enemigosExistentes, int numExistentes,
+		float *outX, float *outY) {
   if (!outX || !outY)
     return false;
 
@@ -458,7 +565,8 @@ static bool ubicarEnemigoAleatorio(float *outX, float *outY) {
   for (int intento = 0; intento < maxIntentosAleatorios; intento++) {
     int fila = rand() % GRID_SIZE;
     int col = rand() % GRID_SIZE;
-    if (!celdaDisponibleParaEnemigo(fila, col))
+    if (!celdaRespetaMargenesCompletos(fila, col, zonaDesembarcoX,
+		zonaDesembarcoY, radioDesembarcoPx, enemigosExistentes, numExistentes, false))
       continue;
     reservarCeldaEnemigo(fila, col);
     *outX = (float)(col * TILE_SIZE) + (float)(TILE_SIZE / 2);
@@ -468,7 +576,8 @@ static bool ubicarEnemigoAleatorio(float *outX, float *outY) {
 
   for (int fila = 0; fila < GRID_SIZE; fila++) {
     for (int col = 0; col < GRID_SIZE; col++) {
-      if (!celdaDisponibleParaEnemigo(fila, col))
+      if (!celdaRespetaMargenesCompletos(fila, col, zonaDesembarcoX,
+  		zonaDesembarcoY, radioDesembarcoPx, enemigosExistentes, numExistentes, false))
         continue;
       reservarCeldaEnemigo(fila, col);
       *outX = (float)(col * TILE_SIZE) + (float)(TILE_SIZE / 2);
@@ -478,6 +587,49 @@ static bool ubicarEnemigoAleatorio(float *outX, float *outY) {
   }
 
   return false;
+}
+
+static bool enemigosCumplenMargenes(const EstadoIsla *estado, float zonaX, float zonaY) {
+  if (!estado) return true;
+  Unidad validados[8];
+  int numValidados = 0;
+  for (int i = 0; i < estado->numEnemigos && i < 8; i++) {
+    const Unidad *e = &estado->enemigos[i];
+    if (e->x < 0 || e->y < 0) continue;
+    int fila = (int)(e->y / (float)TILE_SIZE);
+    int col = (int)(e->x / (float)TILE_SIZE);
+    if (!celdaRespetaMargenesCompletos(fila, col, zonaX, zonaY,
+      MIN_DIST_ZONA_DESEMBARCO_PX, validados, numValidados, true)) {
+      return false;
+    }
+    validados[numValidados++] = *e;
+  }
+  return true;
+}
+
+static void reubicarEnemigosPorMargenes(EstadoIsla *estado, float zonaX, float zonaY) {
+  if (!estado) return;
+  Unidad validados[8];
+  int numValidados = 0;
+  for (int i = 0; i < estado->numEnemigos && i < 8; i++) {
+    Unidad *e = &estado->enemigos[i];
+    if (e->x < 0 || e->y < 0) continue;
+    int fila = (int)(e->y / (float)TILE_SIZE);
+    int col = (int)(e->x / (float)TILE_SIZE);
+    if (!celdaRespetaMargenesCompletos(fila, col, zonaX, zonaY,
+      MIN_DIST_ZONA_DESEMBARCO_PX, validados, numValidados, true)) {
+      float nuevoX = 0.0f, nuevoY = 0.0f;
+      if (ubicarEnemigoAleatorio(zonaX, zonaY, MIN_DIST_ZONA_DESEMBARCO_PX,
+        validados, numValidados, &nuevoX, &nuevoY)) {
+        liberarCeldaEnemigo(fila, col);
+        e->x = nuevoX;
+        e->y = nuevoY;
+      } else {
+        continue; // no hay espacio adicional, dejar enemigo como está
+      }
+    }
+    validados[numValidados++] = *e;
+  }
 }
 
 static int clampIntLocal(int v, int lo, int hi) {
@@ -656,6 +808,49 @@ static bool esTierraOrilla(int cx, int cy, int **col) {
     if (v2 == 1 || s2 == SIMBOLO_AGUA)
       return true;
   }
+  return false;
+}
+
+static bool encontrarCeldaOrillaCercanaConMapa(float barcoX, float barcoY, int **col,
+    int *outCeldaX, int *outCeldaY) {
+  if (!col || !outCeldaX || !outCeldaY) return false;
+  int barcoCeldaX = (int)(barcoX / (float)TILE_SIZE);
+  int barcoCeldaY = (int)(barcoY / (float)TILE_SIZE);
+  for (int radio = 1; radio <= 12; radio++) {
+    for (int dy = -radio; dy <= radio; dy++) {
+      for (int dx = -radio; dx <= radio; dx++) {
+        int celdaX = barcoCeldaX + dx;
+        int celdaY = barcoCeldaY + dy;
+        if (celdaX < 0 || celdaX >= GRID_SIZE || celdaY < 0 || celdaY >= GRID_SIZE)
+          continue;
+        if (esTierraOrilla(celdaX, celdaY, col)) {
+          *outCeldaX = celdaX;
+          *outCeldaY = celdaY;
+          return true;
+        }
+      }
+    }
+  }
+  *outCeldaX = barcoCeldaX;
+  *outCeldaY = barcoCeldaY;
+  return false;
+}
+
+static bool encontrarCeldaOrillaCercana(float barcoX, float barcoY, int *outCeldaX, int *outCeldaY) {
+  int **col = mapaObtenerCollisionMap();
+  if (!col) return false;
+  return encontrarCeldaOrillaCercanaConMapa(barcoX, barcoY, col, outCeldaX, outCeldaY);
+}
+
+static bool calcularCentroZonaDesembarco(float barcoX, float barcoY, float *outX, float *outY) {
+  int celdaX = 0, celdaY = 0;
+  if (encontrarCeldaOrillaCercana(barcoX, barcoY, &celdaX, &celdaY)) {
+    if (outX) *outX = (float)celdaX * (float)TILE_SIZE + (float)TILE_SIZE * 0.5f;
+    if (outY) *outY = (float)celdaY * (float)TILE_SIZE + (float)TILE_SIZE * 0.5f;
+    return true;
+  }
+  if (outX) *outX = barcoX + BARCO_SIZE_PX * 0.5f;
+  if (outY) *outY = barcoY + BARCO_SIZE_PX * 0.5f;
   return false;
 }
 
@@ -917,10 +1112,8 @@ static void restaurarEstadoIslaJugador(struct Jugador *j, int isla) {
 // ============================================================================
 
 bool barcoContienePunto(Barco *barco, float mundoX, float mundoY) {
-  const float BARCO_SIZE = 192.0f;
-
-  return (mundoX >= barco->x && mundoX < barco->x + BARCO_SIZE &&
-          mundoY >= barco->y && mundoY < barco->y + BARCO_SIZE);
+  return (mundoX >= barco->x && mundoX < barco->x + BARCO_SIZE_PX &&
+          mundoY >= barco->y && mundoY < barco->y + BARCO_SIZE_PX);
 }
 
 void desembarcarTropas(Barco *barco, struct Jugador *j) {
@@ -941,39 +1134,12 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
     return;
   }
 
-  // Convertir posición del barco a celdas (alineado con TILE_SIZE)
-  int barcoCeldaX = (int)(barco->x / (float)TILE_SIZE);
-  int barcoCeldaY = (int)(barco->y / (float)TILE_SIZE);
-
-  // Buscar tierra adyacente al barco (búsqueda en espiral) dando prioridad a
-  // orilla (tierra pegada a agua)
   int tierraX = -1, tierraY = -1;
-  bool tierraEncontrada = false;
+  bool tierraEncontrada = encontrarCeldaOrillaCercanaConMapa(barco->x, barco->y, col,
+		&tierraX, &tierraY);
 
-  // Buscar en radio creciente alrededor del barco (hasta 12 celdas)
-  for (int radio = 1; radio <= 12 && !tierraEncontrada; radio++) {
-    for (int dy = -radio; dy <= radio && !tierraEncontrada; dy++) {
-      for (int dx = -radio; dx <= radio; dx++) {
-        int celdaX = barcoCeldaX + dx;
-        int celdaY = barcoCeldaY + dy;
-        if (celdaX < 0 || celdaX >= GRID_SIZE || celdaY < 0 ||
-            celdaY >= GRID_SIZE)
-          continue;
-        if (esTierraOrilla(celdaX, celdaY, col)) {
-          tierraX = celdaX;
-          tierraY = celdaY;
-          tierraEncontrada = true;
-          break;
-        }
-      }
-    }
-  }
-
-  // Si no se encontró tierra, usar posición de emergencia
   if (!tierraEncontrada) {
     printf("[WARNING] No se encontró tierra cerca del barco, desembarcando EN EL SITIO (emergencia)\n");
-    tierraX = barcoCeldaX; 
-    tierraY = barcoCeldaY;
   }
 
   printf("[DEBUG] Punto de desembarco en celda: [%d][%d]\n", tierraY, tierraX);
@@ -1110,8 +1276,20 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
     sIslaInicial = j->islaActual;
     sIslaInicialDefinida = true;
   }
+
+  const bool modoViajeLibre = navegacionViajeLibreDebug();
+  bool desbloqueadasOriginales =
+      (j->islasConquistadas[1] && j->islasConquistadas[2] &&
+       j->islasConquistadas[3]);
+  if ((islaDestino == 4 || islaDestino == 5) && !modoViajeLibre &&
+      !desbloqueadasOriginales) {
+    MessageBox(NULL,
+               "Debes conquistar las tres islas originales antes de viajar al nuevo continente.",
+               "Isla bloqueada", MB_OK | MB_ICONWARNING);
+    return false;
+  }
   // Validación: no permitir llevar obreros a islas no conquistadas
-  if (islaDestino != j->islaActual) {
+  if (!modoViajeLibre && islaDestino != j->islaActual) {
     if (barcoTieneObreros(&j->barco) && !islaConquistada(islaDestino)) {
       MessageBox(NULL, "No puedes llevar obreros hasta conquistar la isla",
                  "Embarque restringido", MB_OK | MB_ICONWARNING);
@@ -1160,6 +1338,16 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
   cargarRecursosGraficos();
 
   EstadoIsla *estadoDestino = &sIslas[islaDestino];
+  float proximoBarcoX = 0.0f;
+  float proximoBarcoY = 0.0f;
+  int proximoBarcoDir = 0;
+  obtenerPosicionBarcoIsla(islaDestino, &proximoBarcoX, &proximoBarcoY,
+		&proximoBarcoDir);
+  // Batallas: con este centro restringimos la aparición de enemigos cerca del desembarco
+  float zonaDesembarcoCentroX = 0.0f;
+  float zonaDesembarcoCentroY = 0.0f;
+  calcularCentroZonaDesembarco(proximoBarcoX, proximoBarcoY,
+		&zonaDesembarcoCentroX, &zonaDesembarcoCentroY);
   // Si la isla ya tiene estado guardado, restaurarlo
   if (islaYaVisitada) {
     mapaRestaurarEstadoIsla(islaDestino);
@@ -1171,6 +1359,15 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
         }
       }
     }
+    if (!estadoDestino->margenesAjustados) {
+      if (!enemigosCumplenMargenes(estadoDestino, zonaDesembarcoCentroX,
+                                   zonaDesembarcoCentroY)) {
+        reubicarEnemigosPorMargenes(estadoDestino, zonaDesembarcoCentroX,
+                                    zonaDesembarcoCentroY);
+      }
+      estadoDestino->margenesAjustados = true;
+    }
+    activarEnemigosDesdeEstado(estadoDestino);
   } else {
     // Primera vez en la isla: resetear y generar base
     reiniciarIslaDesconocida(j);
@@ -1190,7 +1387,9 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
       for (int i = 0; i < maxEnemigos && estadoDestino->numEnemigos < 8; i++) {
         float ex = 0.0f;
         float ey = 0.0f;
-        if (!ubicarEnemigoAleatorio(&ex, &ey)) {
+        if (!ubicarEnemigoAleatorio(zonaDesembarcoCentroX,
+		zonaDesembarcoCentroY, MIN_DIST_ZONA_DESEMBARCO_PX,
+		estadoDestino->enemigos, estadoDestino->numEnemigos, &ex, &ey)) {
           printf("[NAV] Sin espacio libre para todos los enemigos\n");
           break;
         }
@@ -1198,10 +1397,12 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
         Unidad *e = &estadoDestino->enemigos[estadoDestino->numEnemigos];
         e->x = ex;
         e->y = ey;
-        statsBasicosEnemigo(e, (i % 2 == 0) ? TIPO_CABALLERO : TIPO_GUERRERO);
+        statsBasicosEnemigo(e, (i % 2 == 0) ? TIPO_CABALLERO : TIPO_GUERRERO,
+                islaDestino);
         estadoDestino->numEnemigos++;
       }
       estadoDestino->enemigosGenerados = (estadoDestino->numEnemigos > 0);
+      estadoDestino->margenesAjustados = true;
     }
     activarEnemigosDesdeEstado(estadoDestino);
     guardarEstadoIslaJugador(j); // Guardar snapshot inicial
@@ -1209,12 +1410,9 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
   }
 
   // Posicionar barco en orilla de la nueva isla (posiciones fijas por isla)
-  float nuevoBarcoX, nuevoBarcoY;
-  int nuevoDir;
-  obtenerPosicionBarcoIsla(islaDestino, &nuevoBarcoX, &nuevoBarcoY, &nuevoDir);
-  j->barco.x = nuevoBarcoX;
-  j->barco.y = nuevoBarcoY;
-  j->barco.dir = (Direccion)nuevoDir;
+  j->barco.x = proximoBarcoX;
+  j->barco.y = proximoBarcoY;
+  j->barco.dir = (Direccion)proximoBarcoDir;
 
   printf("[DEBUG] Barco reposicionado en isla %d: (%.1f, %.1f)\n", islaDestino,
          j->barco.x, j->barco.y);

@@ -8,10 +8,13 @@
 
 
 #define imgMina "../assets/mina.bmp"
+#define imgMinaFuego "../assets/mina-fuego.bmp"
 #define imgCastilloAliado "../assets/castillo_aliado.bmp"
 #define imgCastilloEnemigo "../assets/castillo_enemigo.bmp"
+#define imgCastilloFuego "../assets/castillo_fuego.bmp"
 #define imgCuartelAliado "../assets/cuartel_aliado.bmp"
 #define imgCuartelEnemigo "../assets/cuartel_enemigo.bmp"
+#define imgCuartelFuego "../assets/cuartel_fuego.bmp"
 
 // Tamaño del castillo y cuartel (4x4 celdas de 64px = 256px)
 #define CASTILLO_SIZE 256
@@ -21,14 +24,20 @@
 HBITMAP g_spriteAyuntamiento = NULL;
 HBITMAP g_spriteMina = NULL;
 HBITMAP g_spriteCuartel = NULL;
+HBITMAP g_spriteMinaFuego = NULL;
+HBITMAP g_spriteMinaHielo = NULL;
 
 // Sprites de castillos para islas (256x256)
 HBITMAP g_spriteCastilloAliado = NULL;
 HBITMAP g_spriteCastilloEnemigo = NULL;
+HBITMAP g_spriteCastilloFuego = NULL;
+HBITMAP g_spriteCastilloHielo = NULL;
 
 // Sprites de cuarteles para islas (256x256)
 HBITMAP g_spriteCuartelAliado = NULL;
 HBITMAP g_spriteCuartelEnemigo = NULL;
+HBITMAP g_spriteCuartelFuego = NULL;
+HBITMAP g_spriteCuartelHielo = NULL;
 
 void edificioInicializar(Edificio *e, TipoEdificio tipo, float x, float y) {
   e->tipo = tipo;
@@ -187,6 +196,32 @@ void edificiosCargarSprites() {
       break;
   }
 
+  const char *attemptsMinaFuego[] = {"\\assets\\mina-fuego.bmp",
+                                     "\\..\\assets\\mina-fuego.bmp",
+                                     "\\mina-fuego.bmp"};
+  g_spriteMinaFuego = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsMinaFuego[i]);
+    g_spriteMinaFuego = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, 128, 128,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteMinaFuego)
+      break;
+  }
+
+  const char *attemptsMinaHielo[] = {"\\assets\\iglu.bmp",
+                                     "\\..\\assets\\iglu.bmp",
+                                     "\\iglu.bmp"};
+  g_spriteMinaHielo = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsMinaHielo[i]);
+    g_spriteMinaHielo = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, 128, 128,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteMinaHielo)
+      break;
+  }
+
   if ( g_spriteMina) {
     printf("[SISTEMA] Recursos de edificios cargados con exito.\n");
   } else {
@@ -239,6 +274,34 @@ void edificiosCargarSprites() {
     printf("[ERROR] No se pudo cargar castillo_enemigo.bmp\n");
   }
 
+  const char *attemptsCastilloFuego[] = {
+      "\\assets\\castillo_fuego.bmp", "\\..\\assets\\castillo_fuego.bmp",
+      "\\castillo_fuego.bmp"};
+  g_spriteCastilloFuego = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloFuego[i]);
+    g_spriteCastilloFuego = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteCastilloFuego) {
+      break;
+    }
+  }
+
+  const char *attemptsCastilloHielo[] = {
+      "\\assets\\castillo_hielo.bmp", "\\..\\assets\\castillo_hielo.bmp",
+      "\\castillo_hielo.bmp"};
+  g_spriteCastilloHielo = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloHielo[i]);
+    g_spriteCastilloHielo = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteCastilloHielo) {
+      break;
+    }
+  }
+
   // ============================================================================
   // CARGAR SPRITES DE CUARTELES ALIADO Y ENEMIGO (256x256, 4x4 celdas)
   // ============================================================================
@@ -281,12 +344,43 @@ void edificiosCargarSprites() {
   if (!g_spriteCuartelEnemigo) {
     printf("[ERROR] No se pudo cargar cuartel_enemigo.bmp\n");
   }
+
+  const char *attemptsCuartelFuego[] = {
+      "\\assets\\cuartel_fuego.bmp", "\\..\\assets\\cuartel_fuego.bmp",
+      "\\cuartel_fuego.bmp"};
+  g_spriteCuartelFuego = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelFuego[i]);
+    g_spriteCuartelFuego = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteCuartelFuego) {
+      break;
+    }
+  }
+
+  const char *attemptsCuartelHielo[] = {
+      "\\assets\\cuartel_hielo.bmp", "\\..\\assets\\cuartel_hielo.bmp",
+      "\\cuartel_hielo.bmp"};
+  g_spriteCuartelHielo = NULL;
+  for (int i = 0; i < 3; i++) {
+    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelHielo[i]);
+    g_spriteCuartelHielo = (HBITMAP)LoadImageA(
+        NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    if (g_spriteCuartelHielo) {
+      break;
+    }
+  }
 }
 
 void edificioDibujar(HDC hdcBuffer, const Edificio *e, int camX, int camY,
                      float zoom, int anchoP, int altoP, int islaActual) {
   if (!e->construido)
     return;
+
+  bool esIslaFuego = mapaTemaActualEsFuego();
+  bool esIslaHielo = mapaTemaActualEsHielo();
 
   // Convertir coordenadas del mundo a pantalla
   int pantallaX = (int)((e->x - camX) * zoom);
@@ -304,45 +398,44 @@ void edificioDibujar(HDC hdcBuffer, const Edificio *e, int camX, int camY,
   HBITMAP spriteADibujar = e->sprite;
   if (!spriteADibujar) {
     if (e->tipo == EDIFICIO_AYUNTAMIENTO) {
-      // ================================================================
-      // SELECCIÓN DINÁMICA DE SPRITE SEGÚN ESTADO DE CONQUISTA
-      // ================================================================
-      // - Isla conquistada (incluyendo la inicial): castillo_aliado.bmp
-      // - Isla no conquistada (enemiga): castillo_enemigo.bmp
-      // ================================================================
-      // Usar el parámetro islaActual recibido
-      // Verificar si la isla está conquistada
-      bool esConquistada = navegacionIsIslaConquistada(islaActual);
-      
-      // Selector de sprite basado en estado de conquista
-      if (esConquistada && g_spriteCastilloAliado) {
-        spriteADibujar = g_spriteCastilloAliado;
-      } else if (!esConquistada && g_spriteCastilloEnemigo) {
-        spriteADibujar = g_spriteCastilloEnemigo;
+      if (esIslaFuego && g_spriteCastilloFuego) {
+        spriteADibujar = g_spriteCastilloFuego;
+      } else if (esIslaHielo && g_spriteCastilloHielo) {
+        spriteADibujar = g_spriteCastilloHielo;
       } else {
-        // Fallback al sprite original si los nuevos no se cargaron
-        spriteADibujar = g_spriteAyuntamiento;
+        bool esConquistada = navegacionIsIslaConquistada(islaActual);
+        if (esConquistada && g_spriteCastilloAliado) {
+          spriteADibujar = g_spriteCastilloAliado;
+        } else if (!esConquistada && g_spriteCastilloEnemigo) {
+          spriteADibujar = g_spriteCastilloEnemigo;
+        } else {
+          spriteADibujar = g_spriteAyuntamiento;
+        }
       }
     }
-    else if (e->tipo == EDIFICIO_MINA)
-      spriteADibujar = g_spriteMina;
-    else if (e->tipo == EDIFICIO_CUARTEL) {
-      // ================================================================
-      // SELECCIÓN DINÁMICA DE SPRITE SEGÚN ESTADO DE CONQUISTA
-      // ================================================================
-      // - Isla conquistada (incluyendo la inicial): cuartel_aliado.bmp
-      // - Isla no conquistada (enemiga): cuartel_enemigo.bmp
-      // ================================================================
-      bool esConquistada = navegacionIsIslaConquistada(islaActual);
-      
-      // Selector de sprite basado en estado de conquista
-      if (esConquistada && g_spriteCuartelAliado) {
-        spriteADibujar = g_spriteCuartelAliado;
-      } else if (!esConquistada && g_spriteCuartelEnemigo) {
-        spriteADibujar = g_spriteCuartelEnemigo;
+    else if (e->tipo == EDIFICIO_MINA) {
+      if (esIslaFuego && g_spriteMinaFuego) {
+        spriteADibujar = g_spriteMinaFuego;
+      } else if (esIslaHielo && g_spriteMinaHielo) {
+        spriteADibujar = g_spriteMinaHielo;
       } else {
-        // Fallback al sprite original si los nuevos no se cargaron
-        spriteADibujar = g_spriteCuartel;
+        spriteADibujar = g_spriteMina;
+      }
+    }
+    else if (e->tipo == EDIFICIO_CUARTEL) {
+      if (esIslaFuego && g_spriteCuartelFuego) {
+        spriteADibujar = g_spriteCuartelFuego;
+      } else if (esIslaHielo && g_spriteCuartelHielo) {
+        spriteADibujar = g_spriteCuartelHielo;
+      } else {
+        bool esConquistada = navegacionIsIslaConquistada(islaActual);
+        if (esConquistada && g_spriteCuartelAliado) {
+          spriteADibujar = g_spriteCuartelAliado;
+        } else if (!esConquistada && g_spriteCuartelEnemigo) {
+          spriteADibujar = g_spriteCuartelEnemigo;
+        } else {
+          spriteADibujar = g_spriteCuartel;
+        }
       }
     }
   }
@@ -415,6 +508,14 @@ void edificiosLiberarSprites() {
     DeleteObject(g_spriteMina);
     g_spriteMina = NULL;
   }
+  if (g_spriteMinaFuego) {
+    DeleteObject(g_spriteMinaFuego);
+    g_spriteMinaFuego = NULL;
+  }
+  if (g_spriteMinaHielo) {
+    DeleteObject(g_spriteMinaHielo);
+    g_spriteMinaHielo = NULL;
+  }
   if (g_spriteCuartel) {
     DeleteObject(g_spriteCuartel);
     g_spriteCuartel = NULL;
@@ -428,6 +529,14 @@ void edificiosLiberarSprites() {
     DeleteObject(g_spriteCastilloEnemigo);
     g_spriteCastilloEnemigo = NULL;
   }
+  if (g_spriteCastilloFuego) {
+    DeleteObject(g_spriteCastilloFuego);
+    g_spriteCastilloFuego = NULL;
+  }
+  if (g_spriteCastilloHielo) {
+    DeleteObject(g_spriteCastilloHielo);
+    g_spriteCastilloHielo = NULL;
+  }
   // Liberar sprites de cuarteles
   if (g_spriteCuartelAliado) {
     DeleteObject(g_spriteCuartelAliado);
@@ -436,5 +545,13 @@ void edificiosLiberarSprites() {
   if (g_spriteCuartelEnemigo) {
     DeleteObject(g_spriteCuartelEnemigo);
     g_spriteCuartelEnemigo = NULL;
+  }
+  if (g_spriteCuartelFuego) {
+    DeleteObject(g_spriteCuartelFuego);
+    g_spriteCuartelFuego = NULL;
+  }
+  if (g_spriteCuartelHielo) {
+    DeleteObject(g_spriteCuartelHielo);
+    g_spriteCuartelHielo = NULL;
   }
 }
