@@ -855,11 +855,18 @@ void mapaRestaurarEstadoIsla(int isla) {
     }
   }
 
-  // Restaurar collision map
-  if (gCollisionMap) {
-    for (int f = 0; f < GRID_SIZE; f++) {
-      for (int c = 0; c < GRID_SIZE; c++) {
-        *(*(gCollisionMap + f) + c) = gCollisionIsla[isla][f][c];
+  // Para islas 4 y 5, REGENERAR el collision map en lugar de restaurarlo
+  // Esto asegura que se use la nueva lógica de detección de agua
+  if (isla == 4 || isla == 5) {
+    printf("[DEBUG] Isla %d: Regenerando collision map con nueva logica de agua...\n", isla);
+    mapaReconstruirCollisionMap();
+  } else {
+    // Restaurar collision map normalmente para islas 1-3
+    if (gCollisionMap) {
+      for (int f = 0; f < GRID_SIZE; f++) {
+        for (int c = 0; c < GRID_SIZE; c++) {
+          *(*(gCollisionMap + f) + c) = gCollisionIsla[isla][f][c];
+        }
       }
     }
   }
@@ -938,7 +945,7 @@ static void detectarAguaEnMapa(void) {
     return;
 
   printf("\n[DEBUG AGUA] ============================================\n");
-  printf("[DEBUG AGUA] Iniciando deteccion de agua con GetDIBits...\n");
+  printf("[DEBUG AGUA] Iniciando deteccion de agua (Isla=%d)...\n", gIslaSeleccionadaActual);
   fflush(stdout);
 
   // ================================================================
@@ -1052,24 +1059,35 @@ static void detectarAguaEnMapa(void) {
       BYTE r = pixelData[offset + 2];
 
       // ================================================================
-      // CRITERIO: DETECTAR SOLO AGUA AZUL
+      // DETECCIÓN DE AGUA SEGÚN TIPO DE ISLA
+      // Solo el AZUL OSCURO oceánico bloquea el paso
       // ================================================================
-      // AGUA debe tener azul dominante sobre rojo y verde
-      // Arena/beige/verde son transitables
-      // ================================================================
-
-      bool esAguaAzulOscura =
-          (b > r + 20 && b > g + 20 && b > 60); // Azul oscuro
-      bool esAguaAzulClara =
-          (b > r && b > g && b > 100); // Azul claro (celeste)
-
-      bool esAgua = esAguaAzulOscura || esAguaAzulClara;
-
-      if (!esAgua && gIslaSeleccionadaActual == 4) {
-        // Isla 4 usa agua turquesa/helada con mucho verde; permitir azul dominante suave
-        bool esAguaCianBrillante = (b > 150 && g > 140 && r < 120 && (b - r) > 25);
-        bool esAguaTurquesa = (b > 170 && g > 150 && r < 150 && (b - g) <= 25);
-        esAgua = esAguaCianBrillante || esAguaTurquesa;
+      bool esAgua = false;
+      
+      if (gIslaSeleccionadaActual == 4) {
+        // ISLA DE HIELO: Solo azul oceánico MUY oscuro es agua
+        // El agua oceánica del mapa tiene aprox RGB(4,59,124)
+        // Los blancos, cianes, grises claros son suelo transitable
+        // Criterio MUY estricto: R muy bajo (<20), G bajo (<80), B alto (>100)
+        esAgua = (r < 20 && g < 80 && b > 100);
+        
+        // DEBUG ISLA 4: Mostrar primeros 20 colores encontrados
+        static int debugIsla4Count = 0;
+        if (debugIsla4Count < 20) {
+          printf("[DEBUG ISLA4 detectarAgua] Celda[%d][%d] RGB(%d,%d,%d) -> esAgua=%d (r<20=%d, g<80=%d, b>100=%d)\n",
+                 f, c, r, g, b, esAgua, (r<20), (g<80), (b>100));
+          fflush(stdout);
+          debugIsla4Count++;
+        }
+      } else if (gIslaSeleccionadaActual == 5) {
+        // ISLA DE FUEGO: Solo azul oceánico es agua
+        // Los rojos, naranjas, grises oscuros son suelo transitable
+        esAgua = (r < 50 && b > 80 && b > g + 40);
+      } else {
+        // ISLAS CLÁSICAS (1, 2, 3): Lógica original
+        bool esAguaAzulOscura = (b > r + 20 && b > g + 20 && b > 60);
+        bool esAguaAzulClara = (b > r && b > g && b > 100);
+        esAgua = esAguaAzulOscura || esAguaAzulClara;
       }
 
       if (esAgua) {
@@ -1082,8 +1100,8 @@ static void detectarAguaEnMapa(void) {
         // Debug primeras 5 escrituras
         if (contadorAgua <= 5) {
           printf("[DEBUG] AGUA DETECTADA: gCollisionMap[%d][%d] = 1 "
-                 "(RGB=%d,%d,%d)\n",
-                 f, c, r, g, b);
+                 "(RGB=%d,%d,%d) Isla=%d\n",
+                 f, c, r, g, b, gIslaSeleccionadaActual);
           fflush(stdout);
         }
       } else {
@@ -2702,10 +2720,10 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
       // Debug temporal cada 60 frames aprox para no spamear
       static int debugFrame = 0;
       debugFrame++;
-      if (debugFrame % 300 == 0 && b->construido) {
-           printf("[RENDER BARCO] Pos(%.1f, %.1f) BasePies: %.1f FilaActual: %d-%d\n", 
-                  b->x, b->y, basePies, yMinFila, yMaxFila);
-      }
+      // if (debugFrame % 300 == 0 && b->construido) {
+      //      printf("[RENDER BARCO] Pos(%.1f, %.1f) BasePies: %.1f FilaActual: %d-%d\n", 
+      //             b->x, b->y, basePies, yMinFila, yMaxFila);
+      // }
 
       if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
         int pantX = (int)((b->x - cam.x) * cam.zoom);
@@ -3018,6 +3036,9 @@ void mapaMoverObjeto(float viejoX, float viejoY, float nuevoX, float nuevoY,
 
 // Retorna true si la celda es tierra transitable; false si es agua u obstáculo.
 bool mapaCeldaEsTierra(int fila, int col) {
+  // DEBUG: Contador estático para limitar mensajes
+  static int debugCount = 0;
+  
   if (fila < 0 || col < 0 || fila >= GRID_SIZE || col >= GRID_SIZE)
     return false;
 
@@ -3031,10 +3052,23 @@ bool mapaCeldaEsTierra(int fila, int col) {
   char simb = mapaObjetos[fila][col];
 
   // Bloquear cualquier cosa marcada como colisión u océano conocido
-  if (valor != 0)
+  if (valor != 0) {
+    if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
+      printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por collisionMap=%d, simbolo='%c'\n", 
+             fila, col, valor, simb ? simb : '.');
+      fflush(stdout);
+      debugCount++;
+    }
     return false;
-  if (simb == SIMBOLO_AGUA)
+  }
+  if (simb == SIMBOLO_AGUA) {
+    if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
+      printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por SIMBOLO_AGUA\n", fila, col);
+      fflush(stdout);
+      debugCount++;
+    }
     return false;
+  }
 
   // Validación adicional por color directo del mapa (por si el agua no fue
   // marcada)
@@ -3053,10 +3087,45 @@ bool mapaCeldaEsTierra(int fila, int col) {
           BYTE r = GetRValue(color);
           BYTE g = GetGValue(color);
           BYTE b = GetBValue(color);
-          bool agua = (b > r + 20 && b > g + 20 && b > 60) ||
-                      (b > r && b > g && b > 100);
-          if (agua)
+          
+          // ================================================================
+          // DETECCIÓN DE AGUA SEGÚN TIPO DE ISLA
+          // Solo el AZUL OSCURO oceánico bloquea el paso
+          // ================================================================
+          bool agua = false;
+          
+          if (gIslaSeleccionadaActual == 4) {
+            // ISLA DE HIELO: Solo azul oceánico MUY oscuro es agua
+            // El agua oceánica del mapa tiene aprox RGB(4,59,124)
+            // Los blancos, cianes, grises claros son suelo transitable
+            // Criterio MUY estricto: R muy bajo (<20), G bajo (<80), B alto (>100)
+            agua = (r < 20 && g < 80 && b > 100);
+            
+            // DEBUG: Mostrar por qué se bloquea o no
+            if (debugCount < 30) {
+              printf("[DEBUG ISLA4] Celda[%d][%d] COLOR RGB(%d,%d,%d) -> agua=%d (r<20:%d, g<80:%d, b>100:%d)\n",
+                     fila, col, r, g, b, agua, (r<20), (g<80), (b>100));
+              fflush(stdout);
+              debugCount++;
+            }
+          } else if (gIslaSeleccionadaActual == 5) {
+            // ISLA DE FUEGO: Solo azul oceánico es agua
+            // Los rojos, naranjas, grises oscuros son suelo transitable
+            agua = (r < 50 && b > 80 && b > g + 40);
+          } else {
+            // ISLAS CLÁSICAS (1, 2, 3): Lógica original
+            agua = (b > r + 20 && b > g + 20 && b > 60) ||
+                   (b > r && b > g && b > 100);
+          }
+          
+          if (agua) {
+            if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
+              printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por COLOR agua=true\n", fila, col);
+              fflush(stdout);
+              debugCount++;
+            }
             return false;
+          }
         }
       }
     }

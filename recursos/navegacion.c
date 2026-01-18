@@ -418,11 +418,11 @@ static void activarEnemigosDesdeEstado(EstadoIsla *estado) {
 }
 
 static void statsBasicosEnemigo(Unidad *u, TipoUnidad tipo, int islaDestino) {
-  int factorStats = 1;
+  float factorStats = 1;
   if (islaDestino == 4) {
-    factorStats = 2;
+    factorStats = 1.3;
   } else if (islaDestino == 5) {
-    factorStats = 3;
+    factorStats = 1.6;
   }
   u->tipo = tipo;
   u->moviendose = false;
@@ -1016,7 +1016,7 @@ static void desembarcarTropasEnCentro(Barco *barco, struct Jugador *j) {
 // Guarda el estado de recursos y edificios del jugador para la isla actual
 static void guardarEstadoIslaJugador(struct Jugador *j) {
   int isla = j->islaActual;
-  if (isla < 1 || isla > 3)
+  if (isla < 1 || isla > 5)
     return;
   EstadoIsla *estado = &sIslas[isla];
 
@@ -1064,14 +1064,14 @@ void navegacionSincronizarIslaActual(struct Jugador *j) {
     return;
   // Guardado: snapshot temporal antes de exportar estadosIsla
   guardarEstadoIslaJugador(j);
-  if (j->islaActual >= 1 && j->islaActual <= 3)
+  if (j->islaActual >= 1 && j->islaActual <= 5)
     // Guardado: persistir mapa/objetos de la isla activa
     mapaGuardarEstadoIsla(j->islaActual);
 }
 
 // Restaura recursos y edificios del jugador al cambiar a otra isla
 static void restaurarEstadoIslaJugador(struct Jugador *j, int isla) {
-  if (isla < 1 || isla > 3)
+  if (isla < 1 || isla > 5)
     return;
   EstadoIsla *estado = &sIslas[isla];
   if (!estado->inicializado)

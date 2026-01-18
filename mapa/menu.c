@@ -732,7 +732,7 @@ void mostrarMenu() {
     }
 
     // NOTA: No volver a mostrar la consola - debe permanecer oculta
-    // if (hConsole) ShowWindow(hConsole, SW_SHOW);
+    if (hConsole) ShowWindow(hConsole, SW_SHOW);
 }
 
 static void dibujarPreviewIsla(HDC hdc, RECT rc) {

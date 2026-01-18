@@ -813,7 +813,8 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   // ================================================================
   // DIAGNÓSTICO PASO 1: Verificar coordenadas recibidas
   // ================================================================
-  printf("\n[DEBUG] ===== NUEVO COMANDO DE MOVIMIENTO =====\n");
+  int islaActual = mapaObtenerIslaSeleccionada();
+  printf("\n[DEBUG] ===== NUEVO COMANDO DE MOVIMIENTO (Isla %d) =====\n", islaActual);
   printf("[DEBUG] Click en coordenadas mundo: (%.2f, %.2f)\n", mundoX, mundoY);
   fflush(stdout);
 
@@ -917,14 +918,9 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   // Puntero base al array de obreros (aritmética de punteros)
   Unidad *base = j->obreros;
 
-  printf("[DEBUG] Buscando obreros seleccionados...\n");
-  fflush(stdout);
-
   // Recorrer todas las unidades usando aritmética de punteros
   for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
     int idx = (int)(o - base);
-    printf("[DEBUG] Obrero %d: seleccionado=%d\n", idx, o->seleccionado);
-    fflush(stdout);
 
     if (!o->seleccionado || o->vida <= 0)
       continue;
