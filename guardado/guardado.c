@@ -628,6 +628,7 @@ void menuPausaInicializar(MenuPausa *menu) {
   menu->rutaGuardado[0] = '\0';
   menu->volverAlMenu = false;
   menu->partidaGuardada = false;
+  menu->ignorarNextChar = false;
 }
 
 void menuPausaAbrir(MenuPausa *menu) {
@@ -1003,6 +1004,12 @@ bool menuPausaProcesarCaracter(MenuPausa *menu, WPARAM caracter) {
         return false;
     }
     
+    // Si hay que ignorar el siguiente caracter (ej: la 'N' que activó el modo)
+    if (menu->ignorarNextChar) {
+        menu->ignorarNextChar = false;
+        return true; // Consumido sin procesar
+    }
+
     // Solo procesar caracteres imprimibles en el modo de ingreso de nombre
   if (menu->modo == MODO_NUEVA_PARTIDA) {
         if (caracter >= 32 && caracter < 127) {
@@ -1054,6 +1061,7 @@ bool menuPausaProcesarTecla(MenuPausa *menu, WPARAM tecla, struct Jugador *j,
             menu->nombreInput[0] = '\0';
             menu->cursorPos = 0;
             menu->nombreExiste = false;
+            menu->ignorarNextChar = true; // Activar flag para ignorar el WM_CHAR de esta tecla
             return true;
         }
         

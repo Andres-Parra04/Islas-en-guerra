@@ -238,6 +238,9 @@ typedef struct {
 
   // Flag para indicar que la partida fue guardada en esta sesión
   bool partidaGuardada;
+
+  // Flag para ignorar el siguiente caracter (para evitar capturar la 'N' al cambiar de modo)
+  bool ignorarNextChar;
 } MenuPausa;
 
 // Inicializa el menú de pausa
