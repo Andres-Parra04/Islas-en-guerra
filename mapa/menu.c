@@ -141,6 +141,21 @@ static int gSeleccionPartida = 0;
 static char gNombrePartidaSeleccionada[MAX_NOMBRE_JUGADOR] = {0};
 static HFONT gFontPequena = NULL;
 
+// --- Sistema de Paginación de Instrucciones ---
+#define MAX_PAGINAS 20
+#define MAX_LINEAS_PAGINA 18
+#define MAX_CHARS_LINEA 100
+
+typedef struct {
+    char lineas[MAX_LINEAS_PAGINA][MAX_CHARS_LINEA];
+    int count;
+} PaginaInstrucciones;
+
+static PaginaInstrucciones gPaginas[MAX_PAGINAS];
+static int gTotalPaginas = 0;
+static int gPaginaActual = 0;
+
+
 // --- Prototipos necesarios ---
 void mostrarInstrucciones();
 static void dibujarPreviewIsla(HDC hdc, RECT rc);
@@ -413,30 +428,42 @@ static void renderMenu(HWND hwnd) {
 
     if (gMostrandoInstrucciones) {
         dibujarFondoBmpInstrucciones(hdc, rc);
-        // Título de instrucciones
-        dibujarTextoCentrado(hdc, gFontTitulo, "INSTRUCCIONES", centroX, tituloY, RGB(240, 240, 240));
+        // Título de instrucciones (con indicador de página)
+        char tituloBuf[64];
+        if (gTotalPaginas > 0) {
+            snprintf(tituloBuf, sizeof(tituloBuf), "INSTRUCCIONES (%d/%d)", gPaginaActual + 1, gTotalPaginas);
+        } else {
+            snprintf(tituloBuf, sizeof(tituloBuf), "INSTRUCCIONES");
+        }
+        dibujarTextoCentrado(hdc, gFontTitulo, tituloBuf, centroX, tituloY, RGB(240, 240, 240));
 
-        // Cuerpo centrado
-        const char *lineas[] = {
-            "OBJETIVO: Conquistar las islas enemigas.",
-            "",
-            "Controles:",
-            "- W / Flecha Arriba: mover seleccion",
-            "- S / Flecha Abajo : mover seleccion",
-            "  - ENTER: confirmar",
-            "",
-            "ESC: Volver al menu"
-        };
-        const int n = sizeof(lineas) / sizeof(lineas[0]);
-        // Calcular altura total para centrar verticalmente
+        // Calcular área para el cuerpo del texto
         SIZE m = medirTexto(hdc, gFontOpciones, "Ay");
         int alturaLinea = m.cy + 8;
-        int bloqueAlto = n * alturaLinea;
-        int inicioY = (alto - bloqueAlto) / 2;
-        for (int i = 0; i < n; i++) {
-            COLORREF color = RGB(255, 255, 255);
-            if (i == n - 1) color = RGB(255, 230, 120); // resaltar ESC
-            dibujarTextoCentrado(hdc, gFontOpciones, lineas[i], centroX, inicioY + i * alturaLinea, color);
+        
+        if (gTotalPaginas > 0) {
+            // Mostrar líneas de la página actual
+            PaginaInstrucciones *pag = &gPaginas[gPaginaActual];
+            int n = pag->count;
+            int bloqueAlto = n * alturaLinea;
+            int inicioY = (alto - bloqueAlto) / 2 + 20; // Un poco más abajo del título
+
+            for (int i = 0; i < n; i++) {
+                // Color blanco por defecto
+                COLORREF color = RGB(255, 255, 255);
+                // Si la línea parece un subtítulo (emezaba con #), pintarla amarilla
+                // (Ya limpiamos los caracteres '#' pero podemos inferir por contexto o simplemente todo blanco)
+                // Para diferenciar, podemos detectar mayúsculas al inicio
+                dibujarTextoCentrado(hdc, gFontOpciones, pag->lineas[i], centroX, inicioY + i * alturaLinea, color);
+            }
+            
+            // Pie de página con controles
+            int pieY = alto - 50;
+            dibujarTextoCentrado(hdc, gFontPequena, "< ANTERIOR   |   SIGUIENTE >", centroX, pieY, RGB(100, 200, 255));
+            dibujarTextoCentrado(hdc, gFontPequena, "ESC: Volver al menú", centroX, pieY + 20, RGB(255, 230, 120));
+        } else {
+             // Fallback por si falla la carga (no debería ocurrir con el manejo de error)
+             dibujarTextoCentrado(hdc, gFontOpciones, "Cargando instrucciones...", centroX, alto/2, RGB(255, 255, 255));
         }
     } else if (gMostrandoSeleccionIsla) {
         dibujarFondoBmpIslas(hdc, rc);
@@ -525,6 +552,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 case VK_ESCAPE:
                     if (gMostrandoInstrucciones) {
                         gMostrandoInstrucciones = false;
+                        gPaginaActual = 0; // Resetear página al salir
                         InvalidateRect(hwnd, NULL, FALSE);
                     } else if (gMostrandoCargaPartidas) {
                         // Volver del menú de carga al menú principal
@@ -607,6 +635,22 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                         }
                     }
                     break;
+                case VK_LEFT:
+                case VK_BACK:
+                    if (gMostrandoInstrucciones) {
+                        if (gPaginaActual > 0) gPaginaActual--;
+                        else gPaginaActual = gTotalPaginas - 1; // Loop al final
+                        InvalidateRect(hwnd, NULL, FALSE);
+                    }
+                    break;
+                case VK_RIGHT:
+                case VK_SPACE:
+                    if (gMostrandoInstrucciones) {
+                        if (gPaginaActual < gTotalPaginas - 1) gPaginaActual++;
+                        else gPaginaActual = 0; // Loop al inicio
+                        InvalidateRect(hwnd, NULL, FALSE);
+                    }
+                    break;
                 default:
                     break;
             }
@@ -643,7 +687,85 @@ void ocultarCursor() {
 
 // --- PANTALLAS DEL JUEGO ---
 
+// Carga instrucciones desde archivo markdwon
+static void cargarInstruccionesInterno() {
+    if (gTotalPaginas > 0) return; // Ya cargado
+
+    gTotalPaginas = 0;
+    
+    // Pagina 1: Objetivo
+    strcpy(gPaginas[0].lineas[0], "--- ISLAS EN GUERRA ---");
+    strcpy(gPaginas[0].lineas[1], "Bienvenido a este RTS de estrategia y exploracion.");
+    strcpy(gPaginas[0].lineas[2], "");
+    strcpy(gPaginas[0].lineas[3], "OBJETIVO PRINCIPAL:");
+    strcpy(gPaginas[0].lineas[4], "Conquistar las 5 islas del archipielago.");
+    strcpy(gPaginas[0].lineas[5], "");
+    strcpy(gPaginas[0].lineas[6], "PASOS PARA LA VICTORIA:");
+    strcpy(gPaginas[0].lineas[7], "1. Recolectar recursos basicos.");
+    strcpy(gPaginas[0].lineas[8], "2. Entrenar ejercito en el Cuartel.");
+    strcpy(gPaginas[0].lineas[9], "3. Reparar el Barco y viajar.");
+    strcpy(gPaginas[0].lineas[10], "4. Eliminar enemigos de cada isla.");
+    gPaginas[0].count = 11;
+
+    // Pagina 2: Controles
+    strcpy(gPaginas[1].lineas[0], "CONTROLES - MOUSE");
+    strcpy(gPaginas[1].lineas[1], "Clic Izq: Seleccionar unidad / Interactuar");
+    strcpy(gPaginas[1].lineas[2], "Clic Der: Mover / Atacar / Talar / Cazar");
+    strcpy(gPaginas[1].lineas[3], "Arrastrar: Mover camara");
+    strcpy(gPaginas[1].lineas[4], "Rueda: Zoom In/Out");
+    strcpy(gPaginas[1].lineas[5], "");
+    strcpy(gPaginas[1].lineas[6], "CONTROLES - TECLADO");
+    strcpy(gPaginas[1].lineas[7], "C: Centrar camara en Ayuntamiento");
+    strcpy(gPaginas[1].lineas[8], "H: Curar unidades seleccionadas (100 Comida)");
+    strcpy(gPaginas[1].lineas[9], "ESC: Pausar / Menu");
+    gPaginas[1].count = 10;
+
+    // Pagina 3: Recursos
+    strcpy(gPaginas[2].lineas[0], "RECURSOS");
+    strcpy(gPaginas[2].lineas[1], "COMIDA (Vacas): Para entrenar y curar tropas.");
+    strcpy(gPaginas[2].lineas[2], "MADERA (Arboles): Barcos y mejoras.");
+    strcpy(gPaginas[2].lineas[3], "ORO (Mina): Compra de tropas.");
+    strcpy(gPaginas[2].lineas[4], "PIEDRA/HIERRO (Mina): Construccion avanzada.");
+    strcpy(gPaginas[2].lineas[5], "");
+    strcpy(gPaginas[2].lineas[6], "COMO RECOLECTAR:");
+    strcpy(gPaginas[2].lineas[7], "- Mina: Enviar Obrero al centro.");
+    strcpy(gPaginas[2].lineas[8], "- Arboles: Clic derecho con Obrero/Guerrero.");
+    strcpy(gPaginas[2].lineas[9], "- Vacas: Clic derecho para cazar.");
+    gPaginas[2].count = 10;
+
+    // Pagina 4: Unidades
+    strcpy(gPaginas[3].lineas[0], "UNIDADES (Entrenar en Cuartel)");
+    strcpy(gPaginas[3].lineas[1], "OBRERO: Recolecta, repara barco. Muy debil.");
+    strcpy(gPaginas[3].lineas[2], "");
+    strcpy(gPaginas[3].lineas[3], "CABALLERO (ESCUDO):");
+    strcpy(gPaginas[3].lineas[4], "Tanque defensivo. Vida alta, ataque medio.");
+    strcpy(gPaginas[3].lineas[5], "");
+    strcpy(gPaginas[3].lineas[6], "CABALLERO (SIN ESCUDO):");
+    strcpy(gPaginas[3].lineas[7], "Ofensivo rapido. Critico alto, defensa media.");
+    strcpy(gPaginas[3].lineas[8], "");
+    strcpy(gPaginas[3].lineas[9], "GUERRERO:");
+    strcpy(gPaginas[3].lineas[10], "Dano masivo, poca vida. Puede talar arboles.");
+    gPaginas[3].count = 11;
+
+    // Pagina 5: Navegacion
+    strcpy(gPaginas[4].lineas[0], "NAVEGACION Y CONQUISTA");
+    strcpy(gPaginas[4].lineas[1], "1. Envia un Obrero a reparar el barco.");
+    strcpy(gPaginas[4].lineas[2], "   (Cuesta Oro, Madera, Piedra, Hierro)");
+    strcpy(gPaginas[4].lineas[3], "2. Sube tropas (Clic derecho en barco).");
+    strcpy(gPaginas[4].lineas[4], "3. Clic izquierdo en barco para Mapa de Viaje.");
+    strcpy(gPaginas[4].lineas[5], "4. Mejora el barco para llevar mas tropas.");
+    strcpy(gPaginas[4].lineas[6], "");
+    strcpy(gPaginas[4].lineas[7], "CONSEJO:");
+    strcpy(gPaginas[4].lineas[8], "No viajes sin un ejercito fuerte.");
+    strcpy(gPaginas[4].lineas[9], "Las islas avanzadas son peligrosas.");
+    gPaginas[4].count = 10;
+     
+    gTotalPaginas = 5;
+}
+
 void mostrarInstrucciones() {
+    // Asegurar carga
+    cargarInstruccionesInterno();
     // Cambiar a vista de instrucciones y refrescar
     gMostrandoInstrucciones = true;
     if (gMenuHwnd) InvalidateRect(gMenuHwnd, NULL, TRUE);
