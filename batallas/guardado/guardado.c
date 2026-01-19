@@ -18,7 +18,7 @@
 // ============================================================================
 
 // Construye la ruta completa del archivo de guardado por nombre
-void obtenerRutaGuardado(const char *nombreJugador, char *ruta, int maxLen) {
+static void obtenerRutaGuardado(const char *nombreJugador, char *ruta, int maxLen) {
   // Sanitizar nombre (quitar caracteres inválidos para archivos)
   char nombreSanitizado[MAX_NOMBRE_JUGADOR];
   int j = 0;
@@ -179,7 +179,6 @@ bool existePartida(const char *nombreJugador) {
 bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
                              Camara *cam) {
   if (nombreJugador == NULL || nombreJugador[0] == '\0') {
-    printf("[ERROR] Nombre de jugador vacío\n");
     return false;
   }
 
@@ -191,7 +190,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
 
   FILE *f = fopen(ruta, "wb");
   if (!f) {
-    printf("[ERROR] No se pudo crear archivo de guardado: %s\n", ruta);
+
     return false;
   }
 
@@ -348,11 +347,9 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   fclose(f);
 
   if (escritos != 1) {
-    printf("[ERROR] Error al escribir datos de guardado\n");
     return false;
   }
 
-  printf("[GUARDADO] Partida guardada: %s\n", ruta);
   return true;
 }
 
@@ -364,7 +361,6 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
 
   FILE *f = fopen(ruta, "rb");
   if (!f) {
-    printf("[ERROR] No se pudo abrir archivo de guardado: %s\n", ruta);
     return false;
   }
 
@@ -373,12 +369,10 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   fclose(f);
 
   if (leidos != 1) {
-    printf("[ERROR] Error al leer datos de guardado\n");
     return false;
   }
 
   if (datos.header.magic != SAVE_MAGIC) {
-    printf("[ERROR] Archivo de guardado corrupto o inválido\n");
     return false;
   }
 
@@ -546,8 +540,6 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   cam->y = datos.camaraY;
   cam->zoom = datos.camaraZoom;
 
-  printf("[CARGA] Partida cargada: %s (Isla %d)\n", nombreJugador,
-         j->islaActual);
   return true;
 }
 

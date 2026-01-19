@@ -43,11 +43,6 @@ static int pixelACelda(float px) {
   int c = (int)(px / (float)TILE_SIZE);
   int resultado = clampInt(c, 0, GRID_SIZE - 1);
 
-  // DEBUG: Verificar conversión (comentar después de confirmar)
-  // printf("[DEBUG pixelACelda] px=%.2f -> c=%d -> resultado=%d
-  // (TILE_SIZE=%d)\n",
-  //        px, c, resultado, TILE_SIZE);
-
   return resultado;
 }
 
@@ -98,13 +93,7 @@ static void obreroLiberarRuta(Unidad *o) {
 
 static void sincronizarIslasConquistadas(struct Jugador *j);
 
-// ============================================================================
-// PATHFINDING BFS - RUTA MÁS CORTA GARANTIZADA
-// ============================================================================
-// Implementación de Breadth-First Search usando SOLO arrays básicos.
-// Garantiza encontrar la ruta más corta explorando nivel por nivel.
-// NO usa colas, heaps, ni estructuras avanzadas - solo arrays planos.
-// ============================================================================
+// Pathfinding BFS - Ruta más corta usando arrays básicos
 static bool pathfindSimple(int startF, int startC, int goalF, int goalC,
                            int **collision, int **outRuta, int *outLen) {
   if (startF == goalF && startC == goalC)
@@ -318,26 +307,17 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
     j->guerreros[i].recibiendoAtaque = false;
   }
 
-  // ================================================================
-  // INICIALIZAR BARCO EN LA ORILLA (192x192px)
-  // ================================================================
-  j->barco.activo = false; // Se activará después de detectar la orilla
+  // Inicializar barco
+  j->barco.activo = false;
   j->barco.x = 0.0f;
   j->barco.y = 0.0f;
   j->barco.dir = DIR_FRONT;
   j->barco.numTropas = 0;
-
-  // Inicializar sistema de mejoras (nivel 1 por defecto)
   j->barco.nivelMejora = 1;
   j->barco.capacidadMaxima = 6;
-  j->barco.construido = false; // Barco comienza destruido
+  j->barco.construido = false;
 
-  printf("[DEBUG] Barco inicializado (pendiente de colocacion en orilla)\\n");
-
-  // ================================================================
-  // REGISTRAR TODOS LOS OBJETOS EN mapaObjetos
-  // ================================================================
-  printf("[DEBUG] Registrando objetos en mapaObjetos...\n");
+  // Registrar objetos en mapaObjetos
 
   // Registrar obreros
   for (int i = 0; i < MAX_OBREROS; i++) {
@@ -345,9 +325,6 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
         mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
     }
   }
-  printf("[DEBUG] %d obreros registrados en matriz\n", 6);
-
-  printf("[DEBUG] %d caballeros registrados en matriz\n", 4);
 
   // Registrar caballeros sin escudo
   for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
@@ -356,7 +333,6 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
                           j->caballerosSinEscudo[i].y, SIMBOLO_CABALLERO);
     }
   }
-  printf("[DEBUG] %d caballeros sin escudo registrados en matriz\n", 4);
 
   // Registrar guerreros
   for (int i = 0; i < MAX_GUERREROS; i++) {
@@ -365,7 +341,6 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
                           SIMBOLO_GUERRERO);
     }
   }
-  printf("[DEBUG] %d guerreros registrados en matriz\n", 2);
 }
 
 void actualizarPersonajes(struct Jugador *j) {
@@ -395,12 +370,6 @@ void actualizarPersonajes(struct Jugador *j) {
       int targetCelda = o->rutaCeldas[o->rutaIdx];
       nextF = targetCelda / GRID_SIZE;
       nextC = targetCelda % GRID_SIZE;
-
-      // DEBUG: Ver qué celda estamos decodificando
-      if (o->rutaIdx == 0) { // Solo primera celda de la ruta
-        printf("[DEBUG RUTA] Obrero %d: targetCelda=%d -> nextF=%d, nextC=%d\n",
-               i, targetCelda, nextF, nextC);
-      }
     } else {
       o->moviendose = false;
       continue;
@@ -797,69 +766,34 @@ void actualizarPersonajes(struct Jugador *j) {
 
   sincronizarIslasConquistadas(j);
 }
-// ============================================================================
-// COMANDAR MOVIMIENTO RTS CON SEPARACIÓN DE UNIDADES
-// ============================================================================
-// - Si el destino es impasable (agua/árbol = 1), buscar celda libre cercana.
-// - Si el destino está ocupado por otra unidad (= 2), buscar celda adyacente.
-// - Múltiples unidades seleccionadas reciben destinos diferentes para no
-// solaparse.
-// ============================================================================
+// Comandar movimiento RTS con separación de unidades
 void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   int **col = mapaObtenerCollisionMap();
   if (!col)
     return;
 
-  // ================================================================
-  // DIAGNÓSTICO PASO 1: Verificar coordenadas recibidas
-  // ================================================================
-  int islaActual = mapaObtenerIslaSeleccionada();
-  printf("\n[DEBUG] ===== NUEVO COMANDO DE MOVIMIENTO (Isla %d) =====\n", islaActual);
-  printf("[DEBUG] Click en coordenadas mundo: (%.2f, %.2f)\n", mundoX, mundoY);
-  fflush(stdout);
 
-  // ================================================================
-  // VALIDACIÓN CRÍTICA #1: FILTRO DE DESTINO ANTES DE PATHFINDING
-  // ================================================================
-  // Convertir coordenadas del clic a índices de la matriz
-  // IMPORTANTE: Usar la MISMA conversión que el hover (división simple)
+
+  // Validar destino antes de pathfinding
   int gF = (int)(mundoY / TILE_SIZE);
   int gC = (int)(mundoX / TILE_SIZE);
 
-  // DIAGNÓSTICO PASO 2: Mostrar conversión
-  printf("[DEBUG] Conversion a matriz: gF=%d, gC=%d\n", gF, gC);
-  fflush(stdout);
 
   if (gF < 0 || gF >= GRID_SIZE || gC < 0 || gC >= GRID_SIZE) {
-    printf("[DEBUG] RECHAZADO: Fuera de limites (gF=%d, gC=%d, GRID_SIZE=%d)\n",
-           gF, gC, GRID_SIZE);
-    fflush(stdout);
     return; // Fuera de límites
   }
 
-  // DIAGNÓSTICO PASO 3: Leer valor de la celda destino
-  printf("[DEBUG] Inspeccionando celda destino [%d][%d]:\n", gF, gC);
-
-  // ================================================================
-  // VALIDACIÓN DE CELDA DESTINO (1x1 - NO 2x2)
-  // ================================================================
-  // El jugador debe ser "sordo" a órdenes sobre agua/obstáculos.
-  // Validamos que LA CELDA esté libre de agua/árboles (1) y edificios (2).
-  // Los personajes (3) NO bloquean las órdenes de movimiento.
-  // ================================================================
+  // Validar celda destino - rechazar agua/obstáculos
   bool destinoBloqueado = false;
   int motivoBloqueo = -1;
 
   int *fila_ptr = *(col + gF);
   int valor = *(fila_ptr + gC);
-  printf("[DEBUG]   Celda[%d][%d] = %d\n", gF, gC, valor);
 
   // Si hay Agua/Árbol (1) o Edificio (2), intentar buscar una celda libre
   // cercana para permitir interactuar o acercarse.
   if (valor == 1 || valor == 2) {
-    printf("[DEBUG] Destino inicial bloqueado (%d), buscando celda libre "
-           "adyacente...\n",
-           valor);
+    
     bool encontrado = false;
     for (int r = 1; r <= 3 && !encontrado; r++) {
       for (int dy = -r; dy <= r && !encontrado; dy++) {
@@ -871,8 +805,6 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
               gF = nf;
               gC = nc;
               encontrado = true;
-              printf("[DEBUG] Reubicado a celda libre cercana: [%d][%d]\n", gF,
-                     gC);
             }
           }
         }
@@ -880,18 +812,11 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     }
 
     if (!encontrado) {
-      printf("[DEBUG] ********************************************\n");
-      printf("[DEBUG] ORDEN RECHAZADA: No hay celdas libres cerca de (F:%d, "
-             "C:%d).\n",
-             gF, gC);
-      printf("[DEBUG] ********************************************\n");
-      fflush(stdout);
       return;
     }
   }
 
   // Si llegamos aquí, el destino ES VÁLIDO (o reubicado)
-  printf("[DEBUG] Destino VALIDO: Procediendo a calcular pathfinding...\n");
   fflush(stdout);
 
   // ================================================================
@@ -971,20 +896,12 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     int *ruta = NULL;
     int len = 0;
 
-    printf("[DEBUG PATH] Obrero %d en[%d][%d] -> destino[%d][%d]\n", idx, sF,
-           sC, destinoF, destinoC);
-    fflush(stdout);
-
     if (pathfindSimple(sF, sC, destinoF, destinoC, col, &ruta, &len)) {
       // DEBUG: Primera celda de la ruta
       if (len > 0) {
         int primeraCelda = ruta[0];
         int primeraF = primeraCelda / GRID_SIZE;
         int primeraC = primeraCelda % GRID_SIZE;
-        printf("[DEBUG PATH] Ruta OK: %d pasos. Primera celda=[%d][%d] "
-               "(codificada=%d)\n",
-               len, primeraF, primeraC, primeraCelda);
-        fflush(stdout);
       }
 
       // Liberar ruta anterior y asignar nueva
@@ -1156,10 +1073,7 @@ void rtsLiberarMovimientoJugador(struct Jugador *j) {
     obreroLiberarRuta(&j->guerreros[i]);
 }
 
-// ============================================================================
-// FUNCIONES DE ENTRENAMIENTO DE TROPAS
-// ============================================================================
-
+// Funciones de entrenamiento de tropas
 bool entrenarObrero(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de obreros
   for (int i = 0; i < MAX_OBREROS; i++) {
@@ -1247,8 +1161,6 @@ bool entrenarObrero(struct Jugador *j, float x, float y) {
       j->obreros[i].tiempoMuerteMs = 0;
       j->obreros[i].frameMuerte = 0;
 
-      printf("[CUARTEL] Nuevo obrero entrenado en posición (%.1f, %.1f)\n",
-             j->obreros[i].x, j->obreros[i].y);
       return true;
     }
   }
@@ -1344,8 +1256,6 @@ bool entrenarCaballero(struct Jugador *j, float x, float y) {
       j->caballeros[i].tiempoMuerteMs = 0;
       j->caballeros[i].frameMuerte = 0;
 
-      printf("[CUARTEL] Nuevo caballero entrenado en posición (%.1f, %.1f)\n",
-             j->caballeros[i].x, j->caballeros[i].y);
       return true;
     }
   }
@@ -1447,8 +1357,6 @@ bool entrenarGuerrero(struct Jugador *j, float x, float y) {
       j->guerreros[i].tiempoMuerteMs = 0;
       j->guerreros[i].frameMuerte = 0;
 
-      printf("[CUARTEL] Nuevo guerrero entrenado en posición (%.1f, %.1f)\n",
-             j->guerreros[i].x, j->guerreros[i].y);
       return true;
     }
   }
@@ -1516,9 +1424,6 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
   if (vacaEncontrada < 0) {
     return false;
   }
-
-  printf("[DEBUG] Cazar: Vaca #%d encontrada en posicion real Celda[%d][%d]\n",
-         vacaEncontrada, vacaFila, vacaCol);
 
   // Usar centro de la vaca para proximidad (aprox 64px de offset del ancla)
   float vacaCentroX = (float)(vacaCol * TILE_SIZE) + 64.0f;
@@ -1611,11 +1516,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
 
   // Los árboles se identifican con SIMBOLO_ARBOL ('A')
   if (tipoObjeto == SIMBOLO_ARBOL) {
-    printf("[DEBUG] Talar: Arbol detectado en Celda[%d][%d]\n", fArbol, cArbol);
-
-    // ================================================================
-    // RESTRICCIÓN DE TALA: OBREROS Y GUERREROS PUEDEN TALAR
-    // ================================================================
+    // Restricción: Solo obreros y guerreros pueden talar
     // Según las reglas del juego:
     // - Obreros: Pueden talar árboles ✓
     // - Guerreros: Pueden talar árboles ✓
@@ -1684,10 +1585,8 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
         if (mapaGolpearArbol(fArbol, cArbol)) {
             // Árbol destruido (el último golpe)
             j->Madera += 50;
-            printf("[RECURSOS] Arbol talado! +50 Madera. Total: %d\n", j->Madera);
         } else {
             // Golpe dado pero no destruido
-            printf("[RECURSOS] Arbol golpeado. Vida restante...\n");
         }
         
         return true; // Click manejado
@@ -1805,10 +1704,7 @@ void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla) {
   int panelX = anchoPantalla - PANEL_ANCHO - MARGEN;
   int panelY = MARGEN;
 
-  // ================================================================
-  // FONDO DEL PANEL (Estilo medieval: cuero/pergamino oscuro)
-  // ================================================================
-  // Fondo principal: Marrón cuero oscuro
+  // Fondo del panel (estilo medieval)
   HBRUSH brushFondo = CreateSolidBrush(RGB(60, 40, 25));
   HBRUSH oldBrush = (HBRUSH)SelectObject(hdcBuffer, brushFondo);
 
@@ -1959,7 +1855,6 @@ static void sincronizarIslasConquistadas(struct Jugador *j) {
       continue;
     if (navegacionIsIslaConquistada(isla)) {
       j->islasConquistadas[isla] = true;
-      printf("[CONQUISTA] Isla %d asegurada.\n", isla);
     }
   }
 }
@@ -1982,50 +1877,7 @@ bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
   return false;
 }
 
-bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
-                                        float distMax) {
-  // Obreros
-  if (recursosObreroCercaDePunto(j, x, y, distMax))
-    return true;
 
-  // Caballeros
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    Unidad *u = &j->caballeros[i];
-    if (!u->seleccionado)
-      continue;
-    float dx = (u->x + 32.0f) - x;
-    float dy = (u->y + 32.0f) - y;
-    float dist = sqrtf(dx * dx + dy * dy);
-    if (dist < distMax)
-      return true;
-  }
-
-  // Caballeros sin escudo
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    Unidad *u = &j->caballerosSinEscudo[i];
-    if (!u->seleccionado)
-      continue;
-    float dx = (u->x + 32.0f) - x;
-    float dy = (u->y + 32.0f) - y;
-    float dist = sqrtf(dx * dx + dy * dy);
-    if (dist < distMax)
-      return true;
-  }
-
-  // Guerreros
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    Unidad *u = &j->guerreros[i];
-    if (!u->seleccionado)
-      continue;
-    float dx = (u->x + 32.0f) - x;
-    float dy = (u->y + 32.0f) - y;
-    float dist = sqrtf(dx * dx + dy * dy);
-    if (dist < distMax)
-      return true;
-  }
-
-  return false;
-}
 
 bool entrenarCaballeroSinEscudo(struct Jugador *j, float x, float y) {
   // Buscar un espacio disponible en el array de caballeros sin escudo
@@ -2114,9 +1966,6 @@ bool entrenarCaballeroSinEscudo(struct Jugador *j, float x, float y) {
       j->caballerosSinEscudo[i].tiempoMuerteMs = 0;
       j->caballerosSinEscudo[i].frameMuerte = 0;
 
-      printf("[CUARTEL] Nuevo caballero sin escudo entrenado en posición "
-             "(%.1f, %.1f)\n",
-             j->caballerosSinEscudo[i].x, j->caballerosSinEscudo[i].y);
       return true;
     }
   }
@@ -2139,8 +1988,6 @@ bool mejorarBarco(struct Jugador *j) {
 
   // Verificar que aún se puede mejorar
   if (nivelActual >= 4) {
-    printf("[MEJORA BARCO] El barco ya está al nivel máximo (%d)\n",
-           nivelActual);
     return false;
   }
 
@@ -2168,9 +2015,7 @@ bool mejorarBarco(struct Jugador *j) {
   // Verificar que el jugador tiene suficientes recursos
   if (j->Oro < oro || j->Madera < madera || j->Piedra < piedra ||
       j->Hierro < hierro) {
-    printf("[MEJORA BARCO] Recursos insuficientes. Requiere: %d Oro, %d "
-           "Madera, %d Piedra, %d Hierro\n",
-           oro, madera, piedra, hierro);
+
     return false;
   }
 
@@ -2183,11 +2028,6 @@ bool mejorarBarco(struct Jugador *j) {
   // Incrementar nivel de mejora
   j->barco.nivelMejora = siguienteNivel;
   j->barco.capacidadMaxima = siguienteNivel * 3 + 3; // 9, 12, 15
-
-  printf(
-      "[MEJORA BARCO] ¡Barco mejorado a nivel %d! Nueva capacidad: %d tropas\n",
-      siguienteNivel, j->barco.capacidadMaxima);
-
   return true;
 }
 
@@ -2203,7 +2043,6 @@ bool construirBarco(struct Jugador *j) {
 
   // Verificar que el barco no esté ya construido
   if (j->barco.construido) {
-    printf("[CONSTRUIR BARCO] El barco ya está construido\n");
     return false;
   }
 
@@ -2212,10 +2051,6 @@ bool construirBarco(struct Jugador *j) {
       j->Madera < COSTO_CONSTRUIR_BARCO_MADERA ||
       j->Piedra < COSTO_CONSTRUIR_BARCO_PIEDRA ||
       j->Hierro < COSTO_CONSTRUIR_BARCO_HIERRO) {
-    printf("[CONSTRUIR BARCO] Recursos insuficientes. Requiere: %d Oro, "
-           "%d Madera, %d Piedra, %d Hierro\n",
-           COSTO_CONSTRUIR_BARCO_ORO, COSTO_CONSTRUIR_BARCO_MADERA,
-           COSTO_CONSTRUIR_BARCO_PIEDRA, COSTO_CONSTRUIR_BARCO_HIERRO);
     return false;
   }
 
@@ -2233,8 +2068,7 @@ bool construirBarco(struct Jugador *j) {
   // Si el barco ya tiene una posición válida (reparación), NO moverlo.
   // Solo buscar orilla si es la primera construcción (x=0, y=0).
   if (j->barco.x > 64.0f && j->barco.y > 64.0f) {
-      printf("[CONSTRUIR BARCO] Reparando barco en posición existente: (%.1f, %.1f)\n", 
-             j->barco.x, j->barco.y);
+
       return true;
   }
 
@@ -2253,19 +2087,15 @@ bool construirBarco(struct Jugador *j) {
       if (oldX > 64.0f || oldY > 64.0f) {
            j->barco.x = oldX;
            j->barco.y = oldY;
-           printf("[CONSTRUIR BARCO] Fallo deteccion, manteniendo posicion: (%.1f, %.1f)\n", oldX, oldY);
       } else {
            // Fallback extremo: Posición 100,100 (probable agua)
            j->barco.x = 100.0f;
            j->barco.y = 100.0f;
-           printf("[CONSTRUIR BARCO] Fallo deteccion total, usando fallback 100,100\n");
       }
   }
 
   j->barco.dir = (Direccion)dir;
 
-  printf("[CONSTRUIR BARCO] ¡Barco construido! Posición: (%.1f, %.1f), Dir: %d\n", 
-         j->barco.x, j->barco.y, dir);
 
   return true;
 }

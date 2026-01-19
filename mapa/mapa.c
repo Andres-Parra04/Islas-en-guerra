@@ -14,26 +14,15 @@
 #include <time.h>
 #include <windows.h>
 
-// Definiciones manuales de rutas
+// Definiciones de rutas de assets (relativas a output/)
 #define RUTA_MAPA "../assets/islas/isla1.bmp"
-#define RUTA_MAPA_ALT "assets/islas/isla1.bmp"
 
 #define ARBOL1 "../assets/arboles/arbol1.bmp"
-#define ARBOL1_ALT "assets/arboles/arbol1.bmp"
-
 #define ARBOL2 "../assets/arboles/arbol2.bmp"
-#define ARBOL2_ALT "assets/arboles/arbol2.bmp"
-
 #define ARBOL3 "../assets/arboles/arbol3.bmp"
-#define ARBOL3_ALT "assets/arboles/arbol3.bmp"
-
 #define ARBOL4 "../assets/arboles/arbol4.bmp"
-#define ARBOL4_ALT "assets/arboles/arbol4.bmp"
-
 #define ARBOL_FUEGO "../assets/arboles/arbol-fuego.bmp"
-#define ARBOL_FUEGO_ALT "assets/arboles/arbol-fuego.bmp"
 #define ARBOL_HIELO "../assets/arboles/arbol-hielo.bmp"
-#define ARBOL_HIELO_ALT "assets/arboles/arbol-hielo.bmp"
 
 #define obrero_front "../assets/obrero/obrero_front.bmp"
 #define obrero_back "../assets/obrero/obrero_back.bmp"
@@ -55,155 +44,88 @@
 #define guerrero_left "../assets/guerrero/guerrero_left.bmp"
 #define guerrero_right "../assets/guerrero/guerrero_right.bmp"
 
-#define GUERRERO_F_ALT "assets/guerrero/guerrero_front.bmp"
-#define GUERRERO_B_ALT "assets/guerrero/guerrero_back.bmp"
-#define GUERRERO_L_ALT "assets/guerrero/guerrero_left.bmp"
-#define GUERRERO_R_ALT "assets/guerrero/guerrero_right.bmp"
-
 #define VACA_F "../assets/vaca/vaca_front.bmp"
 #define VACA_B "../assets/vaca/vaca_back.bmp"
 #define VACA_L "../assets/vaca/vaca_left.bmp"
 #define VACA_R "../assets/vaca/vaca_right.bmp"
 
-#define VACA_F_ALT "assets/vaca/vaca_front.bmp"
-#define VACA_B_ALT "assets/vaca/vaca_back.bmp"
-#define VACA_L_ALT "assets/vaca/vaca_left.bmp"
-#define VACA_R_ALT "assets/vaca/vaca_right.bmp"
+#define BARCO_F "../assets/barco/barco_front.bmp"
+#define BARCO_B "../assets/barco/barco_back.bmp"
+#define BARCO_L "../assets/barco/barco_left.bmp"
+#define BARCO_R "../assets/barco/barco_right.bmp"
+#define BARCO_DESTRUIDO "../assets/barco/barco_destruido.bmp"
+
 
 #define VACA_FUEGO_F "../assets/vaca/vaca-fuego-front.bmp"
 #define VACA_FUEGO_B "../assets/vaca/vaca-fuego-back.bmp"
 #define VACA_FUEGO_L "../assets/vaca/vaca-fuego-left.bmp"
 #define VACA_FUEGO_R "../assets/vaca/vaca-fuego-right.bmp"
-#define VACA_FUEGO_F_ALT "assets/vaca/vaca-fuego-front.bmp"
-#define VACA_FUEGO_B_ALT "assets/vaca/vaca-fuego-back.bmp"
-#define VACA_FUEGO_L_ALT "assets/vaca/vaca-fuego-left.bmp"
-#define VACA_FUEGO_R_ALT "assets/vaca/vaca-fuego-right.bmp"
 #define VACA_HIELO_F "../assets/vaca/vaca-hielo-front.bmp"
 #define VACA_HIELO_B "../assets/vaca/vaca-hielo-back.bmp"
 #define VACA_HIELO_L "../assets/vaca/vaca-hielo-left.bmp"
 #define VACA_HIELO_R "../assets/vaca/vaca-hielo-right.bmp"
-#define VACA_HIELO_F_ALT "assets/vaca/vaca-hielo-front.bmp"
-#define VACA_HIELO_B_ALT "assets/vaca/vaca-hielo-back.bmp"
-#define VACA_HIELO_L_ALT "assets/vaca/vaca-hielo-left.bmp"
-#define VACA_HIELO_R_ALT "assets/vaca/vaca-hielo-right.bmp"
 
 #define CAB_FUEGO_FRONT "../assets/caballero-fuego/caballero-fuego-front.bmp"
-#define CAB_FUEGO_FRONT_ALT "assets/caballero-fuego/caballero-fuego-front.bmp"
 #define CAB_FUEGO_BACK "../assets/caballero-fuego/caballero-fuego-back.bmp"
-#define CAB_FUEGO_BACK_ALT "assets/caballero-fuego/caballero-fuego-back.bmp"
 #define CAB_FUEGO_LEFT "../assets/caballero-fuego/caballero-fuego-left.bmp"
-#define CAB_FUEGO_LEFT_ALT "assets/caballero-fuego/caballero-fuego-left.bmp"
 #define CAB_FUEGO_RIGHT "../assets/caballero-fuego/caballero-fuego-right.bmp"
-#define CAB_FUEGO_RIGHT_ALT "assets/caballero-fuego/caballero-fuego-right.bmp"
 #define CAB_FUEGO_STAND_L "../assets/caballero-fuego/caballero-fuego-war-stand-left.bmp"
-#define CAB_FUEGO_STAND_L_ALT "assets/caballero-fuego/caballero-fuego-war-stand-left.bmp"
 #define CAB_FUEGO_STAND_R "../assets/caballero-fuego/caballero-fuego-war-stand-right.bmp"
-#define CAB_FUEGO_STAND_R_ALT "assets/caballero-fuego/caballero-fuego-war-stand-right.bmp"
 #define CAB_FUEGO_DIE1_L "../assets/caballero-fuego/caballero-fuego-die-1-left.bmp"
-#define CAB_FUEGO_DIE1_L_ALT "assets/caballero-fuego/caballero-fuego-die-1-left.bmp"
 #define CAB_FUEGO_DIE1_R "../assets/caballero-fuego/caballero-fuego-die-1-right.bmp"
-#define CAB_FUEGO_DIE1_R_ALT "assets/caballero-fuego/caballero-fuego-die-1-right.bmp"
 #define CAB_FUEGO_DIE2_L "../assets/caballero-fuego/caballero-fuego-die-2-left.bmp"
-#define CAB_FUEGO_DIE2_L_ALT "assets/caballero-fuego/caballero-fuego-die-2-left.bmp"
 #define CAB_FUEGO_DIE2_R "../assets/caballero-fuego/caballero-fuego-die-2-right.bmp"
-#define CAB_FUEGO_DIE2_R_ALT "assets/caballero-fuego/caballero-fuego-die-2-right.bmp"
 #define CAB_FUEGO_MOVE1_L "../assets/caballero-fuego/caballero-fuego-war-move-1-left.bmp"
-#define CAB_FUEGO_MOVE1_L_ALT "assets/caballero-fuego/caballero-fuego-war-move-1-left.bmp"
 #define CAB_FUEGO_MOVE1_R "../assets/caballero-fuego/caballero-fuego-war-move-1-right.bmp"
-#define CAB_FUEGO_MOVE1_R_ALT "assets/caballero-fuego/caballero-fuego-war-move-1-right.bmp"
 #define CAB_FUEGO_MOVE2_L "../assets/caballero-fuego/caballero-fuego-war-move-2-left.bmp"
-#define CAB_FUEGO_MOVE2_L_ALT "assets/caballero-fuego/caballero-fuego-war-move-2-left.bmp"
 #define CAB_FUEGO_MOVE2_R "../assets/caballero-fuego/caballero-fuego-war-move-2-right.bmp"
-#define CAB_FUEGO_MOVE2_R_ALT "assets/caballero-fuego/caballero-fuego-war-move-2-right.bmp"
+
 #define CAB_HIELO_FRONT "../assets/caballero-hielo/caballero-hielo-front.bmp"
-#define CAB_HIELO_FRONT_ALT "assets/caballero-hielo/caballero-hielo-front.bmp"
 #define CAB_HIELO_BACK "../assets/caballero-hielo/caballero-hielo-back.bmp"
-#define CAB_HIELO_BACK_ALT "assets/caballero-hielo/caballero-hielo-back.bmp"
 #define CAB_HIELO_LEFT "../assets/caballero-hielo/caballero-hielo-left.bmp"
-#define CAB_HIELO_LEFT_ALT "assets/caballero-hielo/caballero-hielo-left.bmp"
 #define CAB_HIELO_RIGHT "../assets/caballero-hielo/caballero-hielo-right.bmp"
-#define CAB_HIELO_RIGHT_ALT "assets/caballero-hielo/caballero-hielo-right.bmp"
 #define CAB_HIELO_STAND_L "../assets/caballero-hielo/caballero-hielo-stand-left.bmp"
-#define CAB_HIELO_STAND_L_ALT "assets/caballero-hielo/caballero-hielo-stand-left.bmp"
 #define CAB_HIELO_STAND_R "../assets/caballero-hielo/caballero-hielo-stand-right.bmp"
-#define CAB_HIELO_STAND_R_ALT "assets/caballero-hielo/caballero-hielo-stand-right.bmp"
 #define CAB_HIELO_DIE1_L "../assets/caballero-hielo/caballero-hielo-die-1-left.bmp"
-#define CAB_HIELO_DIE1_L_ALT "assets/caballero-hielo/caballero-hielo-die-1-left.bmp"
 #define CAB_HIELO_DIE1_R "../assets/caballero-hielo/caballero-hielo-die-1-right.bmp"
-#define CAB_HIELO_DIE1_R_ALT "assets/caballero-hielo/caballero-hielo-die-1-right.bmp"
 #define CAB_HIELO_DIE2_L "../assets/caballero-hielo/caballero-hielo-die-2-left.bmp"
-#define CAB_HIELO_DIE2_L_ALT "assets/caballero-hielo/caballero-hielo-die-2-left.bmp"
 #define CAB_HIELO_DIE2_R "../assets/caballero-hielo/caballero-hielo-die-2-right.bmp"
-#define CAB_HIELO_DIE2_R_ALT "assets/caballero-hielo/caballero-hielo-die-2-right.bmp"
 #define CAB_HIELO_MOVE1_L "../assets/caballero-hielo/caballero-hielo-war-move-1-left.bmp"
-#define CAB_HIELO_MOVE1_L_ALT "assets/caballero-hielo/caballero-hielo-war-move-1-left.bmp"
 #define CAB_HIELO_MOVE2_L "../assets/caballero-hielo/caballero-hielo-war-move-2-left.bmp"
-#define CAB_HIELO_MOVE2_L_ALT "assets/caballero-hielo/caballero-hielo-war-move-2-left.bmp"
 #define CAB_HIELO_MOVE3_L "../assets/caballero-hielo/caballero-hielo-war-move-3-left.bmp"
-#define CAB_HIELO_MOVE3_L_ALT "assets/caballero-hielo/caballero-hielo-war-move-3-left.bmp"
 #define CAB_HIELO_MOVE1_R "../assets/caballero-hielo/caballero-hielo-war-move-1-right.bmp"
-#define CAB_HIELO_MOVE1_R_ALT "assets/caballero-hielo/caballero-hielo-war-move-1-right.bmp"
 #define CAB_HIELO_MOVE2_R "../assets/caballero-hielo/caballero-hielo-war-move-2-right.bmp"
-#define CAB_HIELO_MOVE2_R_ALT "assets/caballero-hielo/caballero-hielo-war-move-2-right.bmp"
 #define CAB_HIELO_MOVE3_R "../assets/caballero-hielo/caballero-hielo-war-move-3-right.bmp"
-#define CAB_HIELO_MOVE3_R_ALT "assets/caballero-hielo/caballero-hielo-war-move-3-right.bmp"
 
 #define GUERRERO_FUEGO_FRONT "../assets/guerrero-fuego/guerrero-fuego-front.bmp"
-#define GUERRERO_FUEGO_FRONT_ALT "assets/guerrero-fuego/guerrero-fuego-front.bmp"
 #define GUERRERO_FUEGO_BACK "../assets/guerrero-fuego/guerrero-fuego-back.bmp"
-#define GUERRERO_FUEGO_BACK_ALT "assets/guerrero-fuego/guerrero-fuego-back.bmp"
 #define GUERRERO_FUEGO_LEFT "../assets/guerrero-fuego/guerrero-fuego-left.bmp"
-#define GUERRERO_FUEGO_LEFT_ALT "assets/guerrero-fuego/guerrero-fuego-left.bmp"
 #define GUERRERO_FUEGO_RIGHT "../assets/guerrero-fuego/guerrero-fuego-right.bmp"
-#define GUERRERO_FUEGO_RIGHT_ALT "assets/guerrero-fuego/guerrero-fuego-right.bmp"
 #define GUERRERO_FUEGO_STAND_L "../assets/guerrero-fuego/guerrero-fuego-war-stand-left.bmp"
-#define GUERRERO_FUEGO_STAND_L_ALT "assets/guerrero-fuego/guerrero-fuego-war-stand-left.bmp"
 #define GUERRERO_FUEGO_STAND_R "../assets/guerrero-fuego/guerrero-fuego-war-stand-right.bmp"
-#define GUERRERO_FUEGO_STAND_R_ALT "assets/guerrero-fuego/guerrero-fuego-war-stand-right.bmp"
 #define GUERRERO_FUEGO_DIE1_L "../assets/guerrero-fuego/guerrero-fuego-die-1-left.bmp"
-#define GUERRERO_FUEGO_DIE1_L_ALT "assets/guerrero-fuego/guerrero-fuego-die-1-left.bmp"
 #define GUERRERO_FUEGO_DIE1_R "../assets/guerrero-fuego/guerrero-fuego-die-1-right.bmp"
-#define GUERRERO_FUEGO_DIE1_R_ALT "assets/guerrero-fuego/guerrero-fuego-die-1-right.bmp"
 #define GUERRERO_FUEGO_DIE2_L "../assets/guerrero-fuego/guerrero-fuego-die-2-left.bmp"
-#define GUERRERO_FUEGO_DIE2_L_ALT "assets/guerrero-fuego/guerrero-fuego-die-2-left.bmp"
 #define GUERRERO_FUEGO_DIE2_R "../assets/guerrero-fuego/guerrero-fuego-die-2-right.bmp"
-#define GUERRERO_FUEGO_DIE2_R_ALT "assets/guerrero-fuego/guerrero-fuego-die-2-right.bmp"
 #define GUERRERO_FUEGO_MOVE1_L "../assets/guerrero-fuego/guerrero-fuego-war-move-1-left.bmp"
-#define GUERRERO_FUEGO_MOVE1_L_ALT "assets/guerrero-fuego/guerrero-fuego-war-move-1-left.bmp"
 #define GUERRERO_FUEGO_MOVE1_R "../assets/guerrero-fuego/guerrero-fuego-war-move-1-right.bmp"
-#define GUERRERO_FUEGO_MOVE1_R_ALT "assets/guerrero-fuego/guerrero-fuego-war-move-1-right.bmp"
 #define GUERRERO_FUEGO_MOVE2_L "../assets/guerrero-fuego/guerrero-fuego-war-move-2-left.bmp"
-#define GUERRERO_FUEGO_MOVE2_L_ALT "assets/guerrero-fuego/guerrero-fuego-war-move-2-left.bmp"
 #define GUERRERO_FUEGO_MOVE2_R "../assets/guerrero-fuego/guerrero-fuego-war-move-2-right.bmp"
-#define GUERRERO_FUEGO_MOVE2_R_ALT "assets/guerrero-fuego/guerrero-fuego-war-move-2-right.bmp"
+
 #define GUERRERO_HIELO_FRONT "../assets/guerrero-hielo/guerrero-hielo-front.bmp"
-#define GUERRERO_HIELO_FRONT_ALT "assets/guerrero-hielo/guerrero-hielo-front.bmp"
 #define GUERRERO_HIELO_BACK "../assets/guerrero-hielo/guerrero-hielo-back.bmp"
-#define GUERRERO_HIELO_BACK_ALT "assets/guerrero-hielo/guerrero-hielo-back.bmp"
 #define GUERRERO_HIELO_LEFT "../assets/guerrero-hielo/guerrero-hielo-left.bmp"
-#define GUERRERO_HIELO_LEFT_ALT "assets/guerrero-hielo/guerrero-hielo-left.bmp"
 #define GUERRERO_HIELO_RIGHT "../assets/guerrero-hielo/guerrero-hielo-right.bmp"
-#define GUERRERO_HIELO_RIGHT_ALT "assets/guerrero-hielo/guerrero-hielo-right.bmp"
 #define GUERRERO_HIELO_STAND_L "../assets/guerrero-hielo/guerrero-hielo-war-stand-left.bmp"
-#define GUERRERO_HIELO_STAND_L_ALT "assets/guerrero-hielo/guerrero-hielo-war-stand-left.bmp"
 #define GUERRERO_HIELO_STAND_R "../assets/guerrero-hielo/guerrero-hielo-war-stand-right.bmp"
-#define GUERRERO_HIELO_STAND_R_ALT "assets/guerrero-hielo/guerrero-hielo-war-stand-right.bmp"
 #define GUERRERO_HIELO_DIE1_L "../assets/guerrero-hielo/guerrero-hielo-die-1-left.bmp"
-#define GUERRERO_HIELO_DIE1_L_ALT "assets/guerrero-hielo/guerrero-hielo-die-1-left.bmp"
 #define GUERRERO_HIELO_DIE1_R "../assets/guerrero-hielo/guerrero-hielo-die-1-right.bmp"
-#define GUERRERO_HIELO_DIE1_R_ALT "assets/guerrero-hielo/guerrero-hielo-die-1-right.bmp"
 #define GUERRERO_HIELO_DIE2_L "../assets/guerrero-hielo/guerrero-hielo-die-2-left.bmp"
-#define GUERRERO_HIELO_DIE2_L_ALT "assets/guerrero-hielo/guerrero-hielo-die-2-left.bmp"
 #define GUERRERO_HIELO_DIE2_R "../assets/guerrero-hielo/guerrero-hielo-die-2-right.bmp"
-#define GUERRERO_HIELO_DIE2_R_ALT "assets/guerrero-hielo/guerrero-hielo-die-2-right.bmp"
 #define GUERRERO_HIELO_MOVE1_L "../assets/guerrero-hielo/guerrero-hielo-war-move-1-left.bmp"
-#define GUERRERO_HIELO_MOVE1_L_ALT "assets/guerrero-hielo/guerrero-hielo-war-move-1-left.bmp"
 #define GUERRERO_HIELO_MOVE1_R "../assets/guerrero-hielo/guerrero-hielo-war-move-1-right.bmp"
-#define GUERRERO_HIELO_MOVE1_R_ALT "assets/guerrero-hielo/guerrero-hielo-war-move-1-right.bmp"
 #define GUERRERO_HIELO_MOVE2_L "../assets/guerrero-hielo/guerrero-hielo-war-move-2-left.bmp"
-#define GUERRERO_HIELO_MOVE2_L_ALT "assets/guerrero-hielo/guerrero-hielo-war-move-2-left.bmp"
 #define GUERRERO_HIELO_MOVE2_R "../assets/guerrero-hielo/guerrero-hielo-war-move-2-right.bmp"
-#define GUERRERO_HIELO_MOVE2_R_ALT "assets/guerrero-hielo/guerrero-hielo-war-move-2-right.bmp"
 
 #define TIEMPO_DESAPARICION_CUERPO_MS 5000ULL
 
@@ -298,12 +220,12 @@ static bool unidadBarraVisible(Unidad *u) {
 static bool mapaEsTemaFuego(void) { return gTemaIslaActual == MAPA_TEMA_FUEGO; }
 static bool mapaEsTemaHielo(void) { return gTemaIslaActual == MAPA_TEMA_HIELO; }
 
-static HBITMAP cargarSpriteOpcional(const char *principal, const char *alterno,
+static HBITMAP cargarSpriteOpcional(const char *principal,
                   int ancho, int alto) {
   HBITMAP h = (HBITMAP)LoadImageA(NULL, principal, IMAGE_BITMAP, ancho, alto,
                   LR_LOADFROMFILE);
-  if (!h && alterno) {
-  h = (HBITMAP)LoadImageA(NULL, alterno, IMAGE_BITMAP, ancho, alto,
+  if (!h) {
+    h = (HBITMAP)LoadImageA(NULL, principal, IMAGE_BITMAP, ancho, alto,
               LR_LOADFROMFILE);
   }
   return h;
@@ -314,80 +236,80 @@ static void cargarSpritesFuego(void) {
   return;
 
   hCaballeroFuegoBmp[DIR_FRONT] =
-    cargarSpriteOpcional(CAB_FUEGO_FRONT, CAB_FUEGO_FRONT_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_FRONT, 64, 64);
   hCaballeroFuegoBmp[DIR_BACK] =
-    cargarSpriteOpcional(CAB_FUEGO_BACK, CAB_FUEGO_BACK_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_BACK, 64, 64);
   hCaballeroFuegoBmp[DIR_LEFT] =
-    cargarSpriteOpcional(CAB_FUEGO_LEFT, CAB_FUEGO_LEFT_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_LEFT, 64, 64);
   hCaballeroFuegoBmp[DIR_RIGHT] =
-    cargarSpriteOpcional(CAB_FUEGO_RIGHT, CAB_FUEGO_RIGHT_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_RIGHT, 64, 64);
 
   hCaballeroFuegoStand[0] =
-    cargarSpriteOpcional(CAB_FUEGO_STAND_L, CAB_FUEGO_STAND_L_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_STAND_L, 64, 64);
   hCaballeroFuegoStand[1] =
-    cargarSpriteOpcional(CAB_FUEGO_STAND_R, CAB_FUEGO_STAND_R_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_STAND_R, 64, 64);
   hCaballeroFuegoDie[0] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE1_L, CAB_FUEGO_DIE1_L_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_DIE1_L, 64, 64);
   hCaballeroFuegoDie[1] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE1_R, CAB_FUEGO_DIE1_R_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_DIE1_R, 64, 64);
   hCaballeroFuegoDie2[0] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE2_L, CAB_FUEGO_DIE2_L_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_DIE2_L, 64, 64);
   hCaballeroFuegoDie2[1] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE2_R, CAB_FUEGO_DIE2_R_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_DIE2_R, 64, 64);
 
   hCaballeroFuegoAtk[0][0] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE1_L, CAB_FUEGO_MOVE1_L_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_MOVE1_L, 64, 64);
   hCaballeroFuegoAtk[0][1] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE2_L, CAB_FUEGO_MOVE2_L_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_MOVE2_L, 64, 64);
   hCaballeroFuegoAtk[0][2] =
     hCaballeroFuegoAtk[0][1] ? hCaballeroFuegoAtk[0][1]
                  : hCaballeroFuegoAtk[0][0];
   hCaballeroFuegoAtk[1][0] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE1_R, CAB_FUEGO_MOVE1_R_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_MOVE1_R, 64, 64);
   hCaballeroFuegoAtk[1][1] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE2_R, CAB_FUEGO_MOVE2_R_ALT, 64, 64);
+    cargarSpriteOpcional(CAB_FUEGO_MOVE2_R, 64, 64);
   hCaballeroFuegoAtk[1][2] =
     hCaballeroFuegoAtk[1][1] ? hCaballeroFuegoAtk[1][1]
                  : hCaballeroFuegoAtk[1][0];
 
   hGuerreroFuegoBmp[DIR_FRONT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_FRONT, GUERRERO_FUEGO_FRONT_ALT, 64, 64);
+    GUERRERO_FUEGO_FRONT, 64, 64);
   hGuerreroFuegoBmp[DIR_BACK] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_BACK, GUERRERO_FUEGO_BACK_ALT, 64, 64);
+    GUERRERO_FUEGO_BACK, 64, 64);
   hGuerreroFuegoBmp[DIR_LEFT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_LEFT, GUERRERO_FUEGO_LEFT_ALT, 64, 64);
+    GUERRERO_FUEGO_LEFT, 64, 64);
   hGuerreroFuegoBmp[DIR_RIGHT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_RIGHT, GUERRERO_FUEGO_RIGHT_ALT, 64, 64);
+    GUERRERO_FUEGO_RIGHT, 64, 64);
 
   hGuerreroFuegoStand[0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_STAND_L, GUERRERO_FUEGO_STAND_L_ALT, 64, 64);
+    GUERRERO_FUEGO_STAND_L, 64, 64);
   hGuerreroFuegoStand[1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_STAND_R, GUERRERO_FUEGO_STAND_R_ALT, 64, 64);
+    GUERRERO_FUEGO_STAND_R, 64, 64);
   hGuerreroFuegoDie[0] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE1_L,
-                        GUERRERO_FUEGO_DIE1_L_ALT, 64,
+                        64,
                         64);
   hGuerreroFuegoDie[1] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE1_R,
-                        GUERRERO_FUEGO_DIE1_R_ALT, 64,
+                        64,
                         64);
   hGuerreroFuegoDie2[0] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE2_L,
-                         GUERRERO_FUEGO_DIE2_L_ALT, 64,
+               64,
                          64);
   hGuerreroFuegoDie2[1] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE2_R,
-                         GUERRERO_FUEGO_DIE2_R_ALT, 64,
+               64,
                          64);
 
   hGuerreroFuegoWalk[0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_L, GUERRERO_FUEGO_MOVE1_L_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE1_L, 64, 64);
   hGuerreroFuegoWalk[1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_R, GUERRERO_FUEGO_MOVE1_R_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE1_R, 64, 64);
   hGuerreroFuegoAtk[0][0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_L, GUERRERO_FUEGO_MOVE1_L_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE1_L, 64, 64);
   hGuerreroFuegoAtk[0][1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE2_L, GUERRERO_FUEGO_MOVE2_L_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE2_L, 64, 64);
   hGuerreroFuegoAtk[1][0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_R, GUERRERO_FUEGO_MOVE1_R_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE1_R, 64, 64);
   hGuerreroFuegoAtk[1][1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE2_R, GUERRERO_FUEGO_MOVE2_R_ALT, 64, 64);
+    GUERRERO_FUEGO_MOVE2_R, 64, 64);
 
   gSpritesFuegoCargados = true;
 }
@@ -397,106 +319,89 @@ static void cargarSpritesFuego(void) {
     return;
 
     hCaballeroHieloBmp[DIR_FRONT] =
-      cargarSpriteOpcional(CAB_HIELO_FRONT, CAB_HIELO_FRONT_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_FRONT,  64, 64);
     hCaballeroHieloBmp[DIR_BACK] =
-      cargarSpriteOpcional(CAB_HIELO_BACK, CAB_HIELO_BACK_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_BACK, 64, 64);
     hCaballeroHieloBmp[DIR_LEFT] =
-      cargarSpriteOpcional(CAB_HIELO_LEFT, CAB_HIELO_LEFT_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_LEFT, 64, 64);
     hCaballeroHieloBmp[DIR_RIGHT] =
-      cargarSpriteOpcional(CAB_HIELO_RIGHT, CAB_HIELO_RIGHT_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_RIGHT, 64, 64);
 
     hCaballeroHieloStand[0] =
-      cargarSpriteOpcional(CAB_HIELO_STAND_L, CAB_HIELO_STAND_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_STAND_L, 64, 64);
     hCaballeroHieloStand[1] =
-      cargarSpriteOpcional(CAB_HIELO_STAND_R, CAB_HIELO_STAND_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_STAND_R, 64, 64);
     hCaballeroHieloDie[0] =
-      cargarSpriteOpcional(CAB_HIELO_DIE1_L, CAB_HIELO_DIE1_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_DIE1_L, 64, 64);
     hCaballeroHieloDie[1] =
-      cargarSpriteOpcional(CAB_HIELO_DIE1_R, CAB_HIELO_DIE1_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_DIE1_R, 64, 64);
     hCaballeroHieloDie2[0] =
-      cargarSpriteOpcional(CAB_HIELO_DIE2_L, CAB_HIELO_DIE2_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_DIE2_L, 64, 64);
     hCaballeroHieloDie2[1] =
-      cargarSpriteOpcional(CAB_HIELO_DIE2_R, CAB_HIELO_DIE2_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_DIE2_R, 64, 64);
 
     hCaballeroHieloAtk[0][0] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE1_L, CAB_HIELO_MOVE1_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE1_L, 64, 64);
     hCaballeroHieloAtk[0][1] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE2_L, CAB_HIELO_MOVE2_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE2_L, 64, 64);
     hCaballeroHieloAtk[0][2] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE3_L, CAB_HIELO_MOVE3_L_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE3_L, 64, 64);
     if (!hCaballeroHieloAtk[0][2])
     hCaballeroHieloAtk[0][2] = hCaballeroHieloAtk[0][1];
     if (!hCaballeroHieloAtk[0][1])
     hCaballeroHieloAtk[0][1] = hCaballeroHieloAtk[0][0];
 
     hCaballeroHieloAtk[1][0] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE1_R, CAB_HIELO_MOVE1_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE1_R, 64, 64);
     hCaballeroHieloAtk[1][1] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE2_R, CAB_HIELO_MOVE2_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE2_R, 64, 64);
     hCaballeroHieloAtk[1][2] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE3_R, CAB_HIELO_MOVE3_R_ALT, 64, 64);
+      cargarSpriteOpcional(CAB_HIELO_MOVE3_R, 64, 64);
     if (!hCaballeroHieloAtk[1][2])
     hCaballeroHieloAtk[1][2] = hCaballeroHieloAtk[1][1];
     if (!hCaballeroHieloAtk[1][1])
     hCaballeroHieloAtk[1][1] = hCaballeroHieloAtk[1][0];
 
     hGuerreroHieloBmp[DIR_FRONT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_FRONT, GUERRERO_HIELO_FRONT_ALT, 64, 64);
+      GUERRERO_HIELO_FRONT, 64, 64);
     hGuerreroHieloBmp[DIR_BACK] = cargarSpriteOpcional(
-      GUERRERO_HIELO_BACK, GUERRERO_HIELO_BACK_ALT, 64, 64);
+      GUERRERO_HIELO_BACK, 64, 64);
     hGuerreroHieloBmp[DIR_LEFT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_LEFT, GUERRERO_HIELO_LEFT_ALT, 64, 64);
+      GUERRERO_HIELO_LEFT, 64, 64);
     hGuerreroHieloBmp[DIR_RIGHT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_RIGHT, GUERRERO_HIELO_RIGHT_ALT, 64, 64);
+      GUERRERO_HIELO_RIGHT, 64, 64);
 
     hGuerreroHieloStand[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_STAND_L, GUERRERO_HIELO_STAND_L_ALT, 64, 64);
+      GUERRERO_HIELO_STAND_L, 64, 64);
     hGuerreroHieloStand[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_STAND_R, GUERRERO_HIELO_STAND_R_ALT, 64, 64);
+      GUERRERO_HIELO_STAND_R, 64, 64);
     hGuerreroHieloDie[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE1_L, GUERRERO_HIELO_DIE1_L_ALT, 64, 64);
+      GUERRERO_HIELO_DIE1_L, 64, 64);
     hGuerreroHieloDie[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE1_R, GUERRERO_HIELO_DIE1_R_ALT, 64, 64);
+      GUERRERO_HIELO_DIE1_R, 64, 64);
     hGuerreroHieloDie2[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE2_L, GUERRERO_HIELO_DIE2_L_ALT, 64, 64);
+      GUERRERO_HIELO_DIE2_L, 64, 64);
     hGuerreroHieloDie2[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE2_R, GUERRERO_HIELO_DIE2_R_ALT, 64, 64);
+      GUERRERO_HIELO_DIE2_R, 64, 64);
 
     hGuerreroHieloWalk[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_L, GUERRERO_HIELO_MOVE1_L_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE1_L, 64, 64);
     hGuerreroHieloWalk[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_R, GUERRERO_HIELO_MOVE1_R_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE1_R, 64, 64);
 
     hGuerreroHieloAtk[0][0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_L, GUERRERO_HIELO_MOVE1_L_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE1_L, 64, 64);
     hGuerreroHieloAtk[0][1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE2_L, GUERRERO_HIELO_MOVE2_L_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE2_L, 64, 64);
     hGuerreroHieloAtk[1][0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_R, GUERRERO_HIELO_MOVE1_R_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE1_R, 64, 64);
     hGuerreroHieloAtk[1][1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE2_R, GUERRERO_HIELO_MOVE2_R_ALT, 64, 64);
+      GUERRERO_HIELO_MOVE2_R, 64, 64);
 
     gSpritesHieloCargados = true;
   }
 
-// Definiciones para obrerro fallback
-#define OBRERO_F_ALT "assets/obrero/obrero_front.bmp"
-#define OBRERO_B_ALT "assets/obrero/obrero_back.bmp"
-#define OBRERO_L_ALT "assets/obrero/obrero_left.bmp"
-#define OBRERO_R_ALT "assets/obrero/obrero_right.bmp"
 
-#define BARCO_F "../assets/barco/barco_front.bmp"
-#define BARCO_B "../assets/barco/barco_back.bmp"
-#define BARCO_L "../assets/barco/barco_left.bmp"
-#define BARCO_R "../assets/barco/barco_right.bmp"
-
-#define BARCO_F_ALT "assets/barco/barco_front.bmp"
-#define BARCO_B_ALT "assets/barco/barco_back.bmp"
-#define BARCO_L_ALT "assets/barco/barco_left.bmp"
-#define BARCO_R_ALT "assets/barco/barco_right.bmp"
-
-#define BARCO_DESTRUIDO "../assets/barco/barco_destruido.bmp"
-#define BARCO_DESTRUIDO_ALT "assets/barco/barco_destruido.bmp"
 
 static HBITMAP hMapaBmp =
     NULL; // Mapa de isla individual (isla1, isla2, o isla3)
@@ -505,7 +410,6 @@ static HBITMAP hMapaGlobalBmp =
 static HBITMAP hArboles[4] = {NULL};
 
 static char gRutaMapaPrincipal[MAX_PATH] = RUTA_MAPA;
-static char gRutaMapaAlterna[MAX_PATH] = RUTA_MAPA_ALT;
 
 // Matriz lógica de objetos - ahora usa CARACTERES (32x32 con celdas de 64px)
 char mapaObjetos[GRID_SIZE][GRID_SIZE] = {0};
@@ -609,8 +513,7 @@ Vaca *mapaObtenerVacas(int *cantidad) {
 bool mapaEliminarVacaPorIndice(int indice) {
   // Validar índice
   if (indice < 0 || indice >= gNumVacas) {
-    printf("[ERROR] mapaEliminarVacaPorIndice: índice %d fuera de rango (0-%d)\n",
-           indice, gNumVacas - 1);
+
     return false;
   }
 
@@ -618,9 +521,6 @@ bool mapaEliminarVacaPorIndice(int indice) {
   Vaca *pVaca = gVacas + indice;  // Aritmética de punteros
   int vacaFila = (int)(pVaca->y / TILE_SIZE);
   int vacaCol = (int)(pVaca->x / TILE_SIZE);
-
-  printf("[DEBUG] Eliminando vaca #%d en posición ACTUAL: Celda[%d][%d]\n",
-         indice, vacaFila, vacaCol);
 
   // 1. Limpiar la celda en mapaObjetos (posición ACTUAL, no la original)
   if (vacaFila >= 0 && vacaFila < GRID_SIZE && 
@@ -649,7 +549,6 @@ bool mapaEliminarVacaPorIndice(int indice) {
   }
 
   gNumVacas--;
-  printf("[DEBUG] Vaca eliminada por índice. Restan: %d vacas\n", gNumVacas);
 
   return true;
 }
@@ -703,7 +602,6 @@ void mapaRestaurarVacasExternas(const Vaca *vacas, int cantidad) {
 void mapaSeleccionarIsla(int isla) {
   int seleccion = (isla >= 1 && isla <= 5) ? isla : 1;
     snprintf(gRutaMapaPrincipal, sizeof(gRutaMapaPrincipal), "..\\assets\\islas\\isla%d.bmp", seleccion);
-    snprintf(gRutaMapaAlterna, sizeof(gRutaMapaAlterna), "assets/islas/isla%d.bmp", seleccion);
     gIslaSeleccionadaActual = seleccion;
     if (seleccion == 5) {
       gTemaIslaActual = MAPA_TEMA_FUEGO;
@@ -839,7 +737,6 @@ void mapaGuardarEstadoIsla(int isla) {
   }
 
   gIslaGuardada[isla] = true;
-  printf("[DEBUG] Estado de isla %d guardado en memoria\n", isla);
 }
 
 void mapaRestaurarEstadoIsla(int isla) {
@@ -858,7 +755,6 @@ void mapaRestaurarEstadoIsla(int isla) {
   // Para islas 4 y 5, REGENERAR el collision map en lugar de restaurarlo
   // Esto asegura que se use la nueva lógica de detección de agua
   if (isla == 4 || isla == 5) {
-    printf("[DEBUG] Isla %d: Regenerando collision map con nueva logica de agua...\n", isla);
     mapaReconstruirCollisionMap();
   } else {
     // Restaurar collision map normalmente para islas 1-3
@@ -876,8 +772,6 @@ void mapaRestaurarEstadoIsla(int isla) {
   for (int i = 0; i < gNumVacas; i++) {
     gVacas[i] = gVacasIsla[isla][i];
   }
-
-  printf("[DEBUG] Estado de isla %d restaurado desde memoria\n", isla);
 }
 
 // Guardado: extrae un snapshot del mapa/collision/vacas de cada isla para
@@ -944,23 +838,14 @@ static void detectarAguaEnMapa(void) {
   if (!hMapaBmp || !gCollisionMap)
     return;
 
-  printf("\n[DEBUG AGUA] ============================================\n");
-  printf("[DEBUG AGUA] Iniciando deteccion de agua (Isla=%d)...\n", gIslaSeleccionadaActual);
-  fflush(stdout);
 
   // ================================================================
   // OBTENER INFORMACIÓN DEL BITMAP
   // ================================================================
   BITMAP bm;
   if (!GetObject(hMapaBmp, sizeof(BITMAP), &bm)) {
-    printf("[DEBUG AGUA] ERROR: No se pudo obtener info del bitmap\n");
-    fflush(stdout);
     return;
   }
-
-  printf("[DEBUG AGUA] Bitmap dimensions: %dx%d\n", bm.bmWidth, bm.bmHeight);
-  printf("[DEBUG AGUA] Bits per pixel: %d\n", bm.bmBitsPixel);
-  fflush(stdout);
 
   // ================================================================
   // CONFIGURAR BITMAPINFO PARA LEER PIXELS
@@ -982,8 +867,6 @@ static void detectarAguaEnMapa(void) {
   BYTE *pixelData = (BYTE *)malloc(imageSize);
 
   if (!pixelData) {
-    printf("[DEBUG AGUA] ERROR: No se pudo asignar memoria\n");
-    fflush(stdout);
     return;
   }
 
@@ -993,19 +876,14 @@ static void detectarAguaEnMapa(void) {
   ReleaseDC(NULL, hdcScreen);
 
   if (!result) {
-    printf("[DEBUG AGUA] ERROR: GetDIBits fallo\n");
     free(pixelData);
-    fflush(stdout);
     return;
   }
 
-  printf("[DEBUG AGUA] Bitmap leido exitosamente a memoria\n");
-  fflush(stdout);
 
   // ================================================================
   // MUESTREO: Verificar primeros píxeles
   // ================================================================
-  printf("\n[DEBUG AGUA] === MUESTREO DE COLORES ===\n");
   int posicionesTest[][2] = {{5, 5}, {10, 10}, {15, 15}, {7, 7}, {14, 8}};
 
   for (int i = 0; i < 5; i++) {
@@ -1022,11 +900,8 @@ static void detectarAguaEnMapa(void) {
 
       bool verde = (g > r && g > b && g > 45);
       bool beige = (r > 80 && g > 80 && b < 100 && abs(r - g) < 50);
-      printf("[DEBUG] Celda[%2d][%2d] @ (%4d,%4d): RGB(%3d,%3d,%3d) -> %s\n", f,
-             c, px, py, r, g, b, (verde || beige) ? "TIERRA" : "AGUA");
     }
   }
-  fflush(stdout);
 
   // ================================================================
   // DETECCIÓN COMPLETA DE AGUA
@@ -1074,9 +949,6 @@ static void detectarAguaEnMapa(void) {
         // DEBUG ISLA 4: Mostrar primeros 20 colores encontrados
         static int debugIsla4Count = 0;
         if (debugIsla4Count < 20) {
-          printf("[DEBUG ISLA4 detectarAgua] Celda[%d][%d] RGB(%d,%d,%d) -> esAgua=%d (r<20=%d, g<80=%d, b>100=%d)\n",
-                 f, c, r, g, b, esAgua, (r<20), (g<80), (b>100));
-          fflush(stdout);
           debugIsla4Count++;
         }
       } else if (gIslaSeleccionadaActual == 5) {
@@ -1099,10 +971,6 @@ static void detectarAguaEnMapa(void) {
 
         // Debug primeras 5 escrituras
         if (contadorAgua <= 5) {
-          printf("[DEBUG] AGUA DETECTADA: gCollisionMap[%d][%d] = 1 "
-                 "(RGB=%d,%d,%d) Isla=%d\n",
-                 f, c, r, g, b, gIslaSeleccionadaActual);
-          fflush(stdout);
         }
       } else {
         // NO es agua - es tierra transitable (verde, arena, beige, etc)
@@ -1117,33 +985,8 @@ static void detectarAguaEnMapa(void) {
   // ================================================================
   // REPORTE FINAL
   // ================================================================
-  printf("\n[DEBUG AGUA] === RESUMEN ===\n");
-  printf("[DEBUG AGUA] Celdas de AGUA: %d\n", contadorAgua);
-  printf("[DEBUG AGUA] Celdas de TIERRA: %d\n", contadorTierra);
-  printf("[DEBUG AGUA] Fuera de limites: %d\n", contadorFueraDeLimites);
-  printf("[DEBUG AGUA] Total procesado: %d\n",
-         contadorAgua + contadorTierra + contadorFueraDeLimites);
-  fflush(stdout);
-
-  // Verificación post-escritura
-  printf("\n[DEBUG AGUA] === VERIFICACION POST-ESCRITURA ===\n");
-  for (int i = 0; i < 5; i++) {
-    int f = posicionesTest[i][0];
-    int c = posicionesTest[i][1];
-    int valor = *(*(gCollisionMap + f) + c);
-    printf("[DEBUG] gCollisionMap[%d][%d] = %d\n", f, c, valor);
-  }
-
-  // Snapshot de fila 10
-  printf("\n[DEBUG] Fila 10: ");
-  for (int c = 0; c < 20; c++) {
-    printf("%d", *(*(gCollisionMap + 10) + c));
-  }
-  printf("...\n");
 
   if (contadorAgua == 0) {
-    printf(
-        "\n[DEBUG AGUA] WARNING: No se detecto agua, activando fallback...\n");
     // Marcar bordes como agua
     for (int i = 0; i < GRID_SIZE; i++) {
       if (*(*(gCollisionMap + 0) + i) == 0)
@@ -1156,10 +999,6 @@ static void detectarAguaEnMapa(void) {
         *(*(gCollisionMap + i) + GRID_SIZE - 1) = 1;
     }
   }
-
-  printf("[DEBUG AGUA] Deteccion completada exitosamente.\n");
-  printf("[DEBUG AGUA] ============================================\n\n");
-  fflush(stdout);
 }
 
 // ============================================================================
@@ -1179,10 +1018,6 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
     *outDir = DIR_FRONT;
     return;
   }
-
-  printf("\n[DEBUG BARCO] ============================================\n");
-  printf("[DEBUG BARCO] Buscando AGUA para colocar barco...\n");
-  fflush(stdout);
 
   // El barco ocupa 6x6 celdas (192px / 32px = 6)
   const int BARCO_CELDAS = 6;
@@ -1254,27 +1089,13 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
             *outY = (float)(f * TILE_SIZE);
             *outDir = direcciones[d];
 
-            printf("[DEBUG BARCO] Orilla encontrada!\n");
-            printf("[DEBUG BARCO]   Celda AGUA: [%d][%d]\n", f, c);
-            printf("[DEBUG BARCO]   Posicion: (%.1f, %.1f)\n", *outX, *outY);
-            printf("[DEBUG BARCO]   Direccion hacia tierra: %d\n", *outDir);
-            printf("[DEBUG BARCO]   Espacio: %dx%d celdas de AGUA\n",
-                   BARCO_CELDAS, BARCO_CELDAS);
-            printf("[DEBUG BARCO]   Celdas de agua verificadas: %d/%d\n",
-                   celdasAgua, BARCO_CELDAS * BARCO_CELDAS);
-            printf("[DEBUG BARCO] "
-                   "============================================\n\n");
-            fflush(stdout);
             return;
           }
         }
       }
     }
   }
-
   // FALLBACK: Si no se encuentra orilla ideal, buscar CUALQUIER celda de agua
-  printf("[WARNING BARCO] No se encontró orilla con tierra adyacente, buscando "
-         "agua...\n");
   for (int f = 0; f < GRID_SIZE - BARCO_CELDAS; f++) {
     for (int c = 0; c < GRID_SIZE - BARCO_CELDAS; c++) {
       // Verificar si hay un bloque 6x6 de agua
@@ -1291,9 +1112,6 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
         *outX = (float)(c * TILE_SIZE);
         *outY = (float)(f * TILE_SIZE);
         *outDir = DIR_FRONT;
-        printf("[DEBUG BARCO] Agua encontrada en posición: (%.1f, %.1f)\n",
-               *outX, *outY);
-        fflush(stdout);
         return;
       }
     }
@@ -1303,9 +1121,6 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
   *outX = 1000.0f;
   *outY = 1000.0f;
   *outDir = DIR_FRONT;
-  printf("[ERROR BARCO] ¡No se encontró NINGUNA agua en todo el mapa!\n");
-  printf("[DEBUG BARCO] ============================================\n\n");
-  fflush(stdout);
 }
 
 void generarBosqueAutomatico() {
@@ -1323,6 +1138,8 @@ void generarBosqueAutomatico() {
   char (*ptrMatriz)[GRID_SIZE] = mapaObjetos;
   srand((unsigned int)time(NULL));
 
+  // Obtener ID de isla para adaptar la logica de generacion
+  int islaActual = gIslaSeleccionadaActual;
   // ============================================================================
   // RESERVAR CELDAS DE EDIFICIOS ANTES DE GENERAR BOSQUE
   // ============================================================================
@@ -1357,18 +1174,9 @@ void generarBosqueAutomatico() {
     }
   }
 
-  printf("[DEBUG] Edificios y perímetros de seguridad reservados en "
-         "mapaObjetos.\n");
-
-  // Obtener ID de isla para adaptar la logica de generacion
-  int islaActual = gIslaSeleccionadaActual;
-  printf("[DEBUG] Generando recursos para Isla ID: %d\n", islaActual);
-
-  // REQUISITO CRÍTICO: Colocar exactamente 15 árboles (no por probabilidad)
   const int NUM_ARBOLES_EXACTO = 15;
   int contador = 0;
 
-  // Bucle while que continúa hasta colocar exactamente 40 árboles
   int intentos = 0;
   const int MAX_INTENTOS = 50000; // Limite de seguridad para evitar congelamiento
   while (contador < NUM_ARBOLES_EXACTO && intentos < MAX_INTENTOS) {
@@ -1433,13 +1241,6 @@ void generarBosqueAutomatico() {
       contador++;
     }
   }
-
-  if (intentos >= MAX_INTENTOS) {
-      printf("[WARNING] Timeout generando arboles. Colocados: %d/%d. Verifique que el mapa tenga color verde (R<100, G>70, B<80).\n", contador, NUM_ARBOLES_EXACTO);
-  }
-
-  printf("[DEBUG] Logica: %d arboles registrados en la matriz con punteros.\n",
-         contador);
 
   // ============================================================================
   // GENERACIÓN DE VACAS DINÁMICAS (en lugar de estáticas en mapaObjetos)
@@ -1511,13 +1312,6 @@ void generarBosqueAutomatico() {
       gNumVacas++;
     }
   }
-
-  if (intentos >= MAX_INTENTOS) {
-       printf("[WARNING] Timeout generando vacas. Colocadas: %d/%d.\n", gNumVacas, NUM_VACAS_EXACTO);
-  }
-
-  printf("[DEBUG] Logica: %d vacas dinámicas generadas.\n", gNumVacas);
-
   // Construir la grilla de colisión con árboles Y detectar agua
   // NOTA: mapaReconstruirCollisionMap() YA llama a detectarAguaEnMapa()
   // internamente
@@ -1529,12 +1323,9 @@ void generarBosqueAutomatico() {
 }
 
 void cargarRecursosGraficos() {
-  // 1. Cargar Mapa Base (Intento doble)
+  // 1. Cargar Mapa Base
   hMapaBmp = (HBITMAP)LoadImageA(NULL, gRutaMapaPrincipal, IMAGE_BITMAP, 0, 0,
                                  LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-  if (!hMapaBmp)
-    hMapaBmp = (HBITMAP)LoadImageA(NULL, gRutaMapaAlterna, IMAGE_BITMAP, 0, 0,
-                                   LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
   if (mapaEsTemaFuego()) {
     cargarSpritesFuego();
@@ -1542,85 +1333,46 @@ void cargarRecursosGraficos() {
     cargarSpritesHielo();
   }
 
-  // NUEVO: Cargar mapa global con las 3 islas (mapaDemo2.bmp)
+  // Cargar mapa global con las 3 islas (mapaDemo2.bmp)
   hMapaGlobalBmp =
       (HBITMAP)LoadImageA(NULL, "../assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0,
                           LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-  if (!hMapaGlobalBmp) {
-    hMapaGlobalBmp =
-        (HBITMAP)LoadImageA(NULL, "assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0,
-                            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-  }
 
-  if (!hMapaGlobalBmp) {
-    printf("[ERROR] No se pudo cargar mapaDemo2.bmp para vista global\n");
-  } else {
-    printf("[OK] Mapa global (mapaDemo2.bmp) cargado correctamente\n");
-  }
 
-  // 2. Cargar cada árbol individualmente con sistema de respaldo (Fallback)
-  const char *rutasPrincipales[4];
-  const char *rutasAlternas[4];
+  // 2. Cargar cada árbol individualmente
+  const char *rutasArboles[4];
   if (mapaEsTemaFuego()) {
     for (int i = 0; i < 4; i++) {
-      rutasPrincipales[i] = ARBOL_FUEGO;
-      rutasAlternas[i] = ARBOL_FUEGO_ALT;
+      rutasArboles[i] = ARBOL_FUEGO;
     }
   } else if (mapaEsTemaHielo()) {
     for (int i = 0; i < 4; i++) {
-      rutasPrincipales[i] = ARBOL_HIELO;
-      rutasAlternas[i] = ARBOL_HIELO_ALT;
+      rutasArboles[i] = ARBOL_HIELO;
     }
   } else {
-    rutasPrincipales[0] = ARBOL1;
-    rutasPrincipales[1] = ARBOL2;
-    rutasPrincipales[2] = ARBOL3;
-    rutasPrincipales[3] = ARBOL4;
-    rutasAlternas[0] = ARBOL1_ALT;
-    rutasAlternas[1] = ARBOL2_ALT;
-    rutasAlternas[2] = ARBOL3_ALT;
-    rutasAlternas[3] = ARBOL4_ALT;
+    rutasArboles[0] = ARBOL1;
+    rutasArboles[1] = ARBOL2;
+    rutasArboles[2] = ARBOL3;
+    rutasArboles[3] = ARBOL4;
   }
 
   int cargados = 0;
   for (int i = 0; i < 4; i++) {
-    // Intento 1: Con "../"
     hArboles[i] =
-        (HBITMAP)LoadImageA(NULL, rutasPrincipales[i], IMAGE_BITMAP,
+        (HBITMAP)LoadImageA(NULL, rutasArboles[i], IMAGE_BITMAP,
                             SPRITE_ARBOL, SPRITE_ARBOL, LR_LOADFROMFILE);
-
-    // Intento 2: Sin "../" (si el primer intento falló)
-    if (!hArboles[i]) {
-      hArboles[i] =
-          (HBITMAP)LoadImageA(NULL, rutasAlternas[i], IMAGE_BITMAP,
-                              SPRITE_ARBOL, SPRITE_ARBOL, LR_LOADFROMFILE);
-    }
-
     if (hArboles[i])
       cargados++;
   }
 
-  // --- AGREGA ESTO PARA LOS OBREROS (CON FALLBACK) ---
+  // Cargar sprites de obreros
   const char *rutasObr[] = {obrero_front, obrero_back, obrero_left,
                             obrero_right};
-  const char *rutasObrAlt[] = {OBRERO_F_ALT, OBRERO_B_ALT, OBRERO_L_ALT,
-                               OBRERO_R_ALT};
 
   for (int i = 0; i < 4; i++) {
     hObreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasObr[i], IMAGE_BITMAP, 64, 64,
                                         LR_LOADFROMFILE);
-    if (!hObreroBmp[i]) {
-      hObreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasObrAlt[i], IMAGE_BITMAP,
-                                          64, 64, LR_LOADFROMFILE);
-    }
-
-    if (!hObreroBmp[i]) {
-      printf("[ERROR] No se pudo cargar obrero[%d]\n", i);
-    } else {
-      printf("[OK] Obrero BMP %d cargado correctamente.\n", i);
-    }
   }
-
   // --- CARGAR SPRITES DE CABALLEROS ---
 
   const char *rutasCab[] = {caballero_front, caballero_back, caballero_left,
@@ -1629,12 +1381,6 @@ void cargarRecursosGraficos() {
   for (int i = 0; i < 4; i++) {
     hCaballeroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCab[i], IMAGE_BITMAP, 64,
                                            64, LR_LOADFROMFILE);
-
-    if (!hCaballeroBmp[i]) {
-      printf("[ERROR] No se pudo cargar caballero[%d]\n", i);
-    } else {
-      printf("[OK] Caballero BMP %d cargado correctamente.\n", i);
-    }
   }
 
   // Caballero sin escudo
@@ -1646,111 +1392,55 @@ void cargarRecursosGraficos() {
   for (int i = 0; i < 4; i++) {
     hCaballeroSinEscudoBmp[i] = (HBITMAP)LoadImageA(
         NULL, rutasCabSinEscudo[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-
-    if (!hCaballeroSinEscudoBmp[i]) {
-      printf("[ERROR] No se pudo cargar caballero[%d]\n", i);
-    } else {
-      printf("[OK] Caballero BMP %d cargado correctamente.\n", i);
-    }
   }
 
   // --- CARGAR SPRITES DE GUERREROS ---
   const char *rutasGuerr[] = {guerrero_front, guerrero_back, guerrero_left,
                               guerrero_right};
-
-  const char *rutasGuerrAlt[] = {GUERRERO_F_ALT, GUERRERO_B_ALT, GUERRERO_L_ALT,
-                                 GUERRERO_R_ALT};
-
   for (int i = 0; i < 4; i++) {
     hGuerreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasGuerr[i], IMAGE_BITMAP, 64,
                                           64, LR_LOADFROMFILE);
-    if (!hGuerreroBmp[i]) {
-      hGuerreroBmp[i] = (HBITMAP)LoadImageA(
-          NULL, rutasGuerrAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    }
-    if (!hGuerreroBmp[i]) {
-      printf("[ERROR] No se pudo cargar guerrero[%d]\\n", i);
-    } else {
-      printf("[OK] Guerrero BMP %d cargado correctamente.\\n", i);
-    }
   }
 
   // --- COMBATE: CABALLERO (stand, defense, die) ---
   const char *cabStandLR[2] = {
       "../assets/caballero/caballero_war_stand_left.bmp",
       "../assets/caballero/caballero_war_stand_right.bmp"};
-  const char *cabStandLRAlt[2] = {"assets/caballero/caballero_war_stand_left.bmp",
-                                  "assets/caballero/caballero_war_stand_right.bmp"};
   const char *cabDefLR[2] = {"../assets/caballero/caballero_defense_left.bmp",
                              "../assets/caballero/caballero_defense_right.bmp"};
-  const char *cabDefLRAlt[2] = {"assets/caballero/caballero_defense_left.bmp",
-                                "assets/caballero/caballero_defense_right.bmp"};
   const char *cabDie1LR[2] = {"../assets/caballero/caballero_die_1_left.bmp",
                               "../assets/caballero/caballero_die_1_right.bmp"};
-  const char *cabDie1LRAlt[2] = {"assets/caballero/caballero_die_1_left.bmp",
-                                 "assets/caballero/caballero_die_1_right.bmp"};
   const char *cabDie2LR[2] = {"../assets/caballero/caballero_die_2_left.bmp",
                               "../assets/caballero/caballero_die_2_right.bmp"};
-  const char *cabDie2LRAlt[2] = {"assets/caballero/caballero_die_2_left.bmp",
-                                 "assets/caballero/caballero_die_2_right.bmp"};
   for (int i = 0; i < 2; i++) {
     hCaballeroStand[i] = (HBITMAP)LoadImageA(NULL, cabStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroStand[i])
-      hCaballeroStand[i] = (HBITMAP)LoadImageA(NULL, cabStandLRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hCaballeroDefense[i] = (HBITMAP)LoadImageA(NULL, cabDefLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroDefense[i])
-      hCaballeroDefense[i] = (HBITMAP)LoadImageA(NULL, cabDefLRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hCaballeroDie[i] = (HBITMAP)LoadImageA(NULL, cabDie1LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroDie[i])
-      hCaballeroDie[i] = (HBITMAP)LoadImageA(NULL, cabDie1LRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hCaballeroDie2[i] = (HBITMAP)LoadImageA(NULL, cabDie2LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroDie2[i])
-      hCaballeroDie2[i] = (HBITMAP)LoadImageA(NULL, cabDie2LRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
   }
 
   // --- COMBATE: GUERRERO (stand, walk, die) ---
   const char *gueStandLR[2] = {"../assets/guerrero/guerrero_war_stand_left.bmp",
                                "../assets/guerrero/guerrero_war_stand_right.bmp"};
-  const char *gueStandLRAlt[2] = {"assets/guerrero/guerrero_war_stand_left.bmp",
-                                  "assets/guerrero/guerrero_war_stand_right.bmp"};
   const char *gueWalkLR[2] = {"../assets/guerrero/guerrero_war_walk_left.bmp",
                               "../assets/guerrero/guerrero_war_walk_right.bmp"};
-  const char *gueWalkLRAlt[2] = {"assets/guerrero/guerrero_war_walk_left.bmp",
-                                 "assets/guerrero/guerrero_war_walk_right.bmp"};
   const char *gueDie1LR[2] = {"../assets/guerrero/guerrero_war_die_1_left.bmp",
                               "../assets/guerrero/guerrero_war_die_1_right.bmp"};
-  const char *gueDie1LRAlt[2] = {"assets/guerrero/guerrero_war_die_1_left.bmp",
-                                 "assets/guerrero/guerrero_war_die_1_right.bmp"};
   const char *gueDie2LR[2] = {"../assets/guerrero/guerrero_war_die_2_left.bmp",
                               "../assets/guerrero/guerrero_war_die_2_right.bmp"};
-  const char *gueDie2LRAlt[2] = {"assets/guerrero/guerrero_war_die_2_left.bmp",
-                                 "assets/guerrero/guerrero_war_die_2_right.bmp"};
   for (int i = 0; i < 2; i++) {
     hGuerreroStand[i] = (HBITMAP)LoadImageA(NULL, gueStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hGuerreroStand[i])
-      hGuerreroStand[i] = (HBITMAP)LoadImageA(NULL, gueStandLRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hGuerreroWalk[i] = (HBITMAP)LoadImageA(NULL, gueWalkLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hGuerreroWalk[i])
-      hGuerreroWalk[i] = (HBITMAP)LoadImageA(NULL, gueWalkLRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hGuerreroDie[i] = (HBITMAP)LoadImageA(NULL, gueDie1LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hGuerreroDie[i])
-      hGuerreroDie[i] = (HBITMAP)LoadImageA(NULL, gueDie1LRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hGuerreroDie2[i] = (HBITMAP)LoadImageA(NULL, gueDie2LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hGuerreroDie2[i])
-      hGuerreroDie2[i] = (HBITMAP)LoadImageA(NULL, gueDie2LRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
   }
 
   // --- COMBATE: CABALLERO SIN ESCUDO (stand) ---
   const char *cseStandLR[2] = {
       "../assets/caballero/caballero_war_NO_stand_left.bmp",
       "../assets/caballero/caballero_war_NO_stand_right.bmp"};
-  const char *cseStandLRAlt[2] = {
-      "assets/caballero/caballero_war_NO_stand_left.bmp",
-      "assets/caballero/caballero_war_NO_stand_right.bmp"};
   for (int i = 0; i < 2; i++) {
     hCaballeroSEStand[i] = (HBITMAP)LoadImageA(NULL, cseStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroSEStand[i])
-      hCaballeroSEStand[i] = (HBITMAP)LoadImageA(NULL, cseStandLRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
   }
 
 
@@ -1764,14 +1454,6 @@ void cargarRecursosGraficos() {
       "../assets/caballero/caballero_war_move_1_right.bmp",
       "../assets/caballero/caballero_war_move_2_right.bmp",
       "../assets/caballero/caballero_war_move_3_right.bmp"};
-  const char *cabAtkLAlt[3] = {
-      "assets/caballero/caballero_war_move_1_left.bmp",
-      "assets/caballero/caballero_war_move_2_left.bmp",
-      "assets/caballero/caballero_war_move_3_left.bmp"};
-  const char *cabAtkRAlt[3] = {
-      "assets/caballero/caballero_war_move_1_right.bmp",
-      "assets/caballero/caballero_war_move_2_right.bmp",
-      "assets/caballero/caballero_war_move_3_right.bmp"};
     // Caballero sin escudo: nuevos sprites de ataque (NO_move)
     const char *cseAtkL[3] = {
       "../assets/caballero/caballero_war_NO_move_1_left.bmp",
@@ -1781,40 +1463,24 @@ void cargarRecursosGraficos() {
       "../assets/caballero/caballero_war_NO_move_1_right.bmp",
       "../assets/caballero/caballero_war_NO_move_2_right.bmp",
       "../assets/caballero/caballero_war_NO_move_3_right.bmp"};
-    const char *cseAtkLAlt[3] = {
-      "assets/caballero/caballero_war_NO_move_1_left.bmp",
-      "assets/caballero/caballero_war_NO_move_2_left.bmp",
-      "assets/caballero/caballero_war_NO_move_3_left.bmp"};
-    const char *cseAtkRAlt[3] = {
-      "assets/caballero/caballero_war_NO_move_1_right.bmp",
-      "assets/caballero/caballero_war_NO_move_2_right.bmp",
-      "assets/caballero/caballero_war_NO_move_3_right.bmp"};
 
   for (int i = 0; i < 3; i++) {
     hCaballeroAtk[0][i] = (HBITMAP)LoadImageA(NULL, cabAtkL[i], IMAGE_BITMAP,
-                                              64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroAtk[0][i])
-      hCaballeroAtk[0][i] = (HBITMAP)LoadImageA(
-          NULL, cabAtkLAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+                                              64, 64,   LR_LOADFROMFILE);
     hCaballeroAtk[1][i] = (HBITMAP)LoadImageA(NULL, cabAtkR[i], IMAGE_BITMAP,
                                               64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroAtk[1][i])
-      hCaballeroAtk[1][i] = (HBITMAP)LoadImageA(
-          NULL, cabAtkRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
+    hCaballeroAtk[2][i] = (HBITMAP)LoadImageA(NULL, cseAtkL[i], IMAGE_BITMAP,
+                                              64, 64, LR_LOADFROMFILE);
+    hCaballeroAtk[3][i] = (HBITMAP)LoadImageA(NULL, cseAtkR[i], IMAGE_BITMAP,
+                                              64, 64, LR_LOADFROMFILE);
   }
 
   // Cargar sprites de ataque del caballero sin escudo
   for (int i = 0; i < 3; i++) {
     hCaballeroSEAtk[0][i] = (HBITMAP)LoadImageA(NULL, cseAtkL[i], IMAGE_BITMAP,
                                                 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroSEAtk[0][i])
-      hCaballeroSEAtk[0][i] = (HBITMAP)LoadImageA(
-          NULL, cseAtkLAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hCaballeroSEAtk[1][i] = (HBITMAP)LoadImageA(NULL, cseAtkR[i], IMAGE_BITMAP,
                                                 64, 64, LR_LOADFROMFILE);
-    if (!hCaballeroSEAtk[1][i])
-      hCaballeroSEAtk[1][i] = (HBITMAP)LoadImageA(
-          NULL, cseAtkRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
   }
 
   // Ataque guerrero (left/right, 2 frames)
@@ -1822,96 +1488,46 @@ void cargarRecursosGraficos() {
                             "../assets/guerrero/guerrero_war_move_2_left.bmp"};
   const char *gueAtkR[2] = {"../assets/guerrero/guerrero_war_move_1_right.bmp",
                             "../assets/guerrero/guerrero_war_move_2_right.bmp"};
-  const char *gueAtkLAlt[2] = {"assets/guerrero/guerrero_war_move_1_left.bmp",
-                               "assets/guerrero/guerrero_war_move_2_left.bmp"};
-  const char *gueAtkRAlt[2] = {"assets/guerrero/guerrero_war_move_1_right.bmp",
-                               "assets/guerrero/guerrero_war_move_2_right.bmp"};
   for (int i = 0; i < 2; i++) {
     hGuerreroAtk[0][i] = (HBITMAP)LoadImageA(NULL, gueAtkL[i], IMAGE_BITMAP, 64,
                                              64, LR_LOADFROMFILE);
-    if (!hGuerreroAtk[0][i])
-      hGuerreroAtk[0][i] = (HBITMAP)LoadImageA(
-          NULL, gueAtkLAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
     hGuerreroAtk[1][i] = (HBITMAP)LoadImageA(NULL, gueAtkR[i], IMAGE_BITMAP, 64,
                                              64, LR_LOADFROMFILE);
-    if (!hGuerreroAtk[1][i])
-      hGuerreroAtk[1][i] = (HBITMAP)LoadImageA(
-          NULL, gueAtkRAlt[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
   }
 
   // --- CARGAR SPRITES DE BARCO (192x192) ---
   const char *rutasBarco[] = {BARCO_F, BARCO_B, BARCO_L, BARCO_R};
-  const char *rutasBarcoAlt[] = {BARCO_F_ALT, BARCO_B_ALT, BARCO_L_ALT, BARCO_R_ALT};
 
   for (int i = 0; i < 4; i++) {
-    // Intento 1: Ruta principal (../assets)
     hBarcoBmp[i] = (HBITMAP)LoadImageA(NULL, rutasBarco[i], IMAGE_BITMAP,
                                        192, 192, LR_LOADFROMFILE);
-    
-    // Intento 2: Ruta alterna (assets/)
-    if (!hBarcoBmp[i]) {
-        hBarcoBmp[i] = (HBITMAP)LoadImageA(NULL, rutasBarcoAlt[i], IMAGE_BITMAP,
-                                       192, 192, LR_LOADFROMFILE);
-    }
-
-    if (!hBarcoBmp[i]) {
-      printf("[ERROR] No se pudo cargar barco[%d] (ni '%s' ni '%s')\n", i, rutasBarco[i], rutasBarcoAlt[i]);
-    } else {
-      printf("[OK] Barco BMP %d cargado correctamente (192x192).\n", i);
-    }
   }
 
   // Cargar sprite del barco destruido
   hBarcoDestruidoBmp = (HBITMAP)LoadImageA(NULL, BARCO_DESTRUIDO, IMAGE_BITMAP,
                                            192, 192, LR_LOADFROMFILE);
-  if (!hBarcoDestruidoBmp) {
-    hBarcoDestruidoBmp = (HBITMAP)LoadImageA(NULL, BARCO_DESTRUIDO_ALT, IMAGE_BITMAP,
-                                             192, 192, LR_LOADFROMFILE);
-  }
-  if (hBarcoDestruidoBmp) {
-    printf("[OK] Barco destruido cargado correctamente (192x192).\n");
-  } else {
-    printf("[ERROR] No se pudo cargar barco_destruido.bmp\n");
-  }
+  
 
   const char *rutasVaca[4];
-  const char *rutasVacaAlt[4];
   if (mapaEsTemaFuego()) {
     rutasVaca[DIR_FRONT] = VACA_FUEGO_F;
-    rutasVacaAlt[DIR_FRONT] = VACA_FUEGO_F_ALT;
     rutasVaca[DIR_BACK] = VACA_FUEGO_B;
-    rutasVacaAlt[DIR_BACK] = VACA_FUEGO_B_ALT;
     rutasVaca[DIR_LEFT] = VACA_FUEGO_L;
-    rutasVacaAlt[DIR_LEFT] = VACA_FUEGO_L_ALT;
     rutasVaca[DIR_RIGHT] = VACA_FUEGO_R;
-    rutasVacaAlt[DIR_RIGHT] = VACA_FUEGO_R_ALT;
   } else if (mapaEsTemaHielo()) {
     rutasVaca[DIR_FRONT] = VACA_HIELO_F;
-    rutasVacaAlt[DIR_FRONT] = VACA_HIELO_F_ALT;
     rutasVaca[DIR_BACK] = VACA_HIELO_B;
-    rutasVacaAlt[DIR_BACK] = VACA_HIELO_B_ALT;
     rutasVaca[DIR_LEFT] = VACA_HIELO_L;
-    rutasVacaAlt[DIR_LEFT] = VACA_HIELO_L_ALT;
     rutasVaca[DIR_RIGHT] = VACA_HIELO_R;
-    rutasVacaAlt[DIR_RIGHT] = VACA_HIELO_R_ALT;
   } else {
     rutasVaca[DIR_FRONT] = VACA_F;
-    rutasVacaAlt[DIR_FRONT] = VACA_F_ALT;
     rutasVaca[DIR_BACK] = VACA_B;
-    rutasVacaAlt[DIR_BACK] = VACA_B_ALT;
     rutasVaca[DIR_LEFT] = VACA_L;
-    rutasVacaAlt[DIR_LEFT] = VACA_L_ALT;
     rutasVaca[DIR_RIGHT] = VACA_R;
-    rutasVacaAlt[DIR_RIGHT] = VACA_R_ALT;
   }
   for (int i = 0; i < 4; i++) {
     hVacaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasVaca[i], IMAGE_BITMAP, 64, 64,
                                       LR_LOADFROMFILE);
-    if (!hVacaBmp[i]) {
-      hVacaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasVacaAlt[i], IMAGE_BITMAP, 64,
-                                        64, LR_LOADFROMFILE);
-    }
-    printf("[%s] Vaca BMP %d cargado.\\n", hVacaBmp[i] ? "OK" : "ERROR", i);
   }
 
   if (gGenerarRecursos) {
@@ -2720,10 +2336,6 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
       // Debug temporal cada 60 frames aprox para no spamear
       static int debugFrame = 0;
       debugFrame++;
-      // if (debugFrame % 300 == 0 && b->construido) {
-      //      printf("[RENDER BARCO] Pos(%.1f, %.1f) BasePies: %.1f FilaActual: %d-%d\n", 
-      //             b->x, b->y, basePies, yMinFila, yMaxFila);
-      // }
 
       if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
         int pantX = (int)((b->x - cam.x) * cam.zoom);
@@ -2736,16 +2348,14 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
           if (b->construido) {
             HBITMAP sprite = hBarcoBmp[b->dir];
             if (!sprite) {
-                 printf("[ERROR RENDER] Sprite de barco NULL para dir %d\n", b->dir);
-                 sprite = hBarcoBmp[0]; // Fallback
+                 sprite = hBarcoBmp[0]; 
             }
             SelectObject(hdcSprites, sprite);
           } else {
             SelectObject(hdcSprites, hBarcoDestruidoBmp);
           }
-          BOOL res = TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
+          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
                          192, 192, RGB(255, 255, 255));
-          if (!res) printf("[ERROR RENDER] Fallo TransparentBlt barco\n");
         }
       }
     }
@@ -2865,8 +2475,6 @@ void mapaEliminarObjeto(int f, int c) {
             gVacas[k] = gVacas[k + 1];
           }
           gNumVacas--;
-          printf("[DEBUG] Vaca dinamica eliminada de gVacas. Restan: %d\n",
-                 gNumVacas);
           break; // Asumimos una vaca por celda
         }
       }
@@ -2911,7 +2519,6 @@ void inicializarMapa(char mapa[GRID_SIZE][GRID_SIZE]) {
       *(ptrCelda + c) = SIMBOLO_VACIO;
     }
   }
-  printf("[DEBUG] Mapa inicializado\n");
 }
 
 void mostrarMapa(char mapa[GRID_SIZE][GRID_SIZE]) {
@@ -2957,42 +2564,6 @@ void mostrarMapa(char mapa[GRID_SIZE][GRID_SIZE]) {
   for (int c = 0; c < GRID_SIZE; c++)
     printf("--");
   printf("+\n\n");
-}
-
-void explorarMapa(char mapa[GRID_SIZE][GRID_SIZE]) {
-  int fila, columna;
-  printf("\n=== EXPLORAR MAPA ===\n");
-  printf("Fila (0-%d): ", GRID_SIZE - 1);
-  scanf("%d", &fila);
-  printf("Columna (0-%d): ", GRID_SIZE - 1);
-  scanf("%d", &columna);
-
-  if (fila < 0 || fila >= GRID_SIZE || columna < 0 || columna >= GRID_SIZE) {
-    printf("[ERROR] Coordenadas fuera del mapa\n");
-    return;
-  }
-
-  char (*ptrFila)[GRID_SIZE] = mapa;
-  char *celda = (*(ptrFila + fila)) + columna;
-  char contenido = *celda;
-
-  printf("[EXPLORACION] Celda [%d][%d]: ", fila, columna);
-  switch (contenido) {
-  case SIMBOLO_ARBOL:
-    printf("ARBOL\n");
-    break;
-  case SIMBOLO_VACIO:
-    printf("Vacio\n");
-    break;
-  default:
-    printf("%c\n", contenido);
-  }
-}
-
-char obtenerContenidoCelda(char *celda) {
-  if (celda == NULL)
-    return '\0';
-  return *celda;
 }
 // ============================================================================
 // FUNCIONES DE SINCRONIZACIÓN: mapaObjetos <-> Estado del Juego
@@ -3054,8 +2625,7 @@ bool mapaCeldaEsTierra(int fila, int col) {
   // Bloquear cualquier cosa marcada como colisión u océano conocido
   if (valor != 0) {
     if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
-      printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por collisionMap=%d, simbolo='%c'\n", 
-             fila, col, valor, simb ? simb : '.');
+
       fflush(stdout);
       debugCount++;
     }
@@ -3063,7 +2633,7 @@ bool mapaCeldaEsTierra(int fila, int col) {
   }
   if (simb == SIMBOLO_AGUA) {
     if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
-      printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por SIMBOLO_AGUA\n", fila, col);
+
       fflush(stdout);
       debugCount++;
     }
@@ -3103,8 +2673,6 @@ bool mapaCeldaEsTierra(int fila, int col) {
             
             // DEBUG: Mostrar por qué se bloquea o no
             if (debugCount < 30) {
-              printf("[DEBUG ISLA4] Celda[%d][%d] COLOR RGB(%d,%d,%d) -> agua=%d (r<20:%d, g<80:%d, b>100:%d)\n",
-                     fila, col, r, g, b, agua, (r<20), (g<80), (b>100));
               fflush(stdout);
               debugCount++;
             }
@@ -3120,7 +2688,6 @@ bool mapaCeldaEsTierra(int fila, int col) {
           
           if (agua) {
             if (debugCount < 30 && gIslaSeleccionadaActual == 4) {
-              printf("[DEBUG ISLA4] Celda[%d][%d] BLOQUEADA por COLOR agua=true\n", fila, col);
               fflush(stdout);
               debugCount++;
             }
@@ -3168,7 +2735,6 @@ void mapaActualizarArboles(void) {
   if (!hMapaBmp)
       return;
 
-  printf("[DEBUG] Regenerando arboles (Faltan %d)...\n", 20 - totalArboles);
 
   HDC hdcPantalla = GetDC(NULL);
   HDC hdcMem = CreateCompatibleDC(hdcPantalla);
@@ -3216,7 +2782,7 @@ void mapaActualizarArboles(void) {
              if (colMat) colMat[fila][col] = 1;
              
              colocado = true;
-             printf("[DEBUG] Arbol regenerado en [%d][%d] (RGB: %d,%d,%d)\n", fila, col, r, g, b);
+
          }
     }
   }

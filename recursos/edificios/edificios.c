@@ -7,14 +7,17 @@
 #include <windows.h>
 
 
-#define imgMina "../../assets/mina.bmp"
-#define imgMinaFuego "../../assets/mina-fuego.bmp"
-#define imgCastilloAliado "../../assets/castillo_aliado.bmp"
-#define imgCastilloEnemigo "../../assets/castillo_enemigo.bmp"
-#define imgCastilloFuego "../../assets/castillo_fuego.bmp"
-#define imgCuartelAliado "../../assets/cuartel_aliado.bmp"
-#define imgCuartelEnemigo "../../assets/cuartel_enemigo.bmp"
-#define imgCuartelFuego "../../assets/cuartel_fuego.bmp"
+#define imgMina "../assets/mina.bmp"
+#define imgMinaFuego "../assets/mina-fuego.bmp"
+#define imgCastilloAliado "../assets/castillo_aliado.bmp"
+#define imgCastilloEnemigo "../assets/castillo_enemigo.bmp"
+#define imgCastilloFuego "../assets/castillo_fuego.bmp"
+#define imgCuartelAliado "../assets/cuartel_aliado.bmp"
+#define imgCuartelEnemigo "../assets/cuartel_enemigo.bmp"
+#define imgCuartelFuego "../assets/cuartel_fuego.bmp"
+#define imgCastilloHielo "../assets/castillo_hielo.bmp"
+#define imgCuartelHielo "../assets/cuartel_hielo.bmp"
+#define imgMinaHielo "../assets/iglu.bmp"
 
 // Tamaño del castillo y cuartel (4x4 celdas de 64px = 256px)
 #define CASTILLO_SIZE 256
@@ -85,8 +88,7 @@ void edificioInicializar(Edificio *e, TipoEdificio tipo, float x, float y) {
     e->piedraRestante = 1500; 
     e->hierroRestante = 1500; // Intercambiado: Era 800 (Ahora abundante)
     e->agotada = false;
-    printf("[MINA] Inicializada con: %d Oro, %d Piedra, %d Hierro\n",
-           e->oroRestante, e->piedraRestante, e->hierroRestante);
+
   } else {
     e->oroRestante = 0;
     e->piedraRestante = 0;
@@ -160,14 +162,7 @@ void edificioActualizar(Edificio *e) {
                   "la estructura ha colapsado.",
                   "Evento: Mina Agotada", MB_OK | MB_ICONWARNING);
 
-      printf("[MINA] ¡EXPLOTÓ! Ya no quedan recursos y la estructura ha "
-             "colapsado.\n");
-    } else {
-      // Debug para consola
-      printf("[MINA] Generado: +%d Oro, +%d Piedra, +%d Hierro | Restante: %d "
-             "Oro, %d Piedra, %d Hierro\n",
-             oroGenerado, piedraGenerada, hierroGenerado, e->oroRestante,
-             e->piedraRestante, e->hierroRestante);
+
     }
   }
 }
@@ -175,215 +170,53 @@ void edificioActualizar(Edificio *e) {
 #define MAX_PATH_LEN 512
 
 void edificiosCargarSprites() {
-  char pathExe[MAX_PATH_LEN];
-  GetModuleFileNameA(NULL, pathExe, MAX_PATH_LEN);
-  char *last = strrchr(pathExe, '\\');
-  if (last)
-    *last = '\0';
 
-  char fullPath[MAX_PATH_LEN];
-
-  // Lista de intentos para la Mina
-  const char *attemptsMina[] = {"\\assets\\mina.bmp", "\\..\\assets\\mina.bmp",
-                                "\\mina.bmp"};
-
-  g_spriteMina = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsMina[i]);
-    g_spriteMina = (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, 128, 128,
+  g_spriteMina = (HBITMAP)LoadImageA(NULL, imgMina, IMAGE_BITMAP, 128, 128,
                                        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteMina)
-      break;
-  }
 
-  const char *attemptsMinaFuego[] = {"\\assets\\mina-fuego.bmp",
-                                     "\\..\\assets\\mina-fuego.bmp",
-                                     "\\mina-fuego.bmp"};
-  g_spriteMinaFuego = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsMinaFuego[i]);
-    g_spriteMinaFuego = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, 128, 128,
+  g_spriteMinaFuego = (HBITMAP)LoadImageA(
+        NULL, imgMinaFuego, IMAGE_BITMAP, 128, 128,
         LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteMinaFuego)
-      break;
-  }
 
-  const char *attemptsMinaHielo[] = {"../../assets/iglu.bmp",
-                                     "\\..\\assets\\iglu.bmp",
-                                     "\\iglu.bmp"};
-  g_spriteMinaHielo = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsMinaHielo[i]);
-    g_spriteMinaHielo = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, 128, 128,
-        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteMinaHielo)
-      break;
-  }
-
-  if ( g_spriteMina) {
-    printf("[SISTEMA] Recursos de edificios cargados con exito.\n");
-  } else {
-    printf("[ERROR] Fallo en carga de sprites:\n");
-    if (!g_spriteMina)
-      printf(" - Fallo Mina\n");
-  }
-  
-  // Debug específico para sprites temáticos
-  if (g_spriteMinaFuego) {
-    printf("[SISTEMA] Sprite mina-fuego.bmp cargado correctamente.\n");
-  } else {
-    printf("[ERROR] No se pudo cargar mina-fuego.bmp\n");
-  }
-  
-  if (g_spriteMinaHielo) {
-    printf("[SISTEMA] Sprite iglu.bmp cargado correctamente.\n");
-  } else {
-    printf("[ERROR] No se pudo cargar iglu.bmp\n");
-  }
+ 
 
   // ============================================================================
   // CARGAR SPRITES DE CASTILLOS ALIADO Y ENEMIGO (256x256, 4x4 celdas)
   // ============================================================================
-  const char *attemptsCastilloAliado[] = {
-      "../../assets/castillo_aliado.bmp", "\\..\\assets\\castillo_aliado.bmp",
-      "\\castillo_aliado.bmp"};
 
-  g_spriteCastilloAliado = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloAliado[i]);
-    g_spriteCastilloAliado =
-        (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+  g_spriteCastilloAliado =
+        (HBITMAP)LoadImageA(NULL, imgCastilloAliado, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
                             LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCastilloAliado) {
-      printf("[SISTEMA] Imagen castillo_aliado.bmp cargada con exito (256x256).\n");
-      break;
-    }
-  }
 
-  const char *attemptsCastilloEnemigo[] = {
-      "../../assets/castillo_enemigo.bmp", "\\..\\assets\\castillo_enemigo.bmp",
-      "\\castillo_enemigo.bmp"};
+  g_spriteCastilloEnemigo =
+        (HBITMAP)LoadImageA(NULL, imgCastilloEnemigo, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+                            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+
+  g_spriteCastilloFuego =
+        (HBITMAP)LoadImageA(NULL, imgCastilloFuego, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+                            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+
+  g_spriteCastilloHielo =
+        (HBITMAP)LoadImageA(NULL, imgCastilloHielo, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+                            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
   g_spriteCastilloEnemigo = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloEnemigo[i]);
-    g_spriteCastilloEnemigo =
-        (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
+
+  g_spriteCuartelAliado =
+        (HBITMAP)LoadImageA(NULL, imgCuartelAliado, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
                             LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCastilloEnemigo) {
-      printf("[SISTEMA] Imagen castillo_enemigo.bmp cargada con exito (256x256).\n");
-      break;
-    }
-  }
 
-  // Verificar si se cargaron los castillos
-  if (!g_spriteCastilloAliado) {
-    printf("[ERROR] No se pudo cargar castillo_aliado.bmp\n");
-  }
-  if (!g_spriteCastilloEnemigo) {
-    printf("[ERROR] No se pudo cargar castillo_enemigo.bmp\n");
-  }
-
-  const char *attemptsCastilloFuego[] = {
-      "../../assets/castillo_fuego.bmp", "\\..\\assets\\castillo_fuego.bmp",
-      "\\castillo_fuego.bmp"};
-  g_spriteCastilloFuego = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloFuego[i]);
-    g_spriteCastilloFuego = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
-        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCastilloFuego) {
-      break;
-    }
-  }
-
-  const char *attemptsCastilloHielo[] = {
-      "../../assets/castillo_hielo.bmp", "\\..\\assets\\castillo_hielo.bmp",
-      "\\castillo_hielo.bmp"};
-  g_spriteCastilloHielo = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCastilloHielo[i]);
-    g_spriteCastilloHielo = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,
-        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCastilloHielo) {
-      break;
-    }
-  }
-
-  // ============================================================================
-  // CARGAR SPRITES DE CUARTELES ALIADO Y ENEMIGO (256x256, 4x4 celdas)
-  // ============================================================================
-  const char *attemptsCuartelAliado[] = {
-      "../../assets/cuartel_aliado.bmp", "\\..\\assets\\cuartel_aliado.bmp",
-      "\\cuartel_aliado.bmp"};
-
-  g_spriteCuartelAliado = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelAliado[i]);
-    g_spriteCuartelAliado =
-        (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
+  g_spriteCuartelFuego =
+        (HBITMAP)LoadImageA(NULL, imgCuartelFuego, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
                             LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCuartelAliado) {
-      printf("[SISTEMA] Imagen cuartel_aliado.bmp cargada con exito (256x256).\n");
-      break;
-    }
-  }
 
-  const char *attemptsCuartelEnemigo[] = {
-      "../../assets/cuartel_enemigo.bmp", "\\..\\assets\\cuartel_enemigo.bmp",
-      "\\cuartel_enemigo.bmp"};
-
-  g_spriteCuartelEnemigo = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelEnemigo[i]);
-    g_spriteCuartelEnemigo =
-        (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
+  g_spriteCuartelHielo =
+        (HBITMAP)LoadImageA(NULL, imgCuartelHielo, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
                             LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCuartelEnemigo) {
-      printf("[SISTEMA] Imagen cuartel_enemigo.bmp cargada con exito (256x256).\n");
-      break;
-    }
-  }
 
-  // Verificar si se cargaron los cuarteles
-  if (!g_spriteCuartelAliado) {
-    printf("[ERROR] No se pudo cargar cuartel_aliado.bmp\n");
-  }
-  if (!g_spriteCuartelEnemigo) {
-    printf("[ERROR] No se pudo cargar cuartel_enemigo.bmp\n");
-  }
-
-  const char *attemptsCuartelFuego[] = {
-      "../../assets/cuartel_fuego.bmp", "\\..\\assets\\cuartel_fuego.bmp",
-      "\\cuartel_fuego.bmp"};
-  g_spriteCuartelFuego = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelFuego[i]);
-    g_spriteCuartelFuego = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
-        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCuartelFuego) {
-      break;
-    }
-  }
-
-  const char *attemptsCuartelHielo[] = {
-      "../../assets/cuartel_hielo.bmp", "\\..\\assets\\cuartel_hielo.bmp",
-      "\\cuartel_hielo.bmp"};
-  g_spriteCuartelHielo = NULL;
-  for (int i = 0; i < 3; i++) {
-    sprintf(fullPath, "%s%s", pathExe, attemptsCuartelHielo[i]);
-    g_spriteCuartelHielo = (HBITMAP)LoadImageA(
-        NULL, fullPath, IMAGE_BITMAP, CUARTEL_SIZE, CUARTEL_SIZE,
-        LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    if (g_spriteCuartelHielo) {
-      break;
-    }
-  }
+  g_spriteMinaHielo =
+        (HBITMAP)LoadImageA(NULL, imgMinaHielo, IMAGE_BITMAP, 128, 128,
+                            LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 }
 
 void edificioDibujar(HDC hdcBuffer, const Edificio *e, int camX, int camY,
@@ -397,11 +230,7 @@ void edificioDibujar(HDC hdcBuffer, const Edificio *e, int camX, int camY,
   // Debug temporal para verificar tema en islas 4 y 5
   static int debugContador = 0;
   if (debugContador < 10 && e->tipo == EDIFICIO_MINA && (esIslaFuego || esIslaHielo)) {
-    printf("[DEBUG EDIFICIO] Dibujando MINA en isla tematica: esIslaFuego=%d, esIslaHielo=%d, islaActual=%d\n",
-           esIslaFuego, esIslaHielo, islaActual);
-    printf("[DEBUG EDIFICIO] Sprites: MinaFuego=%p, MinaHielo(iglu)=%p, MinaNormal=%p\n",
-           (void*)g_spriteMinaFuego, (void*)g_spriteMinaHielo, (void*)g_spriteMina);
-    fflush(stdout);
+
     debugContador++;
   }
 

@@ -190,11 +190,6 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY);
 // Libera memoria dinámica asociada al movimiento (rutas por unidad, etc).
 void rtsLiberarMovimientoJugador(struct Jugador *j);
 void IniciacionRecursos(struct Jugador *j, const char *Nombre);
-void IniciacionTropa(struct Tropa *t, const char *Nombre, int Oro, int Comida,
-                     int Madera, int Piedra, int Vida, int Fuerza,
-                     int VelocidadAtaque, int DistanciaAtaque);
-void gotoxy(int x, int y);
-void mostrarStats(struct Jugador j, int x, int y);
 
 // Nueva función lógica para talar
 bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY);
@@ -218,10 +213,6 @@ bool construirBarco(struct Jugador *j);
 // Verifica si hay algun obrero seleccionado cerca de un punto
 bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
                                 float distMax);
-// Verifica si hay CUALQUIER tropa seleccionada cerca de un punto
-bool recursosCualquierTropaCercaDePunto(struct Jugador *j, float x, float y,
-                                        float distMax);
-
 // ============================================================================
 // PANEL HUD DE RECURSOS (Esquina superior derecha)
 // ============================================================================

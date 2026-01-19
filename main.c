@@ -236,8 +236,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     jugador1.barco.activo = true;
     jugador1.barco.numTropas = 0;
 
-    printf("[DEBUG] Barco colocado en isla %d: (%.1f, %.1f), dir=%d\n",
-           jugador1.islaActual, barcoX, barcoY, barcoDir);
 
     // Registrar barco en mapaObjetos
     mapaRegistrarObjeto(jugador1.barco.x, jugador1.barco.y, SIMBOLO_BARCO);
@@ -264,11 +262,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     if (partidaCargada) {
       const char* nombrePartida = menuObtenerNombrePartida();
       if (nombrePartida && nombrePartida[0] != '\0') {
-        if (cargarPartidaPorNombre(nombrePartida, &jugador1, &camara, &ayuntamiento, &mina, &cuartel)) {
-          printf("[MAIN] Partida '%s' cargada correctamente\n", nombrePartida);
-        } else {
-          printf("[MAIN] Error al cargar la partida '%s'\n", nombrePartida);
-        }
+        cargarPartidaPorNombre(nombrePartida, &jugador1, &camara, &ayuntamiento, &mina, &cuartel);
       }
     }
 

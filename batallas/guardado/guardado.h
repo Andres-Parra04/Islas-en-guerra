@@ -196,8 +196,7 @@ bool existePartida(const char *nombreJugador);
 // Elimina una partida por nombre
 bool eliminarPartida(const char *nombreJugador);
 
-// Obtiene la ruta del archivo de guardado para un nombre
-void obtenerRutaGuardado(const char *nombreJugador, char *ruta, int maxLen);
+
 
 // ============================================================================
 // MENÚ DE PAUSA EN PANTALLA (GDI) - Sin parpadeo

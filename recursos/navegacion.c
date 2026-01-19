@@ -56,9 +56,7 @@ static void edificioASerializable(const Edificio *src,
                                   EdificioIslaSerializable *dst);
 static void serializableAEdificio(const EdificioIslaSerializable *src,
                                   Edificio *dst);
-static const bool sViajeLibreDebug = false;
 
-bool navegacionViajeLibreDebug(void) { return sViajeLibreDebug; }
 
 void navegacionReiniciarEstado(void) {
   for (int isla = 0; isla < 6; isla++) {
@@ -330,9 +328,7 @@ static void obtenerPosicionBarcoIsla(int isla, float *outX, float *outY,
   *outY = (float)(fila * TILE_SIZE);
   *outDir = direccion;
 
-  printf(
-      "[DEBUG BARCO] Isla %d: Matriz[%d][%d] -> Pixeles(%.1f, %.1f), dir=%d\n",
-      isla, fila, columna, *outX, *outY, *outDir);
+
 }
 
 // Función exportable para usar desde main.c
@@ -1006,7 +1002,6 @@ static void desembarcarTropasEnCentro(Barco *barco, struct Jugador *j) {
     barco->tropas[k] = NULL;
   barco->numTropas = 0;
 
-  printf("[DEBUG] Tropas desembarcadas en el centro: %d\n", desembarcadas);
 }
 
 // Guarda el estado de recursos y edificios del jugador para la isla actual
@@ -1052,7 +1047,7 @@ static void guardarEstadoIslaJugador(struct Jugador *j) {
   }
 
   estado->inicializado = true;
-  printf("[DEBUG] Jugador: estado de isla %d guardado\n", isla);
+
 }
 
 void navegacionSincronizarIslaActual(struct Jugador *j) {
@@ -1121,10 +1116,6 @@ static void restaurarEstadoIslaJugador(struct Jugador *j, int isla) {
   if (estado->enemigosGenerados) {
     activarEnemigosDesdeEstado(estado);
   } 
-
-  printf("[DEBUG] Jugador: estado de isla %d restaurado (Recursos mantenidos "
-         "globales)\n",
-         isla);
 }
 
 // ============================================================================
@@ -1137,12 +1128,6 @@ bool barcoContienePunto(Barco *barco, float mundoX, float mundoY) {
 }
 
 void desembarcarTropas(Barco *barco, struct Jugador *j) {
-  printf("[DEBUG] Desembarcando %d tropas...\n", barco->numTropas);
-
-  if (barco->numTropas > MAX_TROPAS_DESEMBARCO) {
-    printf("[WARNING] El barco reporta %d tropas, excediendo el maximo de %d; se limitaran durante el desembarco\n",
-           barco->numTropas, MAX_TROPAS_DESEMBARCO);
-  }
 
   // CRÍTICO: Buscar punto de tierra más cercano al barco
   // El barco está en agua, necesitamos encontrar la tierra adyacente
@@ -1161,8 +1146,6 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
   if (!tierraEncontrada) {
     printf("[WARNING] No se encontró tierra cerca del barco, desembarcando EN EL SITIO (emergencia)\n");
   }
-
-  printf("[DEBUG] Punto de desembarco en celda: [%d][%d]\n", tierraY, tierraX);
 
   // Colocar tropas una por celda de tierra cercana para evitar agua
   // Usar un buffer de celdas usadas cuyo tamaño se adapta a la cantidad real
@@ -1236,9 +1219,6 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
             usados[colocadas][1] = cy;
           }
           colocadas++;
-          printf(
-              "[DEBUG] Tropa %d desembarcada en celda [%d][%d] (%.1f, %.1f)\n",
-              i, cy, cx, tropa->x, tropa->y);
           puesta = true;
           if (colocadas >= maxColocables) {
             break;
@@ -1250,7 +1230,6 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
     // FALLBACK: Si no se encontró lugar libre, colocar en el centro de desembarco
     // (mejor superpuestos que perdidos/invisibles)
     if (!puesta) {
-        printf("[WARNING] No se encontro espacio libre para tropa %d, colocando en centro de desembarco (superpuesta)\n", i);
         tropa->x = (float)(tierraX * TILE_SIZE);
         tropa->y = (float)(tierraY * TILE_SIZE);
         tropa->destinoX = tropa->x;
@@ -1279,7 +1258,6 @@ void desembarcarTropas(Barco *barco, struct Jugador *j) {
 // Esta función resetea el estado del jugador para la nueva isla.
 // ============================================================================
 void reiniciarIslaDesconocida(struct Jugador *j) {
-  printf("[DEBUG] Reiniciando isla desconocida...\n");
 
   // RECURSOS GLOBALES: Mantener los recursos actuales del jugador
   // j->Comida = 50; // Menos recursos que al inicio
@@ -1291,14 +1269,6 @@ void reiniciarIslaDesconocida(struct Jugador *j) {
   j->ayuntamiento = NULL;
   j->mina = NULL;
   j->cuartel = NULL;
-
-  // NOTA: Los personajes ya fueron desembarcados correctamente ANTES de llamar
-  // esta función Por lo tanto, NO necesitamos hacer nada con ellos aquí Solo
-  // las tropas desembarcadas existen en esta isla nueva
-
-  printf("[DEBUG] Isla reiniciada (Recursos globales mantenidos): Oro=%d\n",
-         j->Oro);
-  printf("[DEBUG] Solo las tropas desembarcadas están disponibles\n");
 }
 
 // ============================================================================
@@ -1309,17 +1279,15 @@ void reiniciarIslaDesconocida(struct Jugador *j) {
 // ============================================================================
 
 bool viajarAIsla(struct Jugador *j, int islaDestino) {
-  printf("[DEBUG] Viajando directamente a isla %d\n", islaDestino);
   if (!sIslaInicialDefinida) {
     sIslaInicial = j->islaActual;
     sIslaInicialDefinida = true;
   }
 
-  const bool modoViajeLibre = navegacionViajeLibreDebug();
   bool desbloqueadasOriginales =
       (j->islasConquistadas[1] && j->islasConquistadas[2] &&
        j->islasConquistadas[3]);
-  if ((islaDestino == 4 || islaDestino == 5) && !modoViajeLibre &&
+  if ((islaDestino == 4 || islaDestino == 5) &&
       !desbloqueadasOriginales) {
     MessageBox(NULL,
                "Debes conquistar las tres islas originales antes de viajar al nuevo continente.",
@@ -1327,7 +1295,7 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
     return false;
   }
   // Validación: no permitir llevar obreros a islas no conquistadas
-  if (!modoViajeLibre && islaDestino != j->islaActual) {
+  if (islaDestino != j->islaActual) {
     if (barcoTieneObreros(&j->barco) && !islaConquistada(islaDestino)) {
       MessageBox(NULL, "No puedes llevar obreros hasta conquistar la isla",
                  "Embarque restringido", MB_OK | MB_ICONWARNING);
@@ -1337,8 +1305,6 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
   
   // Si es la misma isla, desembarcar y listo
   if (islaDestino == j->islaActual) {
-    printf("[DEBUG] Ya estás en la isla %d, desembarcando tropas\n",
-           islaDestino);
     desembarcarTropas(&j->barco, j);
     return true;
   }
@@ -1450,7 +1416,6 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
         if (!ubicarEnemigoAleatorio(zonaDesembarcoCentroX,
 		zonaDesembarcoCentroY, MIN_DIST_ZONA_DESEMBARCO_PX,
 		estadoDestino->enemigos, estadoDestino->numEnemigos, &ex, &ey)) {
-          printf("[NAV] Sin espacio libre para todos los enemigos\n");
           break;
         }
 
@@ -1474,12 +1439,7 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
   j->barco.y = proximoBarcoY;
   j->barco.dir = (Direccion)proximoBarcoDir;
 
-  printf("[DEBUG] Barco reposicionado en isla %d: (%.1f, %.1f)\n", islaDestino,
-         j->barco.x, j->barco.y);
-
   // Desembarcar SOLO tropas que venían en el barco
   desembarcarTropas(&j->barco, j);
-
-  printf("[DEBUG] Viaje completado; enemigos pasivos listos\n");
   return true;
 }

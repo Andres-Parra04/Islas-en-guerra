@@ -111,8 +111,8 @@ void menuEmbarqueDibujar(HDC hdc, MenuEmbarque *menu, struct Jugador *j) {
     int total = 0;
     
     // Verificar si las 3 islas están conquistadas o si el modo debug libera viaje
-    const bool modoViajeLibre = navegacionViajeLibreDebug();
-    bool desbloqueado = modoViajeLibre || (j->islasConquistadas[1] && j->islasConquistadas[2] && j->islasConquistadas[3]);
+    // Verificar si las 3 islas están conquistadas
+    bool desbloqueado = (j->islasConquistadas[1] && j->islasConquistadas[2] && j->islasConquistadas[3]);
 
     if (!menu->mostrandoDesconocido) {
         // MODO NORMAL: Islas 1-3 y botón de Continente (si desbloqueado)
@@ -385,8 +385,8 @@ bool menuEmbarqueClick(MenuEmbarque *menu, struct Jugador *j, int x, int y) {
     int startX = menu->x + (menu->ancho - btnWidth) / 2;
     
     // Verificar desbloqueo o modo debug
-    const bool modoViajeLibre = navegacionViajeLibreDebug();
-    bool desbloqueado = modoViajeLibre || (j->islasConquistadas[1] && j->islasConquistadas[2] && j->islasConquistadas[3]);
+    // Verificar desbloqueo
+    bool desbloqueado = (j->islasConquistadas[1] && j->islasConquistadas[2] && j->islasConquistadas[3]);
 
     if (!menu->mostrandoDesconocido) {
         for (int i = 0; i < total; i++) {
@@ -652,11 +652,6 @@ void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
       guerrerosEmbarcados++;
     }
   }
-
-  printf("[DEBUG] Tropas embarcadas: %d obreros, %d caballeros, %d guerreros "
-         "(Total: %d)\n",
-         obrerosEmbarcados, caballerosEmbarcados, guerrerosEmbarcados,
-         j->barco.numTropas);
 
   // Abrir selección de isla dentro del juego
   menu->eligiendoIsla = true;

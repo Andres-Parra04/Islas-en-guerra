@@ -60,21 +60,13 @@
 #define RUTA_FONDO_INSTRUC "..\\assets\\menu\\menu_bg_instruc.bmp"
 
 #define RUTA_ISLA1 "..\\assets\\islas\\isla1.bmp"
-#define RUTA_ISLA1_ALT "assets/islas/isla1.bmp"
 #define RUTA_ISLA2 "..\\assets\\islas\\isla2.bmp"
-#define RUTA_FONDO_ISLAS "..\\assets\\menu\\menu_bg_islas.bmp"
-#define RUTA_FONDO_ISLAS_ALT "assets/menu/menu_bg_islas.bmp"
-#define RUTA_ISLA2_ALT "assets/islas/isla2.bmp"
 #define RUTA_ISLA3 "..\\assets\\islas\\isla3.bmp"
-#define RUTA_ISLA3_ALT "assets/islas/isla3.bmp"
 #define RUTA_ISLA4 "..\\assets\\islas\\isla4.bmp"
-#define RUTA_ISLA4_ALT "assets/islas/isla4.bmp"
 #define RUTA_ISLA5 "..\\assets\\islas\\isla5.bmp"
-#define RUTA_ISLA5_ALT "assets/islas/isla5.bmp"
+#define RUTA_FONDO_ISLAS "..\\assets\\menu\\menu_bg_islas.bmp"
 #define RUTA_MAPA_COMPLETO "..\\assets\\mapa_islas_guerra.bmp"
-#define RUTA_MAPA_COMPLETO_ALT "assets/mapa_islas_guerra.bmp"
 #define RUTA_MAPA2 "..\\assets\\mapa2.bmp"
-#define RUTA_MAPA2_ALT "assets/mapa2.bmp"
 
 static HBITMAP fondoBmp = NULL;
 static BITMAP infoFondo;
@@ -198,9 +190,6 @@ static bool cargarFondoIslas(void) {
 
     fondoIslasBmp = (HBITMAP)LoadImageA(NULL, RUTA_FONDO_ISLAS, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
     if (fondoIslasBmp == NULL) {
-        fondoIslasBmp = (HBITMAP)LoadImageA(NULL, RUTA_FONDO_ISLAS_ALT, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-    }
-    if (fondoIslasBmp == NULL) {
         return false;
     }
 
@@ -218,16 +207,9 @@ static bool cargarIslas(void) {
         RUTA_MAPA_COMPLETO, RUTA_ISLA1, RUTA_ISLA2, RUTA_ISLA3,
         RUTA_MAPA2, RUTA_ISLA4, RUTA_ISLA5
     };
-    const char *rutasAlt[] = { 
-        RUTA_MAPA_COMPLETO_ALT, RUTA_ISLA1_ALT, RUTA_ISLA2_ALT, RUTA_ISLA3_ALT,
-        RUTA_MAPA2_ALT, RUTA_ISLA4_ALT, RUTA_ISLA5_ALT
-    };
 
     for (int i = 0; i < 7; i++) {
         hIslaBmp[i] = (HBITMAP)LoadImageA(NULL, rutas[i], IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-        if (!hIslaBmp[i]) {
-            hIslaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasAlt[i], IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-        }
         if (hIslaBmp[i]) {
             GetObject(hIslaBmp[i], sizeof(BITMAP), &infoIsla[i]);
         }
