@@ -7,11 +7,11 @@
 #include <windowsx.h>
 #include "../batallas/guardado/guardado.h"
 
-// --- CONSTANTES DE DIMENSIONES Y POSICIONAMIENTO ---
+
 #define ANCHO_CONSOLA 80
 #define ALTO_CONSOLA 25
 
-// --- CONSTANTES DE COLOR (Basadas en la API de Windows) ---
+
 #define COLOR_NEGRO 0
 #define COLOR_AZUL_MARINO 1
 #define COLOR_VERDE_OSCURO 2
@@ -45,7 +45,7 @@
 #define COLOR_MARRON_TRONCO 6
 #define COLOR_VERDE_PALMERA 10
 
-// --- CONSTANTES DE TECLA ---
+
 #define TECLA_ENTER 13
 #define TECLA_ESC 27
 #define TECLA_ESPECIAL 224
@@ -54,7 +54,7 @@
 #define TECLA_W 'w'
 #define TECLA_S 's'
 
-// --- RECURSOS ---
+
 // Fondo general del menú y fondo específico de instrucciones
 #define RUTA_FONDO "..\\assets\\menu\\menu_bg.bmp"
 #define RUTA_FONDO_INSTRUC "..\\assets\\menu\\menu_bg_instruc.bmp"
@@ -80,7 +80,7 @@ static HBITMAP fondoIslasBmp = NULL;
 static BITMAP infoFondoIslas;
 static bool fondoIslasListo = false;
 
-// --- Estado global del menú ---
+
 static int gSeleccion = 0;
 static HFONT gFontTitulo = NULL;
 static HFONT gFontOpciones = NULL;
@@ -125,7 +125,7 @@ static HBITMAP hIslaBmp[7] = {NULL};  // 0=mapa3, 1-3=isla1-3, 4=mapa2, 5-6=isla
 static BITMAP infoIsla[7];
 static bool islasCargadas = false;
 
-// --- Estado del menú de carga de partidas ---
+
 static bool gMostrandoCargaPartidas = false;
 static InfoPartida gPartidasDisponibles[MAX_PARTIDAS];
 static int gNumPartidasDisponibles = 0;
@@ -133,7 +133,7 @@ static int gSeleccionPartida = 0;
 static char gNombrePartidaSeleccionada[MAX_NOMBRE_JUGADOR] = {0};
 static HFONT gFontPequena = NULL;
 
-// --- Sistema de Paginación de Instrucciones ---
+
 #define MAX_PAGINAS 20
 #define MAX_LINEAS_PAGINA 18
 #define MAX_CHARS_LINEA 100
@@ -148,7 +148,7 @@ static int gTotalPaginas = 0;
 static int gPaginaActual = 0;
 
 
-// --- Prototipos necesarios ---
+
 void mostrarInstrucciones();
 static void dibujarPreviewIsla(HDC hdc, RECT rc);
 
@@ -654,7 +654,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-// --- FUNCIONES DE CONSOLA (Implementaciones) ---
+
 
 void ocultarCursor() {
     CONSOLE_CURSOR_INFO cursorInfo;
@@ -667,9 +667,9 @@ void ocultarCursor() {
     SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
 
-// --- PANTALLAS DEL JUEGO ---
 
-// Carga instrucciones desde archivo markdwon
+
+// Carga instrucciones
 static void cargarInstruccionesInterno() {
     if (gTotalPaginas > 0) return; // Ya cargado
 

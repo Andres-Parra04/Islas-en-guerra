@@ -1,5 +1,3 @@
-// batallas/batallas.c
-#define _WIN32_WINNT 0x0600
 #include "batallas.h"
 #include "../recursos/navegacion.h"
 #include "../mapa/mapa.h"
@@ -37,13 +35,13 @@ void batallasReiniciarEstado(void) {
 // Garantiza que una unidad tenga stats básicos asignados
 static void asegurarStatsUnidad(Unidad *u) {
 	if (!u) return;
-	// Vida por tipo si falta
+
 	if (u->vidaMax <= 0) {
 		if (u->tipo == TIPO_CABALLERO) { u->vidaMax = CABALLERO_VIDA; u->vida = CABALLERO_VIDA; }
 		else if (u->tipo == TIPO_CABALLERO_SIN_ESCUDO) { u->vidaMax = CABALLERO_SIN_ESCUDO_VIDA; u->vida = CABALLERO_SIN_ESCUDO_VIDA; }
 		else if (u->tipo == TIPO_GUERRERO) { u->vidaMax = GUERRERO_VIDA; u->vida = GUERRERO_VIDA; }
 	}
-	// Daño, defensa y crítico por tipo si no están configurados
+
 	if (u->tipo == TIPO_CABALLERO) {
 		if (u->damage <= 0) u->damage = CABALLERO_DANO;
 		if (u->defensa <= 0) u->defensa = CABALLERO_DEFENSA;
@@ -292,7 +290,7 @@ void simularBatalla(struct Jugador *j) {
 	sUltimoConteoEnemigos = vivosEnemigos;
 
 	if (todosEliminados && !sMensajeVictoriaMostrado) {
-		// Victoria
+
 		MessageBox(NULL, "Has conquistado la isla", "Batalla", MB_OK | MB_ICONINFORMATION);
 		sHuboAliadoEnBatalla = false;
 		sMensajeVictoriaMostrado = true;

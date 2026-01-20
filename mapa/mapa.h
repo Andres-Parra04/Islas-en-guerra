@@ -17,9 +17,7 @@ typedef struct MenuEmbarque MenuEmbarque;
 #define GRID_SIZE (MAPA_SIZE / TILE_SIZE) // 2048/64 = 32x32 celdas
 #define SPRITE_ARBOL 128                  // Tamaño visual del BMP de árbol
 
-// ============================================================================
 // SIMBOLOGÍA DE OBJETOS EN EL MAPA (REQUISITO ACADÉMICO)
-// ============================================================================
 #define SIMBOLO_AGUA '~'      // Agua (no transitable)
 #define SIMBOLO_VACIO '.'     // Terreno vacío (tierra transitable)
 #define SIMBOLO_ARBOL 'A'     // Árbol (obstáculo)
@@ -34,7 +32,7 @@ typedef struct MenuEmbarque MenuEmbarque;
 #define SIMBOLO_RECURSO '$'   // Recurso (para futuro uso)
 #define SIMBOLO_ENEMIGO 'X'   // Enemigo pasivo en isla
 #define SIMBOLO_JUGADOR 'P'   // Posición base del jugador
-// ============================================================================
+
 
 // Matriz lógica de objetos (accesible desde otros módulos)
 extern char mapaObjetos[GRID_SIZE][GRID_SIZE];
@@ -77,7 +75,7 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
 
-// --- FUNCIONES REQUERIDAS POR ESPECIFICACIÓN ACADÉMICA ---
+// FUNCIONES REQUERIDAS POR ESPECIFICACIÓN ACADÉMICA
 // Inicializa la matriz de caracteres con terreno vacío
 void inicializarMapa(char mapa[GRID_SIZE][GRID_SIZE]);
 // Muestra el mapa en la consola (debug/demo)
@@ -113,7 +111,6 @@ void mapaExportarEstadosIsla(MapaEstadoSerializable estados[6]);
 void mapaImportarEstadosIsla(const MapaEstadoSerializable estados[6]);
 
 // Dibuja el mundo (terreno, árboles, obreros) en el DC especificado
-// Ahora acepta el menú para dibujarlo dentro del mismo buffer (evitar parpadeo)
 // highlightFila/Col: celda a resaltar (-1 = ninguna)
 // menuPausa: puntero al menú de pausa (void* para evitar dependencia circular)
 void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,

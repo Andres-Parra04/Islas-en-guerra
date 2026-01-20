@@ -1,4 +1,4 @@
-// recursos/ui_compra.c
+
 #include "ui_compra.h"
 #include <stdio.h>
 #include <string.h>
@@ -183,7 +183,6 @@ void menuCompraDibujar(HDC hdc, MenuCompra *menu, struct Jugador *jugador) {
            DT_CENTER | DT_VCENTER | DT_SINGLELINE);
   DeleteObject(brushCerrar);
 
-  // Mensaje de Error
   // Mensaje de Error
   if (menu->tiempoError > 0) {
     SetTextColor(hdc, RGB(255, 50, 50));

@@ -14,7 +14,7 @@ void desembarcarTropas(Barco* barco, struct Jugador* j);
 // Reinicia recursos y estado al llegar a una isla desconocida
 void reiniciarIslaDesconocida(struct Jugador* j);
 
-// NUEVO: Viaja directamente a una isla sin animación
+// Viaja directamente a una isla sin animación
 bool viajarAIsla(struct Jugador* j, int islaDestino);
 
 // Registrar la isla inicial

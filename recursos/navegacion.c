@@ -1,4 +1,3 @@
-#define _WIN32_WINNT 0x0600
 #include "navegacion.h"
 #include "edificios/edificios.h"
 #include "../mapa/mapa.h"
@@ -288,13 +287,10 @@ void navegacionActivarEnemigosIsla(int isla) {
 static bool buscarCeldaLibreCerca(int preferX, int preferY, int ancho, int alto,
                                   int radioMax, int *outX, int *outY);
 
-// ============================================================================
 // POSICIONES FIJAS DEL BARCO POR ISLA (EN COORDENADAS DE MATRIZ)
-// ============================================================================
 // Las posiciones se definen como (fila, columna) de la matriz 32x32.
 // Se convierten a píxeles multiplicando por TILE_SIZE.
 // Direcciones: 0=DIR_FRONT, 1=DIR_BACK, 2=DIR_LEFT, 3=DIR_RIGHT
-// ============================================================================
 
 // Array de posiciones por isla [isla][0=fila, 1=columna, 2=direccion]
 // Isla 0 no se usa, islas 1-5 son válidas
@@ -699,9 +695,7 @@ int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo) {
 
 static DWORD sStartMs = 0;
 
-// ---------------------------------------------------------------------------
 // VALIDACIONES DE VIAJE
-// ---------------------------------------------------------------------------
 static bool islaConquistada(int isla) {
   if (isla < 1 || isla > 5) return false;
   EstadoIsla *e = &sIslas[isla];

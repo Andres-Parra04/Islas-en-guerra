@@ -17,10 +17,10 @@
 // ============================================================================
 #define SAVE_MAGIC 0x49534C41          // "ISLA" en hex (identificador de archivo)
 #define SAVE_VERSION 2                 // Versión del formato de guardado
-#define SAVE_FOLDER "../saves"            // Carpeta donde se guardan las partidas
-#define SAVE_EXTENSION ".isla"         // Extensión de archivos de guardado
-#define MAX_PARTIDAS 10                // Máximo de partidas guardadas a mostrar
-#define MAX_NOMBRE_JUGADOR 30          // Longitud máxima del nombre
+#define SAVE_FOLDER "../saves"
+#define SAVE_EXTENSION ".isla"
+#define MAX_PARTIDAS 10
+#define MAX_NOMBRE_JUGADOR 30
 
 // ============================================================================
 // ESTRUCTURA DE CABECERA DEL ARCHIVO DE GUARDADO
@@ -28,9 +28,9 @@
 typedef struct {
   unsigned int magic;                     // Identificador mágico (SAVE_MAGIC)
   unsigned int version;                   // Versión del formato
-  char timestamp[32];                     // Fecha y hora del guardado
-  char nombreJugador[MAX_NOMBRE_JUGADOR]; // Nombre del jugador
-  int islaActual;                         // Isla donde está el jugador
+  char timestamp[32];
+  char nombreJugador[MAX_NOMBRE_JUGADOR];
+  int islaActual;
 } SaveHeader;
 
 // ============================================================================
@@ -68,7 +68,7 @@ typedef struct {
   int piedraAcumulada;
   int hierroAcumulado;
 
-  // Agregado para sistema de agotamiento
+  // Sistema de agotamiento
   int oroRestante;
   int piedraRestante;
   int hierroRestante;
@@ -87,11 +87,11 @@ typedef struct {
   int indiceTropas[15]; // Índices de las tropas embarcadas (-1 si vacío)
   int tipoTropas[15];   // Tipo de cada tropa embarcada
 
-  // Agregado para sistema de mejoras
+  // Sistema de mejoras
   int nivelMejora;
   int capacidadMaxima;
 
-  // Agregado para sistema de navegación
+  // Sistema de navegación
   bool navegando;
   float destinoX;
   float destinoY;
@@ -204,18 +204,18 @@ bool eliminarPartida(const char *nombreJugador);
 
 // Modos del menú de pausa
 typedef enum {
-  MODO_PRINCIPAL = 0,      // Menú principal de pausa
-  MODO_GUARDAR = 1,        // Pantalla de guardar (pide nombre)
-  MODO_CARGAR = 2,         // Pantalla de cargar (lista partidas)
-  MODO_CONFIRMAR_SALIR = 3, // Confirmación antes de salir
-  MODO_NUEVA_PARTIDA = 10   // Ingreso de nombre para nueva partida
+  MODO_PRINCIPAL = 0,
+  MODO_GUARDAR = 1,
+  MODO_CARGAR = 2,
+  MODO_CONFIRMAR_SALIR = 3, 
+  MODO_NUEVA_PARTIDA = 10
 } ModoPausa;
 
 // Estado del menú de pausa
 typedef struct {
-  bool activo;    // Si el menú está visible
-  int seleccion;  // Opción seleccionada
-  ModoPausa modo; // Modo actual del menú
+  bool activo;
+  int seleccion;
+  ModoPausa modo;
 
   // Para entrada de nombre al guardar
   char nombreInput[MAX_NOMBRE_JUGADOR]; // Nombre que está escribiendo

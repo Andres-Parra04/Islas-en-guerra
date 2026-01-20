@@ -1,4 +1,4 @@
-// batallas/batallas.h
+
 #ifndef BATALLAS_H
 #define BATALLAS_H
 

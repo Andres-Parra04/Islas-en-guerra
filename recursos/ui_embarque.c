@@ -6,7 +6,7 @@
 #include <windows.h>
 
 
-// Una unidad disponible está viva, visible en el mapa y no está ocupada
+// Verifica si la unidad es valida para embarcar (viva, visible, no moviendose)
 static bool unidadDisponible(const Unidad *u) {
   if (!u)
     return false;
@@ -15,8 +15,7 @@ static bool unidadDisponible(const Unidad *u) {
   return u->x >= 0 && u->y >= 0 && !u->moviendose;
 }
 
-// Requiere que la unidad esté en la orilla junto al barco (zona corta de
-// abordaje)
+// Verifica si la unidad esta en rango de embarque junto al barco
 static bool unidadCercaDeBarco(const Unidad *u, const Barco *barco) {
   if (!u || !barco)
     return false;

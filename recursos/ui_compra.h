@@ -7,7 +7,6 @@
 #include <windows.h>
 
 // --- CONSTANTES DE COMPRA ---
-// --- CONSTANTES DE COMPRA ---
 #define COSTO_CULTIVO_ORO 20
 #define COSTO_CULTIVO_PIEDRA 15
 #define GANANCIA_CULTIVO_COMIDA 50

@@ -21,13 +21,13 @@ typedef struct {
   bool construido; // Si está activo en el juego
   HBITMAP sprite;  // Sprite cargado del edificio
 
-  // --- Lógica de Recursos (Mina) ---
+  // Lógica de Recursos (Mina)
   int oroAcumulado;
   int piedraAcumulada;
   int hierroAcumulado;
   DWORD ultimoTickGeneracion;
 
-  // --- Sistema de agotamiento de recursos ---
+  // Sistema de agotamiento de recursos
   int oroRestante;    // Oro total que queda por extraer
   int piedraRestante; // Piedra total que queda por extraer
   int hierroRestante; // Hierro total que queda por extraer

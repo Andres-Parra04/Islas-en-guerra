@@ -1,7 +1,3 @@
-// guardado/guardado.c
-// Implementación del sistema de guardado en archivos binarios
-// Guardado único por nombre de jugador - Sin parpadeo
-#define _WIN32_WINNT 0x0600
 #include "guardado.h"
 #include "../../mapa/mapa.h"
 #include "../../recursos/recursos.h"
@@ -131,7 +127,7 @@ static void edificioAGuardado(const Edificio *src, EdificioGuardado *dst) {
   dst->piedraAcumulada = src->piedraAcumulada;
   dst->hierroAcumulado = src->hierroAcumulado;
 
-  // Agregado para sistema de agotamiento
+  // Sistema de agotamiento
   dst->oroRestante = src->oroRestante;
   dst->piedraRestante = src->piedraRestante;
   dst->hierroRestante = src->hierroRestante;
@@ -150,7 +146,7 @@ static void guardadoAEdificio(const EdificioGuardado *src, Edificio *dst) {
   dst->piedraAcumulada = src->piedraAcumulada;
   dst->hierroAcumulado = src->hierroAcumulado;
 
-  // Agregado para sistema de agotamiento
+  // Sistema de agotamiento
   dst->oroRestante = src->oroRestante;
   dst->piedraRestante = src->piedraRestante;
   dst->hierroRestante = src->hierroRestante;
@@ -235,7 +231,7 @@ bool guardarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   datos.barco.construido = j->barco.construido;
   datos.barco.numTropas = j->barco.numTropas;
 
-  // Agregado para sistema de mejoras
+  // Sistema de mejoras
   datos.barco.nivelMejora = j->barco.nivelMejora;
   datos.barco.capacidadMaxima = j->barco.capacidadMaxima;
   datos.barco.navegando = j->barco.navegando;
@@ -376,7 +372,7 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
     return false;
   }
 
-  // Guardado: resetear navegación antes de aplicar los datos cargados
+  // Sistema de navegación antes de aplicar los datos cargados
   navegacionReiniciarEstado();
 
   mapaImportarEstadosIsla(datos.estadosMapa);
@@ -420,7 +416,7 @@ bool cargarPartidaPorNombre(const char *nombreJugador, struct Jugador *j,
   j->barco.construido = datos.barco.construido;
   j->barco.numTropas = datos.barco.numTropas;
 
-  // Agregado para sistema de mejoras
+  // Sistema de mejoras
   j->barco.nivelMejora = datos.barco.nivelMejora;
   j->barco.capacidadMaxima = datos.barco.capacidadMaxima;
   j->barco.navegando = datos.barco.navegando;

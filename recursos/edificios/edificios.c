@@ -153,7 +153,7 @@ void edificioActualizar(Edificio *e) {
       e->agotada = true;
       e->construido = false; // "EXPLOTÓ": Desaparece del mapa
 
-      // NUEVO: Liberar el espacio en el mapa de colisiones y matriz de objetos
+      // Liberar el espacio en el mapa de colisiones y matriz de objetos
       mapaDesmarcarEdificio(e->x, e->y, e->ancho, e->alto);
 
       // Mostrar mensaje de evento
@@ -180,9 +180,7 @@ void edificiosCargarSprites() {
 
  
 
-  // ============================================================================
   // CARGAR SPRITES DE CASTILLOS ALIADO Y ENEMIGO (256x256, 4x4 celdas)
-  // ============================================================================
 
   g_spriteCastilloAliado =
         (HBITMAP)LoadImageA(NULL, imgCastilloAliado, IMAGE_BITMAP, CASTILLO_SIZE, CASTILLO_SIZE,

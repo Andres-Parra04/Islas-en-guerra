@@ -1,5 +1,5 @@
 #include "recursos.h"
-#include "navegacion.h" // Incluir para navegacionContarUnidadesGlobal
+#include "navegacion.h"
 #include "edificios/edificios.h"
 #include "../mapa/mapa.h"
 #include "../mapa/menu.h"
@@ -452,7 +452,7 @@ void actualizarPersonajes(struct Jugador *j) {
       // Actualizar la huella 2x2 en la matriz de colisiones
       ocupacionActualizarUnidad(col, o, nextF, nextC);
 
-      // NUEVO: Actualizar mapaObjetos
+      // Actualizar mapaObjetos
       mapaMoverObjeto(viejoX, viejoY, o->x, o->y, SIMBOLO_OBRERO);
 
       if (o->rutaIdx >= o->rutaLen) {
@@ -481,14 +481,12 @@ void actualizarPersonajes(struct Jugador *j) {
       o->x = newX;
       o->y = newY;
 
-      // NUEVO: Actualizar mapaObjetos durante movimiento suave
+      // Actualizar mapaObjetos durante movimiento suave
       mapaMoverObjeto(viejoX, viejoY, o->x, o->y, SIMBOLO_OBRERO);
     }
   }
 
-  // ================================================================
-  // ACTUALIZAR CABALLEROS (misma lógica)
-  // ================================================================
+  // Actualizar caballeros
   for (int i = 0; i < MAX_CABALLEROS; i++) {
     Unidad *u = &j->caballeros[i];
 
@@ -816,14 +814,8 @@ void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
     }
   }
 
-  // Si llegamos aquí, el destino ES VÁLIDO (o reubicado)
-  fflush(stdout);
-
-  // ================================================================
-  // SEPARACIÓN DE DESTINOS: Cada unidad recibe un destino diferente
-  // ================================================================
-  // Array para marcar celdas ya asignadas como destino (máximo 18 unidades)
-  int destinosAsignados[18][2]; // [fila, col] de cada destino asignado
+  // Separación de destinos: cada unidad recibe destino diferente
+  int destinosAsignados[18][2];
   int numDestinos = 0;
 
 // Función inline para verificar si una celda ya fue asignada
@@ -1120,7 +1112,7 @@ bool entrenarObrero(struct Jugador *j, float x, float y) {
                     j->obreros[i].x = nx * (float)TILE_SIZE;
                     j->obreros[i].y = ny * (float)TILE_SIZE;
 
-                    // NUEVO: Reservar posición inmediatamente
+                    // Reservar posición inmediatamente
                     col[ny][nx] = 3; // Ocupado por unidad
                     mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y,
                                         SIMBOLO_OBRERO);
@@ -1214,7 +1206,7 @@ bool entrenarCaballero(struct Jugador *j, float x, float y) {
                     j->caballeros[i].x = nx * (float)TILE_SIZE;
                     j->caballeros[i].y = ny * (float)TILE_SIZE;
 
-                    // NUEVO: Reservar posición inmediatamente
+                    // Reservar posición inmediatamente
                     col[ny][nx] = 3;
                     mapaRegistrarObjeto(j->caballeros[i].x, j->caballeros[i].y,
                                         SIMBOLO_CABALLERO);
@@ -1309,7 +1301,7 @@ bool entrenarGuerrero(struct Jugador *j, float x, float y) {
                     j->guerreros[i].x = nx * (float)TILE_SIZE;
                     j->guerreros[i].y = ny * (float)TILE_SIZE;
 
-                    // NUEVO: Reservar posición inmediatamente
+                    // Reservar posición inmediatamente
                     col[ny][nx] = 3;
                     mapaRegistrarObjeto(j->guerreros[i].x, j->guerreros[i].y,
                                         SIMBOLO_GUERRERO);
@@ -1366,14 +1358,7 @@ bool entrenarGuerrero(struct Jugador *j, float x, float y) {
 }
 
 bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
-  // ================================================================
-  // VERIFICACIÓN DIRECTA: Buscar vaca por posición real del array
-  // ================================================================
-  // En lugar de confiar solo en mapaObjetos, verificamos directamente
-  // las coordenadas de cada vaca en el array dinámico.
-  // ================================================================
-
-  // Convertir click a celda de la matriz
+  // Buscar vaca por posición directa del array
   int clickF = (int)(mundoY / TILE_SIZE);
   int clickC = (int)(mundoX / TILE_SIZE);
 
@@ -1462,14 +1447,11 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
                                "Cazar Vaca", MB_YESNO | MB_ICONQUESTION);
 
     if (respuesta == IDYES) {
-      // ================================================================
       // CORRECCIÓN BUG DE SINCRONIZACIÓN:
-      // ================================================================
       // Usamos el ÍNDICE de la vaca (vacaEncontrada) para eliminarla,
       // no su posición anterior (vacaFila, vacaCol).
       // Esto garantiza que aunque la vaca se haya movido mientras el
       // usuario decidía en el MessageBox, se eliminará la vaca correcta.
-      // ================================================================
       if (mapaEliminarVacaPorIndice(vacaEncontrada)) {
         j->Comida += 100;
         MessageBox(GetActiveWindow(), "Vaca cazada! +100 Comida", "Recursos",
@@ -1488,13 +1470,9 @@ bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
   return true; // Click manejado (movimiento comandado)
 }
 
-// ============================================================================
-// LÓGICA DE TALAR ÁRBOLES
-// ============================================================================
+// Lógica de talar árboles
 bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
-  // 1. Verificar qué objeto hay en el mapa (Búsqueda en 2x2 celdas)
-  // El árbol visual es 128x128 (2x2 tiles) pero se registra en una celda.
-  // Buscamos en la celda clickeada y sus vecinas para mayor tolerancia.
+  // Buscar árbol en celdas 2x2 alrededor del click
   int targets[4][2] = {{0, 0}, {0, -1}, {-1, 0}, {-1, -1}};
   int tipoObjeto = 0;
   int fArbol = -1, cArbol = -1;
@@ -1575,7 +1553,7 @@ bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY) {
 
     // Permitir talar si hay un OBRERO o GUERRERO cerca
     if (taladorCercano != NULL) {
-        // --- NUEVA LÓGICA: GOLPEAR ÁRBOL ---
+        // --- GOLPEAR ÁRBOL ---
         // Se elimina el MessageBox. Cada click resta 1 vida. 
         // Al 3er golpe (vida=0) se destruye y da madera.
         

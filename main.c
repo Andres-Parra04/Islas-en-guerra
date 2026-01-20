@@ -19,25 +19,24 @@
 #define ZOOM_MAXIMO 6.0f
 #define IDT_TIMER_JUEGO 1 // ID para el refresco de lógica (aprox 60fps)
 
-// Variables Globales
+
 Camara camara = {0, 0, 1.0f};
 struct Jugador jugador1;
 bool arrastrandoCamara = false;
 POINT mouseUltimo;
-MenuCompra menuCompra;               // Estado global del menú de compra
-MenuEmbarque menuEmbarque;           // Menú de embarque de tropas
-MenuEntrenamiento menuEntrenamiento; // Estado global del menú de entrenamiento
-Edificio ayuntamiento;               // Edificio del ayuntamiento
-Edificio mina;                       // Edificio de la mina
+MenuCompra menuCompra;
+MenuEmbarque menuEmbarque;
+MenuEntrenamiento menuEntrenamiento;
+Edificio ayuntamiento;
+Edificio mina;
 
-// Variables para resaltar celda bajo el cursor
-int mouseFilaHover = -1; // Fila de la celda bajo el cursor (-1 = ninguna)
-int mouseColHover = -1;  // Columna de la celda bajo el cursor
-Edificio cuartel;        // Edificio del cuartel
+// (-1 = ninguna)
+int mouseFilaHover = -1;
+int mouseColHover = -1;
+Edificio cuartel;
 
-// Sistema de guardado/pausa
-MenuPausa menuPausa;         // Menú de pausa con opciones de guardar/cargar
-bool partidaCargada = false; // Indica si se está cargando una partida guardada
+MenuPausa menuPausa;
+bool partidaCargada = false;
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
 void corregirLimitesCamara(RECT rect) {
@@ -78,9 +77,7 @@ void seleccionarPersonaje(float mundoX, float mundoY) {
   // Puntero a la estructura del jugador
   struct Jugador *pJugador = &jugador1;
 
-  // ================================================================
-  // CONSTANTE: Tamaño de hitbox de las unidades (64x64px)
-  // ================================================================
+  // Tamaño de hitbox de las unidades (64x64px)
   const float OBRERO_SIZE = 64.0f;
 
   // Puntero base al array de obreros (para aritmética de punteros)
@@ -189,7 +186,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     // Inicializar recursos del jugador y obreros
     IniciacionRecursos(&jugador1, "Jugador 1");
 
-    // NUEVO: Guardar isla inicial seleccionada
+    // Guardar isla inicial seleccionada
     jugador1.islaActual = menuObtenerIsla(); // 1, 2, o 3
     navegacionRegistrarIslaInicial(jugador1.islaActual);
 
@@ -310,7 +307,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       float mundoX = (px / camara.zoom) + camara.x;
       float mundoY = (py / camara.zoom) + camara.y;
 
-      // Verificar si se hizo click sobre el barco
+
       if (barcoContienePunto(&jugador1.barco, mundoX, mundoY)) {
         // Solo abrir menú de embarque si el barco está construido
         if (jugador1.barco.construido) {
@@ -320,7 +317,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
         }
         // Si está destruido, no hacer nada (el jugador debe construirlo primero)
       }
-      // Verificar si se hizo click sobre el ayuntamiento
       else if (edificioContienePunto(&ayuntamiento, mundoX, mundoY)) {
         // RESTRICCIÓN: Solo obreros pueden interactuar con el ayuntamiento
         // Usamos el centro del ayuntamiento para medir proximidad
@@ -336,7 +332,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                                 ayuntamiento.y + 64.0f);
         }
       }
-      // Verificar si se hizo click sobre el cuartel
       else if (edificioContienePunto(&cuartel, mundoX, mundoY)) {
         // RESTRICCIÓN: Solo OBREROS pueden interactuar con el cuartel
         // (igual que el ayuntamiento - los soldados no entrenan tropas)

@@ -193,7 +193,7 @@ void IniciacionRecursos(struct Jugador *j, const char *Nombre);
 
 // Nueva función lógica para talar
 bool recursosIntentarTalar(struct Jugador *j, float mundoX, float mundoY);
-// Nueva función para recoger de la mina
+// Interacción con recursos (tala, caza, minas)
 bool recursosIntentarRecogerMina(struct Jugador *j, float mundoX, float mundoY);
 // Nueva función para cazar vacas
 bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY);
@@ -210,16 +210,13 @@ bool mejorarBarco(struct Jugador *j);
 // Función para construir el barco (reparar desde estado destruido)
 bool construirBarco(struct Jugador *j);
 
-// Verifica si hay algun obrero seleccionado cerca de un punto
+// Busca un obrero cercano al punto especificado
 bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
                                 float distMax);
-// ============================================================================
-// PANEL HUD DE RECURSOS (Esquina superior derecha)
-// ============================================================================
+// --- PANEL HUD DE RECURSOS ---
 // Dibuja un panel con los recursos actuales del jugador (Oro, Madera, Piedra,
 // Comida) y el conteo de unidades. Se renderiza directamente sobre el buffer
 // para evitar parpadeo.
-// ============================================================================
 void panelRecursosDibujar(HDC hdcBuffer, struct Jugador *j, int anchoPantalla);
 
 #endif

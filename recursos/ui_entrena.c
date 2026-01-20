@@ -1,4 +1,4 @@
-// recursos/ui_entrena.c
+
 #include "ui_entrena.h"
 #include <stdio.h>
 #include <string.h>
@@ -307,7 +307,6 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
            DT_CENTER | DT_VCENTER | DT_SINGLELINE);
   DeleteObject(brushCerrar);
 
-  // Mensaje de Error
   // Mensaje de Error
   if (menu->tiempoError > 0) {
     SetTextColor(hdc, RGB(255, 50, 50)); // Red brighter

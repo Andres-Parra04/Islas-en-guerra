@@ -1,5 +1,3 @@
-// Definir version de Windows para habilitar GetTickCount64 en MinGW/GCC
-#define _WIN32_WINNT 0x0600
 #include "mapa.h"
 #include "../recursos/edificios/edificios.h"
 #include "../batallas/guardado/guardado.h"
@@ -432,7 +430,7 @@ static int gCollisionIsla[6][GRID_SIZE][GRID_SIZE];
 static Vaca gVacasIsla[6][10];
 static int gNumVacasIsla[6] = {0};
 
-// --- VIDA DE ARBOLES (NUEVO) ---
+// --- VIDA DE ARBOLES ---
 // Matriz paralela para almacenar la vida de cada árbol (3 = full, 2, 1, 0)
 // Inicialmente 0. Se pone a 3 cuando se genera un árbol.
 static int gArbolesVida[GRID_SIZE][GRID_SIZE] = {0};
@@ -503,13 +501,8 @@ Vaca *mapaObtenerVacas(int *cantidad) {
   return gVacas;
 }
 
-// ============================================================================
-// ELIMINAR VACA POR ÍNDICE (SOLUCIÓN A BUG DE SINCRONIZACIÓN)
-// ============================================================================
-// Esta función elimina una vaca usando su ÍNDICE en el array, no su posición
-// en el mapa. Esto evita el bug donde la vaca se mueve mientras el usuario
-// decide en el MessageBox de confirmación.
-// ============================================================================
+// Elimina una vaca usando su ÍNDICE en el array.
+// Evita el bug donde la vaca se mueve mientra el usuario confirma.
 bool mapaEliminarVacaPorIndice(int indice) {
   // Validar índice
   if (indice < 0 || indice >= gNumVacas) {

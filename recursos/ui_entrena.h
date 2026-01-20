@@ -7,8 +7,6 @@
 #include <windows.h>
 
 // --- CONSTANTES DE ENTRENAMIENTO ---
-// --- CONSTANTES DE ENTRENAMIENTO ---
-// --- CONSTANTES DE ENTRENAMIENTO ---
 #define COSTO_OBRERO_ORO 30 // Mantener Oro
 #define COSTO_OBRERO_COMIDA 25 // Sube un poco
 
