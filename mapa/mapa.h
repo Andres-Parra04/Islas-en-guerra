@@ -18,6 +18,7 @@ typedef struct MenuEmbarque MenuEmbarque;
 #define SPRITE_ARBOL 128                  // Tamaño visual del BMP de árbol
 
 // SIMBOLOGÍA DE OBJETOS EN EL MAPA (REQUISITO ACADÉMICO)
+#define MAX_VACAS 10
 #define SIMBOLO_AGUA '~'      // Agua (no transitable)
 #define SIMBOLO_VACIO '.'     // Terreno vacío (tierra transitable)
 #define SIMBOLO_ARBOL 'A'     // Árbol (obstáculo)
@@ -70,8 +71,7 @@ void mapaMarcarEdificio(float x, float y, int ancho, int alto);
 void mapaDesmarcarEdificio(float x, float y, int ancho, int alto);
 // Detecta automáticamente una posición válida en la orilla del mapa
 void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
-// Detecta automáticamente una posición válida en la orilla del mapa
-void mapaDetectarOrilla(float *outX, float *outY, int *outDir);
+
 // Libera la memoria del collisionMap dinámico.
 void mapaLiberarCollisionMap(void);
 
@@ -148,12 +148,6 @@ void mapaRestaurarEstadoIsla(
 void mapaGuardar(FILE *f);
 void mapaCargar(FILE *f);
 
-// Nuevas funciones para interacción con recursos
-int mapaObtenerTipoObjeto(int f, int c);
-void mapaEliminarObjeto(int f, int c);
 
-// Serialización
-void mapaGuardar(FILE *f);
-void mapaCargar(FILE *f);
 
 #endif

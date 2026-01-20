@@ -40,134 +40,38 @@ bool partidaCargada = false;
 
 // --- MOTOR DE VALIDACIÓN DE CÁMARA ---
 void corregirLimitesCamara(RECT rect) {
-  int anchoV = rect.right - rect.left;
-  int altoV = rect.bottom - rect.top;
-
-  float scaleX = (float)anchoV / (float)MAPA_SIZE;
-  float scaleY = (float)altoV / (float)MAPA_SIZE;
-  float zMinimo = (scaleX > scaleY) ? scaleX : scaleY;
-
-  if (camara.zoom < zMinimo)
-    camara.zoom = zMinimo;
-  if (camara.zoom > ZOOM_MAXIMO)
-    camara.zoom = ZOOM_MAXIMO;
-
-  int maxW = MAPA_SIZE - (int)(anchoV / camara.zoom);
-  int maxH = MAPA_SIZE - (int)(altoV / camara.zoom);
-
-  if (camara.x < 0)
-    camara.x = 0;
-  if (camara.y < 0)
-    camara.y = 0;
-  if (camara.x > maxW)
-    camara.x = maxW;
-  if (camara.y > maxH)
-    camara.y = maxH;
+  int w = rect.right - rect.left, h = rect.bottom - rect.top;
+  float sX = (float)w / MAPA_SIZE, sY = (float)h / MAPA_SIZE;
+  float zMin = (sX > sY) ? sX : sY;
+  if (camara.zoom < zMin) camara.zoom = zMin;
+  if (camara.zoom > ZOOM_MAXIMO) camara.zoom = ZOOM_MAXIMO;
+  
+  int maxW = MAPA_SIZE - (int)(w / camara.zoom);
+  int maxH = MAPA_SIZE - (int)(h / camara.zoom);
+  if (camara.x < 0) camara.x = 0; else if (camara.x > maxW) camara.x = maxW;
+  if (camara.y < 0) camara.y = 0; else if (camara.y > maxH) camara.y = maxH;
 }
 
-// ============================================================================
-// LÓGICA DE SELECCIÓN PRIORITARIA CON ARITMÉTICA DE PUNTEROS
-// ============================================================================
-// La selección es INDEPENDIENTE del orden de dibujo (renderizado).
-// Aunque un árbol esté dibujado ENCIMA de un obrero, la lógica de selección
-// evalúa directamente la posición del obrero en coordenadas del mundo.
-// Esto permite seleccionar unidades "a través" de objetos visuales.
-// ============================================================================
-void seleccionarPersonaje(float mundoX, float mundoY) {
-  // Puntero a la estructura del jugador
-  struct Jugador *pJugador = &jugador1;
+// Helper inline para colisiones
+static inline bool enHitbox(Unidad *u, float mx, float my) {
+    return (mx >= u->x && mx < u->x + 64.0f && my >= u->y && my < u->y + 64.0f);
+}
 
-  // Tamaño de hitbox de las unidades (64x64px)
-  const float OBRERO_SIZE = 64.0f;
-
-  // Puntero base al array de obreros (para aritmética de punteros)
-  Unidad *base = pJugador->obreros;
-
-  // Solo cambiar el estado del que se clickeó
-  for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
-    if (o->x < 0 || o->vida <= 0) {
-      o->seleccionado = false;
-      continue;
+// Procesa selección de un grupo de unidades
+void procesarGrupo(Unidad *u, int cant, float mx, float my, bool toggle) {
+    for (Unidad *top = u + cant; u < top; u++) {
+        if (u->x < 0 || u->vida <= 0) { u->seleccionado = false; continue; }
+        bool hit = enHitbox(u, mx, my);
+        u->seleccionado = hit ? (toggle ? !u->seleccionado : true) : false;
     }
-    // ================================================================
-    // PUNTO EN RECTÁNGULO (Hitbox 64x64)
-    // ================================================================
-    // Verificamos si las coordenadas del mouse (mundoX, mundoY)
-    // están dentro del rectángulo del obrero:
-    //   - Esquina superior izquierda: (o->x, o->y)
-    //   - Esquina inferior derecha: (o->x + 64, o->y + 64)
-    //
-    // CRÍTICO: El obrero mide 64x64px, NO 32x32px (TILE_SIZE)
-    // ================================================================
+}
 
-    // Comparación en X: mundoX >= o->x && mundoX < o->x + 64
-    bool dentroX = (mundoX >= o->x) && (mundoX < o->x + OBRERO_SIZE);
-
-    // Comparación en Y: mundoY >= o->y && mundoY < o->y + 64
-    bool dentroY = (mundoY >= o->y) && (mundoY < o->y + OBRERO_SIZE);
-
-    // Si ambas condiciones son verdaderas, el punto está dentro del hitbox
-    // Esto funciona INDEPENDIENTEMENTE de qué se haya dibujado encima
-    o->seleccionado = (dentroX && dentroY);
-  }
-
-  // SELECCIONAR CABALLEROS CON ESCUDO
-  Unidad *baseCaballeros = pJugador->caballeros;
-  for (Unidad *c = baseCaballeros; c < baseCaballeros + MAX_CABALLEROS; c++) {
-    if (c->x < 0 || c->vida <= 0) {
-      c->seleccionado = false;
-      continue;
-    }
-    float mundoXUnit = c->x;
-    float mundoYUnit = c->y;
-
-    bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
-                   mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
-
-    if (dentro) {
-      c->seleccionado = !c->seleccionado;
-    } else {
-      c->seleccionado = false;
-    }
-  }
-
-  // SELECCIONAR CABALLEROS SIN ESCUDO
-  Unidad *baseCSE = pJugador->caballerosSinEscudo;
-  for (Unidad *c = baseCSE; c < baseCSE + MAX_CABALLEROS_SIN_ESCUDO; c++) {
-    if (c->x < 0 || c->vida <= 0) {
-      c->seleccionado = false;
-      continue;
-    }
-    float mundoXUnit = c->x;
-    float mundoYUnit = c->y;
-
-    bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
-                   mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
-
-    if (dentro) {
-      c->seleccionado = !c->seleccionado;
-    } else {
-      c->seleccionado = false;
-    }
-  }
-
-  // SELECCIONAR GUERREROS
-  Unidad *baseGuerreros = pJugador->guerreros;
-  for (Unidad *g = baseGuerreros; g < baseGuerreros + MAX_GUERREROS; g++) {
-    if (g->x < 0 || g->vida <= 0) {
-      g->seleccionado = false;
-      continue;
-    }
-    float mundoXUnit = g->x;
-    float mundoYUnit = g->y;
-    bool dentro = (mundoX >= mundoXUnit && mundoX < mundoXUnit + OBRERO_SIZE &&
-                   mundoY >= mundoYUnit && mundoY < mundoYUnit + OBRERO_SIZE);
-    if (dentro) {
-      g->seleccionado = !g->seleccionado;
-    } else {
-      g->seleccionado = false;
-    }
-  }
+void seleccionarPersonaje(float mx, float my) {
+    struct Jugador *j = &jugador1;
+    procesarGrupo(j->obreros, MAX_OBREROS, mx, my, false); // Obreros: selección directa
+    procesarGrupo(j->caballeros, MAX_CABALLEROS, mx, my, true); // Militares: toggle
+    procesarGrupo(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, mx, my, true);
+    procesarGrupo(j->guerreros, MAX_GUERREROS, mx, my, true);
 }
 
 void comandarMovimiento(float mundoX, float mundoY) {
@@ -393,33 +297,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
       mostrarMapa(mapaObjetos);
     }
     // Tecla 'H' para CURAR unidades seleccionadas (Cuesta Comida)
+    // Tecla 'H' para CURAR unidades seleccionadas (Cuesta Comida)
     if (wParam == 'H') {
-      bool alguienCurado = false;
+      bool curado = false;
       struct Jugador *j = &jugador1;
+      Unidad *arrs[] = {j->obreros, j->caballeros, j->caballerosSinEscudo, j->guerreros};
+      int maxs[] = {MAX_OBREROS, MAX_CABALLEROS, MAX_CABALLEROS_SIN_ESCUDO, MAX_GUERREROS};
 
-      // Lista de punteros a arrays de unidades para iterar
-      Unidad *arrays[] = {j->obreros, j->caballeros, j->caballerosSinEscudo,
-                          j->guerreros};
-      int tamanos[] = {MAX_OBREROS, MAX_CABALLEROS, MAX_CABALLEROS_SIN_ESCUDO, MAX_GUERREROS};
-
-      for (int a = 0; a < 4; a++) {
-        for (int i = 0; i < tamanos[a]; i++) {
-          Unidad *u = &arrays[a][i];
-          if (u->seleccionado && u->x >= 0 && u->vida < u->vidaMax) {
-            if (j->Comida >= COSTO_CURACION) {
-              j->Comida -= COSTO_CURACION;
-              u->vida += CANTIDAD_CURACION * u->vidaMax / 100;
-              if (u->vida > u->vidaMax)
-                u->vida = u->vidaMax;
-              alguienCurado = true;
+      for (int k = 0; k < 4; k++) {
+        Unidad *u = arrs[k], *end = u + maxs[k];
+        for (; u < end; u++) {
+            if (u->seleccionado && u->x >= 0 && u->vida < u->vidaMax && j->Comida >= COSTO_CURACION) {
+                j->Comida -= COSTO_CURACION;
+                u->vida += (int)(u->vidaMax * CANTIDAD_CURACION / 100.0f);
+                if (u->vida > u->vidaMax) u->vida = u->vidaMax;
+                curado = true;
             }
-          }
         }
       }
-
-      if (alguienCurado) {
-        InvalidateRect(hwnd, NULL, FALSE);
-      }
+      if (curado) InvalidateRect(hwnd, NULL, FALSE);
     }
     break;
 

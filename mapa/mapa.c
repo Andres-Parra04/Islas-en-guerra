@@ -212,192 +212,81 @@ static bool unidadBarraVisible(Unidad *u) {
     return false;
   if (u->vida > 0)
     return true;
-  return !unidadCuerpoDesaparecido(u, GetTickCount64(), NULL);
+  return !unidadCuerpoDesaparecido(u, (ULONGLONG)GetTickCount(), NULL);
 }
 
 static bool mapaEsTemaFuego(void) { return gTemaIslaActual == MAPA_TEMA_FUEGO; }
 static bool mapaEsTemaHielo(void) { return gTemaIslaActual == MAPA_TEMA_HIELO; }
 
-static HBITMAP cargarSpriteOpcional(const char *principal,
-                  int ancho, int alto) {
-  HBITMAP h = (HBITMAP)LoadImageA(NULL, principal, IMAGE_BITMAP, ancho, alto,
-                  LR_LOADFROMFILE);
-  if (!h) {
-    h = (HBITMAP)LoadImageA(NULL, principal, IMAGE_BITMAP, ancho, alto,
-              LR_LOADFROMFILE);
-  }
-  return h;
+static HBITMAP loadBmp(const char *path, int w, int h) {
+  HBITMAP bmp = (HBITMAP)LoadImageA(NULL, path, IMAGE_BITMAP, w, h, LR_LOADFROMFILE);
+  return bmp ? bmp : (HBITMAP)LoadImageA(NULL, path, IMAGE_BITMAP, w, h, LR_LOADFROMFILE);
 }
 
-static void cargarSpritesFuego(void) {
-  if (gSpritesFuegoCargados)
-  return;
+static void cargarSpritesTema(int tema) {
+    if ((tema == 1 && gSpritesHieloCargados) || (tema == 2 && gSpritesFuegoCargados)) return;
+    
+    // Arrays de punteros a globals y rutas
+    HBITMAP *targets[] = {
+        hCaballeroFuegoBmp, hCaballeroHieloBmp, // Front/Back/Left/Right
+        hGuerreroFuegoBmp, hGuerreroHieloBmp
+    };
+    const char *paths[][4] = {
+        {CAB_FUEGO_FRONT, CAB_FUEGO_BACK, CAB_FUEGO_LEFT, CAB_FUEGO_RIGHT},
+        {CAB_HIELO_FRONT, CAB_HIELO_BACK, CAB_HIELO_LEFT, CAB_HIELO_RIGHT},
+        {GUERRERO_FUEGO_FRONT, GUERRERO_FUEGO_BACK, GUERRERO_FUEGO_LEFT, GUERRERO_FUEGO_RIGHT},
+        {GUERRERO_HIELO_FRONT, GUERRERO_HIELO_BACK, GUERRERO_HIELO_LEFT, GUERRERO_HIELO_RIGHT}
+    };
+    
+    int tOffset = (tema == 2) ? 0 : 1; // 0=Fuego, 1=Hielo
+    for(int i=0; i<4; i++) targets[tOffset*2][i] = loadBmp(paths[tOffset*2][i], 64, 64);
+    for(int i=0; i<4; i++) targets[tOffset*2+1][i] = loadBmp(paths[tOffset*2+1][i], 64, 64);
 
-  hCaballeroFuegoBmp[DIR_FRONT] =
-    cargarSpriteOpcional(CAB_FUEGO_FRONT, 64, 64);
-  hCaballeroFuegoBmp[DIR_BACK] =
-    cargarSpriteOpcional(CAB_FUEGO_BACK, 64, 64);
-  hCaballeroFuegoBmp[DIR_LEFT] =
-    cargarSpriteOpcional(CAB_FUEGO_LEFT, 64, 64);
-  hCaballeroFuegoBmp[DIR_RIGHT] =
-    cargarSpriteOpcional(CAB_FUEGO_RIGHT, 64, 64);
+    // Animaciones (Stand, Die, Atk) - Simplificado: Carga directa a punteros especificos
+    struct { HBITMAP *arr; const char **files; int count; } anims[] = {
+        {hCaballeroFuegoStand, (const char*[]){CAB_FUEGO_STAND_L, CAB_FUEGO_STAND_R}, 2},
+        {hCaballeroFuegoDie, (const char*[]){CAB_FUEGO_DIE1_L, CAB_FUEGO_DIE1_R}, 2},
+        {hCaballeroFuegoDie2, (const char*[]){CAB_FUEGO_DIE2_L, CAB_FUEGO_DIE2_R}, 2},
+        {hGuerreroFuegoStand, (const char*[]){GUERRERO_FUEGO_STAND_L, GUERRERO_FUEGO_STAND_R}, 2},
+        {hGuerreroFuegoDie, (const char*[]){GUERRERO_FUEGO_DIE1_L, GUERRERO_FUEGO_DIE1_R}, 2},
+        {hGuerreroFuegoDie2, (const char*[]){GUERRERO_FUEGO_DIE2_L, GUERRERO_FUEGO_DIE2_R}, 2},
+        {hGuerreroFuegoWalk, (const char*[]){GUERRERO_FUEGO_MOVE1_L, GUERRERO_FUEGO_MOVE1_R}, 2},
+        
+        {hCaballeroHieloStand, (const char*[]){CAB_HIELO_STAND_L, CAB_HIELO_STAND_R}, 2},
+        {hCaballeroHieloDie, (const char*[]){CAB_HIELO_DIE1_L, CAB_HIELO_DIE1_R}, 2},
+        {hCaballeroHieloDie2, (const char*[]){CAB_HIELO_DIE2_L, CAB_HIELO_DIE2_R}, 2},
+        {hGuerreroHieloStand, (const char*[]){GUERRERO_HIELO_STAND_L, GUERRERO_HIELO_STAND_R}, 2},
+        {hGuerreroHieloDie, (const char*[]){GUERRERO_HIELO_DIE1_L, GUERRERO_HIELO_DIE1_R}, 2},
+        {hGuerreroHieloDie2, (const char*[]){GUERRERO_HIELO_DIE2_L, GUERRERO_HIELO_DIE2_R}, 2},
+        {hGuerreroHieloWalk, (const char*[]){GUERRERO_HIELO_MOVE1_L, GUERRERO_HIELO_MOVE1_R}, 2}
+    };
+    
+    int start = (tema==2) ? 0 : 7;
+    int end = (tema==2) ? 7 : 14;
+    for(int k=start; k<end; k++) 
+        for(int j=0; j<anims[k].count; j++) 
+            anims[k].arr[j] = loadBmp(anims[k].files[j], 64, 64);
 
-  hCaballeroFuegoStand[0] =
-    cargarSpriteOpcional(CAB_FUEGO_STAND_L, 64, 64);
-  hCaballeroFuegoStand[1] =
-    cargarSpriteOpcional(CAB_FUEGO_STAND_R, 64, 64);
-  hCaballeroFuegoDie[0] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE1_L, 64, 64);
-  hCaballeroFuegoDie[1] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE1_R, 64, 64);
-  hCaballeroFuegoDie2[0] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE2_L, 64, 64);
-  hCaballeroFuegoDie2[1] =
-    cargarSpriteOpcional(CAB_FUEGO_DIE2_R, 64, 64);
-
-  hCaballeroFuegoAtk[0][0] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE1_L, 64, 64);
-  hCaballeroFuegoAtk[0][1] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE2_L, 64, 64);
-  hCaballeroFuegoAtk[0][2] =
-    hCaballeroFuegoAtk[0][1] ? hCaballeroFuegoAtk[0][1]
-                 : hCaballeroFuegoAtk[0][0];
-  hCaballeroFuegoAtk[1][0] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE1_R, 64, 64);
-  hCaballeroFuegoAtk[1][1] =
-    cargarSpriteOpcional(CAB_FUEGO_MOVE2_R, 64, 64);
-  hCaballeroFuegoAtk[1][2] =
-    hCaballeroFuegoAtk[1][1] ? hCaballeroFuegoAtk[1][1]
-                 : hCaballeroFuegoAtk[1][0];
-
-  hGuerreroFuegoBmp[DIR_FRONT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_FRONT, 64, 64);
-  hGuerreroFuegoBmp[DIR_BACK] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_BACK, 64, 64);
-  hGuerreroFuegoBmp[DIR_LEFT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_LEFT, 64, 64);
-  hGuerreroFuegoBmp[DIR_RIGHT] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_RIGHT, 64, 64);
-
-  hGuerreroFuegoStand[0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_STAND_L, 64, 64);
-  hGuerreroFuegoStand[1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_STAND_R, 64, 64);
-  hGuerreroFuegoDie[0] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE1_L,
-                        64,
-                        64);
-  hGuerreroFuegoDie[1] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE1_R,
-                        64,
-                        64);
-  hGuerreroFuegoDie2[0] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE2_L,
-               64,
-                         64);
-  hGuerreroFuegoDie2[1] = cargarSpriteOpcional(GUERRERO_FUEGO_DIE2_R,
-               64,
-                         64);
-
-  hGuerreroFuegoWalk[0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_L, 64, 64);
-  hGuerreroFuegoWalk[1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_R, 64, 64);
-  hGuerreroFuegoAtk[0][0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_L, 64, 64);
-  hGuerreroFuegoAtk[0][1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE2_L, 64, 64);
-  hGuerreroFuegoAtk[1][0] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE1_R, 64, 64);
-  hGuerreroFuegoAtk[1][1] = cargarSpriteOpcional(
-    GUERRERO_FUEGO_MOVE2_R, 64, 64);
-
-  gSpritesFuegoCargados = true;
+    // Ataques (Logica especial para arrays multidimensionales)
+    if (tema == 2) {
+        const char *cfAtk[] = {CAB_FUEGO_MOVE1_L, CAB_FUEGO_MOVE2_L, CAB_FUEGO_MOVE2_L, CAB_FUEGO_MOVE1_R, CAB_FUEGO_MOVE2_R, CAB_FUEGO_MOVE2_R};
+        for(int i=0; i<6; i++) hCaballeroFuegoAtk[i/3][i%3] = loadBmp(cfAtk[i], 64, 64);
+        
+        const char *gfAtk[] = {GUERRERO_FUEGO_MOVE1_L, GUERRERO_FUEGO_MOVE2_L, GUERRERO_FUEGO_MOVE1_R, GUERRERO_FUEGO_MOVE2_R};
+        for(int i=0; i<4; i++) hGuerreroFuegoAtk[i/2][i%2] = loadBmp(gfAtk[i], 64, 64);
+        gSpritesFuegoCargados = true;
+    } else {
+        const char *chAtk[] = {CAB_HIELO_MOVE1_L, CAB_HIELO_MOVE2_L, CAB_HIELO_MOVE3_L, CAB_HIELO_MOVE1_R, CAB_HIELO_MOVE2_R, CAB_HIELO_MOVE3_R};
+         for(int i=0; i<6; i++) hCaballeroHieloAtk[i/3][i%3] = loadBmp(chAtk[i], 64, 64);
+         
+         const char *ghAtk[] = {GUERRERO_HIELO_MOVE1_L, GUERRERO_HIELO_MOVE2_L, GUERRERO_HIELO_MOVE1_R, GUERRERO_HIELO_MOVE2_R};
+         for(int i=0; i<4; i++) hGuerreroHieloAtk[i/2][i%2] = loadBmp(ghAtk[i], 64, 64);
+         gSpritesHieloCargados = true;
+    }
 }
 
-  static void cargarSpritesHielo(void) {
-    if (gSpritesHieloCargados)
-    return;
-
-    hCaballeroHieloBmp[DIR_FRONT] =
-      cargarSpriteOpcional(CAB_HIELO_FRONT,  64, 64);
-    hCaballeroHieloBmp[DIR_BACK] =
-      cargarSpriteOpcional(CAB_HIELO_BACK, 64, 64);
-    hCaballeroHieloBmp[DIR_LEFT] =
-      cargarSpriteOpcional(CAB_HIELO_LEFT, 64, 64);
-    hCaballeroHieloBmp[DIR_RIGHT] =
-      cargarSpriteOpcional(CAB_HIELO_RIGHT, 64, 64);
-
-    hCaballeroHieloStand[0] =
-      cargarSpriteOpcional(CAB_HIELO_STAND_L, 64, 64);
-    hCaballeroHieloStand[1] =
-      cargarSpriteOpcional(CAB_HIELO_STAND_R, 64, 64);
-    hCaballeroHieloDie[0] =
-      cargarSpriteOpcional(CAB_HIELO_DIE1_L, 64, 64);
-    hCaballeroHieloDie[1] =
-      cargarSpriteOpcional(CAB_HIELO_DIE1_R, 64, 64);
-    hCaballeroHieloDie2[0] =
-      cargarSpriteOpcional(CAB_HIELO_DIE2_L, 64, 64);
-    hCaballeroHieloDie2[1] =
-      cargarSpriteOpcional(CAB_HIELO_DIE2_R, 64, 64);
-
-    hCaballeroHieloAtk[0][0] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE1_L, 64, 64);
-    hCaballeroHieloAtk[0][1] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE2_L, 64, 64);
-    hCaballeroHieloAtk[0][2] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE3_L, 64, 64);
-    if (!hCaballeroHieloAtk[0][2])
-    hCaballeroHieloAtk[0][2] = hCaballeroHieloAtk[0][1];
-    if (!hCaballeroHieloAtk[0][1])
-    hCaballeroHieloAtk[0][1] = hCaballeroHieloAtk[0][0];
-
-    hCaballeroHieloAtk[1][0] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE1_R, 64, 64);
-    hCaballeroHieloAtk[1][1] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE2_R, 64, 64);
-    hCaballeroHieloAtk[1][2] =
-      cargarSpriteOpcional(CAB_HIELO_MOVE3_R, 64, 64);
-    if (!hCaballeroHieloAtk[1][2])
-    hCaballeroHieloAtk[1][2] = hCaballeroHieloAtk[1][1];
-    if (!hCaballeroHieloAtk[1][1])
-    hCaballeroHieloAtk[1][1] = hCaballeroHieloAtk[1][0];
-
-    hGuerreroHieloBmp[DIR_FRONT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_FRONT, 64, 64);
-    hGuerreroHieloBmp[DIR_BACK] = cargarSpriteOpcional(
-      GUERRERO_HIELO_BACK, 64, 64);
-    hGuerreroHieloBmp[DIR_LEFT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_LEFT, 64, 64);
-    hGuerreroHieloBmp[DIR_RIGHT] = cargarSpriteOpcional(
-      GUERRERO_HIELO_RIGHT, 64, 64);
-
-    hGuerreroHieloStand[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_STAND_L, 64, 64);
-    hGuerreroHieloStand[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_STAND_R, 64, 64);
-    hGuerreroHieloDie[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE1_L, 64, 64);
-    hGuerreroHieloDie[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE1_R, 64, 64);
-    hGuerreroHieloDie2[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE2_L, 64, 64);
-    hGuerreroHieloDie2[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_DIE2_R, 64, 64);
-
-    hGuerreroHieloWalk[0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_L, 64, 64);
-    hGuerreroHieloWalk[1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_R, 64, 64);
-
-    hGuerreroHieloAtk[0][0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_L, 64, 64);
-    hGuerreroHieloAtk[0][1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE2_L, 64, 64);
-    hGuerreroHieloAtk[1][0] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE1_R, 64, 64);
-    hGuerreroHieloAtk[1][1] = cargarSpriteOpcional(
-      GUERRERO_HIELO_MOVE2_R, 64, 64);
-
-    gSpritesHieloCargados = true;
-  }
+static void cargarSpritesFuego(void) { cargarSpritesTema(2); }
+static void cargarSpritesHielo(void) { cargarSpritesTema(1); }
 
 
 
@@ -825,171 +714,66 @@ void mapaImportarEstadosIsla(const MapaEstadoSerializable estados[6]) {
 //   2 = Ocupada por unidad (temporalmente bloqueada)
 // ============================================================================
 
-// Detecta agua analizando los píxeles del mapa base
-// Utiliza aritmética de punteros para recorrer la matriz
+// Helper para verificar color de agua segun tema
+static inline bool esColorAgua(BYTE r, BYTE g, BYTE b, int tema) {
+    if (tema == 4) return (r < 20 && g < 80 && b > 100);
+    if (tema == 5) return (r < 50 && b > 80 && b > g + 40);
+    return ((b > r + 20 && b > g + 20 && b > 60) || (b > r && b > g && b > 100));
+}
+
 static void detectarAguaEnMapa(void) {
-  if (!hMapaBmp || !gCollisionMap)
-    return;
+  if (!hMapaBmp || !gCollisionMap) return;
 
-
-  // ================================================================
-  // OBTENER INFORMACIÓN DEL BITMAP
-  // ================================================================
   BITMAP bm;
-  if (!GetObject(hMapaBmp, sizeof(BITMAP), &bm)) {
-    return;
-  }
+  if (!GetObject(hMapaBmp, sizeof(BITMAP), &bm)) return;
 
-  // ================================================================
-  // CONFIGURAR BITMAPINFO PARA LEER PIXELS
-  // ================================================================
-  BITMAPINFO bmi;
-  ZeroMemory(&bmi, sizeof(BITMAPINFO));
+  BITMAPINFO bmi = {0};
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bmi.bmiHeader.biWidth = bm.bmWidth;
-  bmi.bmiHeader.biHeight = -bm.bmHeight; // Negativo = top-down
+  bmi.bmiHeader.biHeight = -bm.bmHeight;
   bmi.bmiHeader.biPlanes = 1;
-  bmi.bmiHeader.biBitCount = 24; // 24-bit RGB
+  bmi.bmiHeader.biBitCount = 24;
   bmi.bmiHeader.biCompression = BI_RGB;
 
-  // ================================================================
-  // LEER TODO EL BITMAP A MEMORIA
-  // ================================================================
-  int rowSize = ((bm.bmWidth * 3 + 3) & ~3); // Alineado a 4 bytes
+  int rowSize = ((bm.bmWidth * 3 + 3) & ~3);
   int imageSize = rowSize * bm.bmHeight;
   BYTE *pixelData = (BYTE *)malloc(imageSize);
-
-  if (!pixelData) {
-    return;
-  }
+  if (!pixelData) return;
 
   HDC hdcScreen = GetDC(NULL);
-  int result = GetDIBits(hdcScreen, hMapaBmp, 0, bm.bmHeight, pixelData, &bmi,
-                         DIB_RGB_COLORS);
+  if (!GetDIBits(hdcScreen, hMapaBmp, 0, bm.bmHeight, pixelData, &bmi, DIB_RGB_COLORS)) {
+    ReleaseDC(NULL, hdcScreen); free(pixelData); return;
+  }
   ReleaseDC(NULL, hdcScreen);
 
-  if (!result) {
-    free(pixelData);
-    return;
-  }
-
-
-  // ================================================================
-  // MUESTREO: Verificar primeros píxeles
-  // ================================================================
-  int posicionesTest[][2] = {{5, 5}, {10, 10}, {15, 15}, {7, 7}, {14, 8}};
-
-  for (int i = 0; i < 5; i++) {
-    int f = posicionesTest[i][0];
-    int c = posicionesTest[i][1];
-    int px = (c * TILE_SIZE) + 16;
-    int py = (f * TILE_SIZE) + 16;
-
-    if (px >= 0 && px < bm.bmWidth && py >= 0 && py < bm.bmHeight) {
-      int offset = py * rowSize + px * 3;
-      BYTE b = pixelData[offset + 0];
-      BYTE g = pixelData[offset + 1];
-      BYTE r = pixelData[offset + 2];
-
-      bool verde = (g > r && g > b && g > 45);
-      bool beige = (r > 80 && g > 80 && b < 100 && abs(r - g) < 50);
-    }
-  }
-
-  // ================================================================
-  // DETECCIÓN COMPLETA DE AGUA
-  // ================================================================
-  int contadorAgua = 0;
-  int contadorTierra = 0;
-  int contadorFueraDeLimites = 0;
+  int contadorAgua = 0, contadorTierra = 0;
+  int tema = gIslaSeleccionadaActual;
 
   for (int f = 0; f < GRID_SIZE; f++) {
     int *fila = *(gCollisionMap + f);
     for (int c = 0; c < GRID_SIZE; c++) {
-      // No sobreescribir árboles u obstáculos
-      if (*(fila + c) != 0)
-        continue;
+      if (*(fila + c) != 0) continue;
 
-      // Calcular pixel central de la celda
-      int px = (c * TILE_SIZE) + 16;
-      int py = (f * TILE_SIZE) + 16;
+      int px = (c * TILE_SIZE) + 16, py = (f * TILE_SIZE) + 16;
+      if (px < 0 || px >= bm.bmWidth || py < 0 || py >= bm.bmHeight) continue;
 
-      // Verificar límites
-      if (px < 0 || px >= bm.bmWidth || py < 0 || py >= bm.bmHeight) {
-        contadorFueraDeLimites++;
-        continue;
-      }
-
-      // Leer pixel desde buffer
       int offset = py * rowSize + px * 3;
-      BYTE b = pixelData[offset + 0];
-      BYTE g = pixelData[offset + 1];
-      BYTE r = pixelData[offset + 2];
-
-      // ================================================================
-      // DETECCIÓN DE AGUA SEGÚN TIPO DE ISLA
-      // Solo el AZUL OSCURO oceánico bloquea el paso
-      // ================================================================
-      bool esAgua = false;
-      
-      if (gIslaSeleccionadaActual == 4) {
-        // ISLA DE HIELO: Solo azul oceánico MUY oscuro es agua
-        // El agua oceánica del mapa tiene aprox RGB(4,59,124)
-        // Los blancos, cianes, grises claros son suelo transitable
-        // Criterio MUY estricto: R muy bajo (<20), G bajo (<80), B alto (>100)
-        esAgua = (r < 20 && g < 80 && b > 100);
-        
-        // DEBUG ISLA 4: Mostrar primeros 20 colores encontrados
-        static int debugIsla4Count = 0;
-        if (debugIsla4Count < 20) {
-          debugIsla4Count++;
-        }
-      } else if (gIslaSeleccionadaActual == 5) {
-        // ISLA DE FUEGO: Solo azul oceánico es agua
-        // Los rojos, naranjas, grises oscuros son suelo transitable
-        esAgua = (r < 50 && b > 80 && b > g + 40);
-      } else {
-        // ISLAS CLÁSICAS (1, 2, 3): Lógica original
-        bool esAguaAzulOscura = (b > r + 20 && b > g + 20 && b > 60);
-        bool esAguaAzulClara = (b > r && b > g && b > 100);
-        esAgua = esAguaAzulOscura || esAguaAzulClara;
-      }
-
-      if (esAgua) {
-        // ES AGUA - marcar como impasable
+      // Pixel format: BGR
+      if (esColorAgua(pixelData[offset+2], pixelData[offset+1], pixelData[offset], tema)) {
         *(fila + c) = 1;
-        mapaObjetos[f][c] =
-            SIMBOLO_AGUA; // NUEVO: Marcar con '~' en mapaObjetos
+        mapaObjetos[f][c] = SIMBOLO_AGUA;
         contadorAgua++;
-
-        // Debug primeras 5 escrituras
-        if (contadorAgua <= 5) {
-        }
       } else {
-        // NO es agua - es tierra transitable (verde, arena, beige, etc)
         contadorTierra++;
       }
     }
   }
-
-  // Liberar memoria
   free(pixelData);
 
-  // ================================================================
-  // REPORTE FINAL
-  // ================================================================
-
-  if (contadorAgua == 0) {
-    // Marcar bordes como agua
+  if (contadorAgua == 0) { // Fallback borders
     for (int i = 0; i < GRID_SIZE; i++) {
-      if (*(*(gCollisionMap + 0) + i) == 0)
-        *(*(gCollisionMap + 0) + i) = 1;
-      if (*(*(gCollisionMap + GRID_SIZE - 1) + i) == 0)
-        *(*(gCollisionMap + GRID_SIZE - 1) + i) = 1;
-      if (*(*(gCollisionMap + i) + 0) == 0)
-        *(*(gCollisionMap + i) + 0) = 1;
-      if (*(*(gCollisionMap + i) + GRID_SIZE - 1) == 0)
-        *(*(gCollisionMap + i) + GRID_SIZE - 1) = 1;
+        gCollisionMap[0][i] = 1; gCollisionMap[GRID_SIZE-1][i] = 1;
+        gCollisionMap[i][0] = 1; gCollisionMap[i][GRID_SIZE-1] = 1;
     }
   }
 }
@@ -1116,418 +900,125 @@ void mapaDetectarOrilla(float *outX, float *outY, int *outDir) {
   *outDir = DIR_FRONT;
 }
 
+// Helper para validar suelo para vegetacion/animales
+static inline bool esSueloValido(BYTE r, BYTE g, BYTE b, int tema, bool esAgua) {
+    if (esAgua) return false;
+    if (tema == 4) return (r > 180 && g > 180 && b > 180) || (b > 150 && g > 150 && r > 100);
+    if (tema == 5) return (r > g + 30 && r > b + 30) || (r < 100 && g < 100 && b < 100 && abs(r - g) < 30 && abs(r - b) < 30);
+    return g > r && g > b && g > 70 && b < 80 && r < 100;
+}
+
+static void colocarObjetosAleatorios(int cantidad, char simbolo, HDC hdcMem, int tema) {
+   int cnt = 0, tries = 0;
+   while (cnt < cantidad && tries < 50000) {
+       tries++;
+       int f = rand() % GRID_SIZE, c = rand() % GRID_SIZE;
+       if (mapaObjetos[f][c] != 0) continue;
+       
+       int px = (c * TILE_SIZE) + 16, py = (f * TILE_SIZE) + 16;
+       COLORREF cRef = GetPixel(hdcMem, px, py);
+       if (cRef == CLR_INVALID) continue;
+       BYTE r = GetRValue(cRef), g = GetGValue(cRef), b = GetBValue(cRef);
+       
+       bool agua = esColorAgua(r, g, b, tema) || (mapaObjetos[f][c] == SIMBOLO_AGUA);
+       
+       if (esSueloValido(r, g, b, tema, agua)) {
+           mapaObjetos[f][c] = simbolo;
+           if (simbolo == SIMBOLO_ARBOL) gArbolesVida[f][c] = 3;
+           else if (simbolo == SIMBOLO_VACA && gNumVacas < MAX_VACAS) {
+               gVacas[gNumVacas++] = (Vaca){ (float)(c*TILE_SIZE), (float)(f*TILE_SIZE), rand()%4, rand()%120 };
+           }
+           cnt++;
+       }
+   }
+}
+
 void generarBosqueAutomatico() {
-  if (!hMapaBmp)
-    return;
-
-  HDC hdcPantalla = GetDC(NULL);
-  HDC hdcMem = CreateCompatibleDC(hdcPantalla);
-  HBITMAP hOldBmp = (HBITMAP)SelectObject(hdcMem, hMapaBmp);
-
-  // Limpiar objetos y colisiones antes de regenerar (para nuevas islas)
+  if (!hMapaBmp) return;
+  HDC hdcSc = GetDC(NULL); HDC hdcMem = CreateCompatibleDC(hdcSc);
+  HBITMAP hOld = (HBITMAP)SelectObject(hdcMem, hMapaBmp);
   mapaLimpiarObjetosYColision();
-
-  // Requisito: Aritmética de punteros para manejar la matriz
-  char (*ptrMatriz)[GRID_SIZE] = mapaObjetos;
-  srand((unsigned int)time(NULL));
-
-  // Obtener ID de isla para adaptar la logica de generacion
-  int islaActual = gIslaSeleccionadaActual;
-  // ============================================================================
-  // RESERVAR CELDAS DE EDIFICIOS ANTES DE GENERAR BOSQUE
-  // ============================================================================
-  // Los edificios se inicializan en WM_CREATE DESPUÉS de esta función,
-  // pero las posiciones son fijas. Reservamos las celdas para evitar que
-  // árboles o vacas se coloquen en las posiciones de los edificios.
-  // NUEVO: Reservar un margen de 2 celdas alrededor para evitar confusión.
-  // ============================================================================
-
-  // Función local temporal para marcar zonas de exclusión
-  int edificios_coords[3][2] = {
-      {(int)((1024.0f - 64.0f) / TILE_SIZE),
-       (int)((1024.0f - 64.0f) / TILE_SIZE)}, // Ayuntamiento
-      {(int)(450.0f / TILE_SIZE), (int)((1024.0f - 64.0f) / TILE_SIZE)}, // Mina
-      {(int)(1600.0f / TILE_SIZE),
-       (int)((1024.0f - 64.0f) / TILE_SIZE)} // Cuartel
+  
+  // Reservar edificios
+  int edif[3][2] = {
+      {(int)((1024-64)/32), (int)((1024-64)/32)}, 
+      {(int)(450/32), (int)((1024-64)/32)}, 
+      {(int)(1600/32), (int)((1024-64)/32)}
   };
-
-  for (int e = 0; e < 3; e++) {
-    int baseF = edificios_coords[e][0];
-    int baseC = edificios_coords[e][1];
-    // Marcar 2x2 del edificio + margen de 2 tiles en todas direcciones
-    // Total: bloque de 6x6 celdas centrado en el edificio
-    for (int df = -2; df <= 3; df++) {
-      for (int dc = -2; dc <= 3; dc++) {
-        int nf = baseF + df;
-        int nc = baseC + dc;
-        if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-          *(*(ptrMatriz + nf) + nc) = SIMBOLO_EDIFICIO;
-        }
+  for(int i=0; i<3; i++) {
+      for(int df=-2; df<=3; df++) {
+          for(int dc=-2; dc<=3; dc++) {
+              int nf = edif[i][0]+df, nc = edif[i][1]+dc;
+              if (nf>=0 && nf<GRID_SIZE && nc>=0 && nc<GRID_SIZE) mapaObjetos[nf][nc] = SIMBOLO_EDIFICIO;
+          }
       }
-    }
   }
 
-  const int NUM_ARBOLES_EXACTO = 15;
-  int contador = 0;
-
-  int intentos = 0;
-  const int MAX_INTENTOS = 50000; // Limite de seguridad para evitar congelamiento
-  while (contador < NUM_ARBOLES_EXACTO && intentos < MAX_INTENTOS) {
-    intentos++;
-    // Generar coordenadas aleatorias en la matriz 32x32
-    int fila = rand() % GRID_SIZE;
-    int col = rand() % GRID_SIZE;
-
-    // Verificar que la celda esté vacía (no haya otro árbol)
-    if (*(*(ptrMatriz + fila) + col) != SIMBOLO_VACIO &&
-        *(*(ptrMatriz + fila) + col) != 0) {
-      continue; // Ya hay algo aquí, intentar otra posición
-    }
-
-    // Calcular píxel central de la celda para verificar el color del suelo
-    int px = (col * TILE_SIZE) + (TILE_SIZE / 2);
-    int py = (fila * TILE_SIZE) + (TILE_SIZE / 2);
-
-    COLORREF color = GetPixel(hdcMem, px, py);
-    if (color == CLR_INVALID)
-      continue;
-
-    BYTE r = GetRValue(color);
-    BYTE g = GetGValue(color);
-    BYTE b = GetBValue(color);
-
-    bool esAgua = (b > r + 20 && b > g + 20) ||
-                  (*(*(ptrMatriz + fila) + col) == SIMBOLO_AGUA);
-
-    bool esSueloValido = false;
-
-    // Lógica adaptativa según el tipo de isla
-    if (islaActual == 4) {
-        // ISLA 4 (Hielo/Nieve): Check de BLANCO / GRIS CLARO / CIAN
-        // Criterio: rgb altos y balanceados (blanco/gris) o cian claro
-        bool esBlanco = (r > 180 && g > 180 && b > 180);
-        bool esCianSolo = (b > 150 && g > 150 && r > 100); 
-        if (!esAgua && (esBlanco || esCianSolo)) {
-            esSueloValido = true;
-        } 
-    } else if (islaActual == 5) {
-        // ISLA 5 (Fuego/Volcán): Check de ROJO / GRIS OSCURO / CENIZA
-        // Criterio: rojo dominante, o gris oscuro (tierra quemada)
-        bool esRojo = (r > g + 30 && r > b + 30);
-        bool esGrisOscuro = (r < 100 && g < 100 && b < 100 && abs(r-g) < 30 && abs(r-b) < 30);
-        if (!esAgua && (esRojo || esGrisOscuro)) {
-            esSueloValido = true;
-        }
-    } else {
-        // ISLAS 1, 2, 3 (Bosque - Default): Check estricto de VERDE
-        // Criterio: verde debe dominar claramente y azul debe ser bajo
-        if (!esAgua && g > r && g > b && g > 70 && b < 80 && r < 100) {
-            esSueloValido = true;
-        }
-    }
-
-    if (esSueloValido) {
-      // Colocar árbol usando aritmética de punteros y símbolo de caracter
-      *(*(ptrMatriz + fila) + col) = SIMBOLO_ARBOL;
-      // Inicializar vida del árbol (3 golpes)
-      gArbolesVida[fila][col] = 3;
-      contador++;
-    }
-  }
-
-  // ============================================================================
-  // GENERACIÓN DE VACAS DINÁMICAS (en lugar de estáticas en mapaObjetos)
-  // ============================================================================
-  const int NUM_VACAS_EXACTO = 10;
+  srand((unsigned int)time(NULL));
+  colocarObjetosAleatorios(15, SIMBOLO_ARBOL, hdcMem, gIslaSeleccionadaActual);
   gNumVacas = 0;
+  colocarObjetosAleatorios(10, SIMBOLO_VACA, hdcMem, gIslaSeleccionadaActual);
 
-  while (gNumVacas < NUM_VACAS_EXACTO && intentos < MAX_INTENTOS) {
-    intentos++; // Reutilizamos variable, asumimos que se resetea o continúa incrementando, mejor resetear si queremos full attempts
-    // Pero como MAX_INTENTOS es 50000, es suficiente para ambos. O mejor resetear.
-    
-    int fila = rand() % GRID_SIZE;
-    int col = rand() % GRID_SIZE;
-
-    // No colocar vaca donde ya hay árbol u otra vaca
-    if (*(*(ptrMatriz + fila) + col) != 0)
-      continue;
-
-    // Verificar que el suelo sea tierra (mismo criterio que árboles)
-    int px = (col * TILE_SIZE) + (TILE_SIZE / 2);
-    int py = (fila * TILE_SIZE) + (TILE_SIZE / 2);
-
-    COLORREF color = GetPixel(hdcMem, px, py);
-    if (color == CLR_INVALID)
-      continue;
-
-    BYTE r = GetRValue(color);
-    BYTE g = GetGValue(color);
-    BYTE b = GetBValue(color);
-
-    bool esAgua = (b > r + 20 && b > g + 20) ||
-                  (*(*(ptrMatriz + fila) + col) == SIMBOLO_AGUA);
-
-    bool esSueloValido = false;
-
-    // Lógica adaptativa según el tipo de isla (MISMA LÓGICA QUE ÁRBOLES)
-    if (islaActual == 4) {
-        // ISLA 4 (Hielo): Blanco/Cian
-        bool esBlanco = (r > 180 && g > 180 && b > 180);
-        bool esCianSolo = (b > 150 && g > 150 && r > 100);
-        if (!esAgua && (esBlanco || esCianSolo)) esSueloValido = true;
-    } else if (islaActual == 5) {
-        // ISLA 5 (Fuego): Rojo/Gris
-        bool esRojo = (r > g + 30 && r > b + 30);
-        bool esGrisOscuro = (r < 100 && g < 100 && b < 100 && abs(r-g) < 30 && abs(r-b) < 30);
-        if (!esAgua && (esRojo || esGrisOscuro)) esSueloValido = true;
-    } else {
-        // ISLAS 1, 2, 3 (Bosque): Verde
-        if (!esAgua && g > r && g > b && g > 70 && b < 80 && r < 100) esSueloValido = true;
-    }
-
-    if (esSueloValido) {
-      // Inicializar vaca en el array dinámico
-      Vaca *v = &gVacas[gNumVacas];
-
-      // Posición: centro de la celda en píxeles
-      v->x = (float)(col * TILE_SIZE);
-      v->y = (float)(fila * TILE_SIZE);
-
-      // Dirección aleatoria (0-3 = DIR_FRONT, DIR_BACK, DIR_LEFT, DIR_RIGHT)
-      v->dir = (Direccion)(rand() % 4);
-
-      // Timer aleatorio para que no se muevan todas a la vez
-      v->timerMovimiento = rand() % 120;
-
-      // NUEVO: Registrar vaca en mapaObjetos para identificar su posicion
-      *(*(ptrMatriz + fila) + col) = SIMBOLO_VACA;
-
-      gNumVacas++;
-    }
-  }
-  // Construir la grilla de colisión con árboles Y detectar agua
-  // NOTA: mapaReconstruirCollisionMap() YA llama a detectarAguaEnMapa()
-  // internamente
   mapaReconstruirCollisionMap();
-
-  SelectObject(hdcMem, hOldBmp);
-  DeleteDC(hdcMem);
-  ReleaseDC(NULL, hdcPantalla);
+  SelectObject(hdcMem, hOld); DeleteDC(hdcMem); ReleaseDC(NULL, hdcSc);
 }
 
 void cargarRecursosGraficos() {
-  // 1. Cargar Mapa Base
-  hMapaBmp = (HBITMAP)LoadImageA(NULL, gRutaMapaPrincipal, IMAGE_BITMAP, 0, 0,
-                                 LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+  hMapaBmp = (HBITMAP)LoadImageA(NULL, gRutaMapaPrincipal, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+  if (mapaEsTemaFuego()) cargarSpritesFuego();
+  else if (mapaEsTemaHielo()) cargarSpritesHielo();
 
-  if (mapaEsTemaFuego()) {
-    cargarSpritesFuego();
-  } else if (mapaEsTemaHielo()) {
-    cargarSpritesHielo();
-  }
+  hMapaGlobalBmp = (HBITMAP)LoadImageA(NULL, "../assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-  // Cargar mapa global con las 3 islas (mapaDemo2.bmp)
-  hMapaGlobalBmp =
-      (HBITMAP)LoadImageA(NULL, "../assets/mapaDemo2.bmp", IMAGE_BITMAP, 0, 0,
-                          LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+  const char *arboles[][4] = {
+      {ARBOL_FUEGO, ARBOL_FUEGO, ARBOL_FUEGO, ARBOL_FUEGO}, // Tema Fuego
+      {ARBOL_HIELO, ARBOL_HIELO, ARBOL_HIELO, ARBOL_HIELO}, // Tema Hielo
+      {ARBOL1, ARBOL2, ARBOL3, ARBOL4} // Default
+  };
+  int tIdx = mapaEsTemaFuego() ? 0 : (mapaEsTemaHielo() ? 1 : 2);
+  for (int i=0; i<4; i++) hArboles[i] = loadBmp(arboles[tIdx][i], SPRITE_ARBOL, SPRITE_ARBOL);
 
+  // Carga de unidades (Obreros, Caballeros, SinEscudo, Guerreros)
+  HBITMAP *dest[] = {hObreroBmp, hCaballeroBmp, hCaballeroSinEscudoBmp, hGuerreroBmp};
+  const char **src[] = {
+      (const char*[]){obrero_front, obrero_back, obrero_left, obrero_right},
+      (const char*[]){caballero_front, caballero_back, caballero_left, caballero_right},
+      (const char*[]){caballeroSinEscudo_front, caballeroSinEscudo_back, caballeroSinEscudo_left, caballeroSinEscudo_right},
+      (const char*[]){guerrero_front, guerrero_back, guerrero_left, guerrero_right}
+  };
+  for(int k=0; k<4; k++) for(int i=0; i<4; i++) dest[k][i] = loadBmp(src[k][i], 64, 64);
 
-  // 2. Cargar cada árbol individualmente
-  const char *rutasArboles[4];
-  if (mapaEsTemaFuego()) {
-    for (int i = 0; i < 4; i++) {
-      rutasArboles[i] = ARBOL_FUEGO;
-    }
-  } else if (mapaEsTemaHielo()) {
-    for (int i = 0; i < 4; i++) {
-      rutasArboles[i] = ARBOL_HIELO;
-    }
-  } else {
-    rutasArboles[0] = ARBOL1;
-    rutasArboles[1] = ARBOL2;
-    rutasArboles[2] = ARBOL3;
-    rutasArboles[3] = ARBOL4;
-  }
+  // Combate
+  struct { HBITMAP *arr; const char *files[2]; } combat[] = {
+      { hCaballeroStand, {"../assets/caballero/caballero_war_stand_left.bmp", "../assets/caballero/caballero_war_stand_right.bmp"} },
+      { hCaballeroDefense, {"../assets/caballero/caballero_defense_left.bmp", "../assets/caballero/caballero_defense_right.bmp"} },
+      { hCaballeroDie, {"../assets/caballero/caballero_die_1_left.bmp", "../assets/caballero/caballero_die_1_right.bmp"} },
+      { hCaballeroDie2, {"../assets/caballero/caballero_die_2_left.bmp", "../assets/caballero/caballero_die_2_right.bmp"} },
+      { hCaballeroSEStand, {"../assets/caballero/caballero_war_NO_stand_left.bmp", "../assets/caballero/caballero_war_NO_stand_right.bmp"} },
+      { hGuerreroStand, {"../assets/guerrero/guerrero_war_stand_left.bmp", "../assets/guerrero/guerrero_war_stand_right.bmp"} },
+      { hGuerreroWalk, {"../assets/guerrero/guerrero_war_walk_left.bmp", "../assets/guerrero/guerrero_war_walk_right.bmp"} },
+      { hGuerreroDie, {"../assets/guerrero/guerrero_war_die_1_left.bmp", "../assets/guerrero/guerrero_war_die_1_right.bmp"} },
+      { hGuerreroDie2, {"../assets/guerrero/guerrero_war_die_2_left.bmp", "../assets/guerrero/guerrero_war_die_2_right.bmp"} }
+  };
+  for(int i=0; i<9; i++) for(int d=0; d<2; d++) combat[i].arr[d] = loadBmp(combat[i].files[d], 64, 64);
 
-  int cargados = 0;
-  for (int i = 0; i < 4; i++) {
-    hArboles[i] =
-        (HBITMAP)LoadImageA(NULL, rutasArboles[i], IMAGE_BITMAP,
-                            SPRITE_ARBOL, SPRITE_ARBOL, LR_LOADFROMFILE);
-    if (hArboles[i])
-      cargados++;
-  }
+  // Ataques
+  const char *atkFiles[][6] = {
+      {"../assets/caballero/caballero_war_move_1_left.bmp", "../assets/caballero/caballero_war_move_2_left.bmp", "../assets/caballero/caballero_war_move_3_left.bmp", "../assets/caballero/caballero_war_move_1_right.bmp", "../assets/caballero/caballero_war_move_2_right.bmp", "../assets/caballero/caballero_war_move_3_right.bmp"},
+      {"../assets/caballero/caballero_war_NO_move_1_left.bmp", "../assets/caballero/caballero_war_NO_move_2_left.bmp", "../assets/caballero/caballero_war_NO_move_3_left.bmp", "../assets/caballero/caballero_war_NO_move_1_right.bmp", "../assets/caballero/caballero_war_NO_move_2_right.bmp", "../assets/caballero/caballero_war_NO_move_3_right.bmp"},
+      {"../assets/guerrero/guerrero_war_move_1_left.bmp", "../assets/guerrero/guerrero_war_move_2_left.bmp", NULL, "../assets/guerrero/guerrero_war_move_1_right.bmp", "../assets/guerrero/guerrero_war_move_2_right.bmp", NULL}
+  };
+  for(int i=0; i<6; i++) { hCaballeroAtk[i/3][i%3] = loadBmp(atkFiles[0][i], 64, 64); hCaballeroSEAtk[i/3][i%3] = loadBmp(atkFiles[1][i], 64, 64); hCaballeroAtk[2 + i/3][i%3] = loadBmp(atkFiles[1][i], 64, 64); }
+  for(int i=0; i<4; i++) { int f = (i < 2) ? i : i+1; hGuerreroAtk[i/2][i%2] = loadBmp(atkFiles[2][f], 64, 64); }
 
-  // Cargar sprites de obreros
-  const char *rutasObr[] = {obrero_front, obrero_back, obrero_left,
-                            obrero_right};
+  const char *barcos[] = {BARCO_F, BARCO_B, BARCO_L, BARCO_R};
+  for(int i=0; i<4; i++) hBarcoBmp[i] = loadBmp(barcos[i], 192, 192);
+  hBarcoDestruidoBmp = loadBmp(BARCO_DESTRUIDO, 192, 192);
 
-  for (int i = 0; i < 4; i++) {
-    hObreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasObr[i], IMAGE_BITMAP, 64, 64,
-                                        LR_LOADFROMFILE);
-  }
-  // --- CARGAR SPRITES DE CABALLEROS ---
+  const char *vacas[][4] = {{VACA_FUEGO_F, VACA_FUEGO_B, VACA_FUEGO_L, VACA_FUEGO_R}, {VACA_HIELO_F, VACA_HIELO_B, VACA_HIELO_L, VACA_HIELO_R}, {VACA_F, VACA_B, VACA_L, VACA_R}};
+  for(int i=0; i<4; i++) hVacaBmp[i] = loadBmp(vacas[tIdx][i], 64, 64);
 
-  const char *rutasCab[] = {caballero_front, caballero_back, caballero_left,
-                            caballero_right};
-
-  for (int i = 0; i < 4; i++) {
-    hCaballeroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasCab[i], IMAGE_BITMAP, 64,
-                                           64, LR_LOADFROMFILE);
-  }
-
-  // Caballero sin escudo
-
-  const char *rutasCabSinEscudo[] = {
-      caballeroSinEscudo_front, caballeroSinEscudo_back,
-      caballeroSinEscudo_left, caballeroSinEscudo_right};
-
-  for (int i = 0; i < 4; i++) {
-    hCaballeroSinEscudoBmp[i] = (HBITMAP)LoadImageA(
-        NULL, rutasCabSinEscudo[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-  }
-
-  // --- CARGAR SPRITES DE GUERREROS ---
-  const char *rutasGuerr[] = {guerrero_front, guerrero_back, guerrero_left,
-                              guerrero_right};
-  for (int i = 0; i < 4; i++) {
-    hGuerreroBmp[i] = (HBITMAP)LoadImageA(NULL, rutasGuerr[i], IMAGE_BITMAP, 64,
-                                          64, LR_LOADFROMFILE);
-  }
-
-  // --- COMBATE: CABALLERO (stand, defense, die) ---
-  const char *cabStandLR[2] = {
-      "../assets/caballero/caballero_war_stand_left.bmp",
-      "../assets/caballero/caballero_war_stand_right.bmp"};
-  const char *cabDefLR[2] = {"../assets/caballero/caballero_defense_left.bmp",
-                             "../assets/caballero/caballero_defense_right.bmp"};
-  const char *cabDie1LR[2] = {"../assets/caballero/caballero_die_1_left.bmp",
-                              "../assets/caballero/caballero_die_1_right.bmp"};
-  const char *cabDie2LR[2] = {"../assets/caballero/caballero_die_2_left.bmp",
-                              "../assets/caballero/caballero_die_2_right.bmp"};
-  for (int i = 0; i < 2; i++) {
-    hCaballeroStand[i] = (HBITMAP)LoadImageA(NULL, cabStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hCaballeroDefense[i] = (HBITMAP)LoadImageA(NULL, cabDefLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hCaballeroDie[i] = (HBITMAP)LoadImageA(NULL, cabDie1LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hCaballeroDie2[i] = (HBITMAP)LoadImageA(NULL, cabDie2LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-  }
-
-  // --- COMBATE: GUERRERO (stand, walk, die) ---
-  const char *gueStandLR[2] = {"../assets/guerrero/guerrero_war_stand_left.bmp",
-                               "../assets/guerrero/guerrero_war_stand_right.bmp"};
-  const char *gueWalkLR[2] = {"../assets/guerrero/guerrero_war_walk_left.bmp",
-                              "../assets/guerrero/guerrero_war_walk_right.bmp"};
-  const char *gueDie1LR[2] = {"../assets/guerrero/guerrero_war_die_1_left.bmp",
-                              "../assets/guerrero/guerrero_war_die_1_right.bmp"};
-  const char *gueDie2LR[2] = {"../assets/guerrero/guerrero_war_die_2_left.bmp",
-                              "../assets/guerrero/guerrero_war_die_2_right.bmp"};
-  for (int i = 0; i < 2; i++) {
-    hGuerreroStand[i] = (HBITMAP)LoadImageA(NULL, gueStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hGuerreroWalk[i] = (HBITMAP)LoadImageA(NULL, gueWalkLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hGuerreroDie[i] = (HBITMAP)LoadImageA(NULL, gueDie1LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-    hGuerreroDie2[i] = (HBITMAP)LoadImageA(NULL, gueDie2LR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-  }
-
-  // --- COMBATE: CABALLERO SIN ESCUDO (stand) ---
-  const char *cseStandLR[2] = {
-      "../assets/caballero/caballero_war_NO_stand_left.bmp",
-      "../assets/caballero/caballero_war_NO_stand_right.bmp"};
-  for (int i = 0; i < 2; i++) {
-    hCaballeroSEStand[i] = (HBITMAP)LoadImageA(NULL, cseStandLR[i], IMAGE_BITMAP, 64, 64, LR_LOADFROMFILE);
-  }
-
-
-
-  // Ataque caballero (left/right, 3 frames)
-  const char *cabAtkL[3] = {
-      "../assets/caballero/caballero_war_move_1_left.bmp",
-      "../assets/caballero/caballero_war_move_2_left.bmp",
-      "../assets/caballero/caballero_war_move_3_left.bmp"};
-  const char *cabAtkR[3] = {
-      "../assets/caballero/caballero_war_move_1_right.bmp",
-      "../assets/caballero/caballero_war_move_2_right.bmp",
-      "../assets/caballero/caballero_war_move_3_right.bmp"};
-    // Caballero sin escudo: nuevos sprites de ataque (NO_move)
-    const char *cseAtkL[3] = {
-      "../assets/caballero/caballero_war_NO_move_1_left.bmp",
-      "../assets/caballero/caballero_war_NO_move_2_left.bmp",
-      "../assets/caballero/caballero_war_NO_move_3_left.bmp"};
-    const char *cseAtkR[3] = {
-      "../assets/caballero/caballero_war_NO_move_1_right.bmp",
-      "../assets/caballero/caballero_war_NO_move_2_right.bmp",
-      "../assets/caballero/caballero_war_NO_move_3_right.bmp"};
-
-  for (int i = 0; i < 3; i++) {
-    hCaballeroAtk[0][i] = (HBITMAP)LoadImageA(NULL, cabAtkL[i], IMAGE_BITMAP,
-                                              64, 64,   LR_LOADFROMFILE);
-    hCaballeroAtk[1][i] = (HBITMAP)LoadImageA(NULL, cabAtkR[i], IMAGE_BITMAP,
-                                              64, 64, LR_LOADFROMFILE);
-    hCaballeroAtk[2][i] = (HBITMAP)LoadImageA(NULL, cseAtkL[i], IMAGE_BITMAP,
-                                              64, 64, LR_LOADFROMFILE);
-    hCaballeroAtk[3][i] = (HBITMAP)LoadImageA(NULL, cseAtkR[i], IMAGE_BITMAP,
-                                              64, 64, LR_LOADFROMFILE);
-  }
-
-  // Cargar sprites de ataque del caballero sin escudo
-  for (int i = 0; i < 3; i++) {
-    hCaballeroSEAtk[0][i] = (HBITMAP)LoadImageA(NULL, cseAtkL[i], IMAGE_BITMAP,
-                                                64, 64, LR_LOADFROMFILE);
-    hCaballeroSEAtk[1][i] = (HBITMAP)LoadImageA(NULL, cseAtkR[i], IMAGE_BITMAP,
-                                                64, 64, LR_LOADFROMFILE);
-  }
-
-  // Ataque guerrero (left/right, 2 frames)
-  const char *gueAtkL[2] = {"../assets/guerrero/guerrero_war_move_1_left.bmp",
-                            "../assets/guerrero/guerrero_war_move_2_left.bmp"};
-  const char *gueAtkR[2] = {"../assets/guerrero/guerrero_war_move_1_right.bmp",
-                            "../assets/guerrero/guerrero_war_move_2_right.bmp"};
-  for (int i = 0; i < 2; i++) {
-    hGuerreroAtk[0][i] = (HBITMAP)LoadImageA(NULL, gueAtkL[i], IMAGE_BITMAP, 64,
-                                             64, LR_LOADFROMFILE);
-    hGuerreroAtk[1][i] = (HBITMAP)LoadImageA(NULL, gueAtkR[i], IMAGE_BITMAP, 64,
-                                             64, LR_LOADFROMFILE);
-  }
-
-  // --- CARGAR SPRITES DE BARCO (192x192) ---
-  const char *rutasBarco[] = {BARCO_F, BARCO_B, BARCO_L, BARCO_R};
-
-  for (int i = 0; i < 4; i++) {
-    hBarcoBmp[i] = (HBITMAP)LoadImageA(NULL, rutasBarco[i], IMAGE_BITMAP,
-                                       192, 192, LR_LOADFROMFILE);
-  }
-
-  // Cargar sprite del barco destruido
-  hBarcoDestruidoBmp = (HBITMAP)LoadImageA(NULL, BARCO_DESTRUIDO, IMAGE_BITMAP,
-                                           192, 192, LR_LOADFROMFILE);
-  
-
-  const char *rutasVaca[4];
-  if (mapaEsTemaFuego()) {
-    rutasVaca[DIR_FRONT] = VACA_FUEGO_F;
-    rutasVaca[DIR_BACK] = VACA_FUEGO_B;
-    rutasVaca[DIR_LEFT] = VACA_FUEGO_L;
-    rutasVaca[DIR_RIGHT] = VACA_FUEGO_R;
-  } else if (mapaEsTemaHielo()) {
-    rutasVaca[DIR_FRONT] = VACA_HIELO_F;
-    rutasVaca[DIR_BACK] = VACA_HIELO_B;
-    rutasVaca[DIR_LEFT] = VACA_HIELO_L;
-    rutasVaca[DIR_RIGHT] = VACA_HIELO_R;
-  } else {
-    rutasVaca[DIR_FRONT] = VACA_F;
-    rutasVaca[DIR_BACK] = VACA_B;
-    rutasVaca[DIR_LEFT] = VACA_L;
-    rutasVaca[DIR_RIGHT] = VACA_R;
-  }
-  for (int i = 0; i < 4; i++) {
-    hVacaBmp[i] = (HBITMAP)LoadImageA(NULL, rutasVaca[i], IMAGE_BITMAP, 64, 64,
-                                      LR_LOADFROMFILE);
-  }
-
-  if (gGenerarRecursos) {
-    generarBosqueAutomatico();
-  } else {
-    mapaReconstruirCollisionMap();
-  }
+  if (gGenerarRecursos) generarBosqueAutomatico(); else mapaReconstruirCollisionMap();
 }
 
 // ============================================================================
@@ -1692,7 +1183,7 @@ static void dibujarUnidadCombat(HDC hdcBuffer, HDC hdcSprites, Unidad *u,
   bool muerto = (u->vida <= 0);
   ULONGLONG dtMuerte = 0;
   if (muerto) {
-    ULONGLONG ahora = GetTickCount64();
+    ULONGLONG ahora = (ULONGLONG)GetTickCount();
     if (unidadCuerpoDesaparecido(u, ahora, &dtMuerte)) {
       return; // Ocultar sprite tras 5s del deceso
     }
@@ -1990,7 +1481,7 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
   static int frameAtaque = 0;
   {
     static ULONGLONG sUltimoAtkMs = 0;
-    ULONGLONG ahora = GetTickCount64();
+    ULONGLONG ahora = (ULONGLONG)GetTickCount();
     if (sUltimoAtkMs == 0 || (ahora > sUltimoAtkMs && (ahora - sUltimoAtkMs) >= 500ULL)) {
       frameAtaque = (frameAtaque + 1) % 6;
       sUltimoAtkMs = ahora;
@@ -2045,312 +1536,114 @@ void dibujarMundo(HDC hdc, RECT rect, Camara cam, struct Jugador *pJugador,
 
   // Recorrer cada fila del mapa (0 a GRID_SIZE-1)
   for (int f = 0; f < GRID_SIZE; f++) {
-    // A) Árboles se dibujan al final de la fila para quedar encima.
+    // Rango Y de la fila actual
+    float yMin = (float)(f * TILE_SIZE);
+    float yMax = (float)((f + 1) * TILE_SIZE);
 
-    // ================================================================
-    // B) DIBUJAR OBREROS CUYA BASE (y + 64) COINCIDE CON ESTA FILA
-    // ================================================================
-    // La "base de los pies" del obrero está en y + TILE_SIZE (64)
-    // Calculamos la fila del mapa correspondiente a esa coordenada Y
-    int yMinFila = f * TILE_SIZE;
-    int yMaxFila = (f + 1) * TILE_SIZE;
-
-    // Puntero base al array de obreros
+    // --- 1. OBREROS ---
     Unidad *baseObreros = pJugador->obreros;
-
     for (Unidad *o = baseObreros; o < baseObreros + MAX_OBREROS; o++) {
-      // La base del obrero (pies) está en o->y + TILE_SIZE
-      float basePies = o->y + (float)TILE_SIZE;
-
-      // Si la base del obrero cae en esta fila, dibujarlo
-      // Si la base del obrero cae en esta fila, dibujarlo
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((o->x - cam.x) * cam.zoom);
-        int pantY = (int)((o->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom); // Definir tam (asumiendo 64px)
-
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          // SELECCIONAR SPRITE SEGUN DIRECCION
-          // Suponemos que hObreroBmp es un array de 4 bitmaps [FRONT, BACK,
-          // LEFT, RIGHT] o algo similar. La estructura Unidad tiene 'dir'.
-          // Buscamos hObreroBmp global.
-
-          // NOTA: Como no vi la declaración exacta, asumo el patrón usado en
-          // caballeros (hCaballeroBmp[c->dir]) Si falla, el compilador avisará
-          // y corregiremos el nombre exacto.
-          SelectObject(hdcSprites, hObreroBmp[o->dir]);
-
-          // Dibujar Frame actual (si hay animación por frames en el bitmap,
-          // ajustar srcX) Por ahora dibujamos el frame 0 (0,0) o usamos
-          // o->frame si el bitmap es una tira. Viendo el código original
-          // (truncado), asumiremos dibujo simple de 64x64.
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         64, 64, RGB(255, 255, 255));
-
-          // Dibujar barra de vida
-          if (unidadBarraVisible(o)) {
-            dibujarBarraVida(hdcBuffer, pantX, pantY, o->vida, o->vidaMax,
-                             cam.zoom);
-          }
-        }
-
-        // Círculo de selección
-        if (o->seleccionado && unidadBarraVisible(o)) {
-          HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-          HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-          SelectObject(hdcBuffer, nullBrush);
-          SelectObject(hdcBuffer, verde);
-          Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                  pantY + tam + 5);
-          DeleteObject(verde);
+      if (o->y + TILE_SIZE >= yMin && o->y + TILE_SIZE < yMax) {
+        int px = (int)((o->x - cam.x) * cam.zoom), py = (int)((o->y - cam.y) * cam.zoom), sz = (int)(64 * cam.zoom);
+        if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
+           SelectObject(hdcSprites, hObreroBmp[o->dir]);
+           TransparentBlt(hdcBuffer, px, py, sz, sz, hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
+           if (unidadBarraVisible(o)) dibujarBarraVida(hdcBuffer, px, py, o->vida, o->vidaMax, cam.zoom);
+           if (o->seleccionado && unidadBarraVisible(o)) {
+               HBRUSH nb = (HBRUSH)GetStockObject(NULL_BRUSH); HPEN p = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+               SelectObject(hdcBuffer, nb); SelectObject(hdcBuffer, p);
+               Ellipse(hdcBuffer, px, py + sz - 10, px + sz, py + sz + 5);
+               DeleteObject(p);
+           }
         }
       }
     }
 
-    // ================================================================
-    // Z) DIBUJAR ÁRBOLES DE ESTA FILA (AL FINAL PARA ESTAR ENCIMA)
-    // ================================================================
+    // --- 2. ÁRBOLES ---
     for (int c = 0; c < GRID_SIZE; c++) {
-      char celdaContenido = *(*(ptrMatriz + f) + c);
-      if (celdaContenido == SIMBOLO_ARBOL) {
-        int mundoX = c * TILE_SIZE;
-        int mundoY = f * TILE_SIZE;
-        int pantX = (int)((mundoX - cam.x) * cam.zoom);
-        int pantY = (int)((mundoY - cam.y) * cam.zoom);
-        int tamZoom = (int)(SPRITE_ARBOL * cam.zoom);
-        if (pantX + tamZoom > 0 && pantX < anchoP && pantY + tamZoom > 0 &&
-            pantY < altoP) {
+      if (*(*(ptrMatriz + f) + c) == SIMBOLO_ARBOL) {
+        int px = (int)((c * TILE_SIZE - cam.x) * cam.zoom), py = (int)((f * TILE_SIZE - cam.y) * cam.zoom), sz = (int)(SPRITE_ARBOL * cam.zoom);
+        if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
           SelectObject(hdcSprites, hArboles[0]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tamZoom, tamZoom, hdcSprites,
-                         0, 0, SPRITE_ARBOL, SPRITE_ARBOL, RGB(255, 255, 255));
-          
-          // DIBUJAR BARRA DE VIDA DEL ARBOL
-          // Vida maxima 3, actual gArbolesVida[f][c]
-          int vidaActual = gArbolesVida[f][c];
-          if (vidaActual > 0 && vidaActual < 3) { // Solo mostrar si esta dañado (opcional, o siempre)
-             // El usuario pidio "encima de cada arbol este una barra de vida"
-             // Asi que la mostramos siempre o solo al dañarse?
-             // "encima de cada arbol este una barra de vida" -> Siempre o casi siempre.
-             // Mostremosla siempre para cumplir literal, o mejor:
-             // Estilo simple: verde/rojo. 
-             // Ajuste de centrado: (128 - 64) / 2 = 32px de offset
-             int offsetX = (int)(32 * cam.zoom);
-             dibujarBarraVida(hdcBuffer, pantX + offsetX, pantY - 10, vidaActual, 3, cam.zoom);
-          } else if (vidaActual == 3) {
-             // Mostrar tambien full vida si se pide "encima de cada arbol"
-             int offsetX = (int)(32 * cam.zoom);
-             dibujarBarraVida(hdcBuffer, pantX + offsetX, pantY - 10, 3, 3, cam.zoom);
-          }
+          TransparentBlt(hdcBuffer, px, py, sz, sz, hdcSprites, 0, 0, SPRITE_ARBOL, SPRITE_ARBOL, RGB(255, 255, 255));
+          int v = gArbolesVida[f][c];
+          if (v > 0) dibujarBarraVida(hdcBuffer, px + (int)(32 * cam.zoom), py - 10, (v==3?3:v), 3, cam.zoom);
         }
       }
     }
 
-    // C) DIBUJAR CABALLEROS (NUEVO)
-    Unidad *baseCaballeros = pJugador->caballeros;
-    for (Unidad *c = baseCaballeros; c < baseCaballeros + MAX_CABALLEROS; c++) {
-      float basePies = c->y + (float)TILE_SIZE;
+    // --- 3. UNIDADES DE COMBATE (ALIADOS) ---
+    struct { Unidad *base; int cap; int type; int offsetIdx; } groups[] = {
+        {pJugador->caballeros, MAX_CABALLEROS, TIPO_CABALLERO, 0},
+        {pJugador->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, TIPO_CABALLERO_SIN_ESCUDO, 4},
+        {pJugador->guerreros, MAX_GUERREROS, TIPO_GUERRERO, 8}
+    };
 
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((c->x - cam.x) * cam.zoom);
-        int pantY = (int)((c->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
-
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          int idxCab = (int)(c - baseCaballeros);
-          bool atacando =
-              (idxCab >= 0 && idxCab < 12) ? ataqueAliados[idxCab] : false;
-          dibujarUnidadCombat(hdcBuffer, hdcSprites, c, cam, anchoP, altoP,
-                              permitirStand, false, atacando, frameAtaque);
-
-          // Dibujar barra de vida
-          if (unidadBarraVisible(c)) {
-            dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
-                             cam.zoom);
-          }
-
-          // Círculo de selección
-          if (c->seleccionado && unidadBarraVisible(c)) {
-            HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-            SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, verde);
-            Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                    pantY + tam + 5);
-            DeleteObject(verde);
-          }
-        }
-      }
-    }
-
-    // C.5) DIBUJAR CABALLEROS SIN ESCUDO (NUEVO)
-    Unidad *baseCSE = pJugador->caballerosSinEscudo;
-    for (Unidad *c = baseCSE; c < baseCSE + MAX_CABALLEROS_SIN_ESCUDO; c++) {
-      float basePies = c->y + (float)TILE_SIZE;
-
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((c->x - cam.x) * cam.zoom);
-        int pantY = (int)((c->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
-
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          SelectObject(hdcSprites, hCaballeroSinEscudoBmp[c->dir]);
-
-          // Dibujar barra de vida
-          if (unidadBarraVisible(c)) {
-            dibujarBarraVida(hdcBuffer, pantX, pantY, c->vida, c->vidaMax,
-                             cam.zoom);
-          }
-
-          // Círculo de selección (verde, igual que aliados)
-          int idxCse = 4 + (int)(c - baseCSE);
-          bool atacando =
-              (idxCse >= 0 && idxCse < 12) ? ataqueAliados[idxCse] : false;
-          dibujarUnidadCombat(hdcBuffer, hdcSprites, c, cam, anchoP, altoP,
-                              permitirStand, false, atacando, frameAtaque);
-          if (c->seleccionado && unidadBarraVisible(c)) {
-            HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-            SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, verde);
-            Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                    pantY + tam + 5);
-            DeleteObject(verde);
-          }
-        }
-      }
-    }
-
-    // D) DIBUJAR GUERREROS (NUEVO)
-    Unidad *baseGuerreros = pJugador->guerreros;
-    for (Unidad *g = baseGuerreros; g < baseGuerreros + MAX_GUERREROS; g++) {
-      float basePies = g->y + (float)TILE_SIZE;
-
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((g->x - cam.x) * cam.zoom);
-        int pantY = (int)((g->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          int idxG = 8 + (int)(g - baseGuerreros);
-          bool atacando =
-              (idxG >= 0 && idxG < 12) ? ataqueAliados[idxG] : false;
-          dibujarUnidadCombat(hdcBuffer, hdcSprites, g, cam, anchoP, altoP,
-                              permitirStandGuerrero, false, atacando, frameAtaque);
-
-          // Dibujar barra de vida
-          if (unidadBarraVisible(g)) {
-            dibujarBarraVida(hdcBuffer, pantX, pantY, g->vida, g->vidaMax,
-                             cam.zoom);
-          }
-          // Círculo de selección (verde, unificado con aliados)
-          if (g->seleccionado && unidadBarraVisible(g)) {
-            HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-            HPEN verde = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-            SelectObject(hdcBuffer, nullBrush);
-            SelectObject(hdcBuffer, verde);
-            Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                    pantY + tam + 5);
-            DeleteObject(verde);
-          }
-        }
-      }
-    }
-
-    // D.5) DIBUJAR ENEMIGOS PASIVOS
-    if (enemigosActivos && enemigosActivosCount > 0) {
-      for (int idx = 0; idx < enemigosActivosCount; idx++) {
-        Unidad *e = &enemigosActivos[idx];
-        float basePies = e->y + (float)TILE_SIZE;
-
-        if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-          int pantX = (int)((e->x - cam.x) * cam.zoom);
-          int pantY = (int)((e->y - cam.y) * cam.zoom);
-          int tam = (int)(64 * cam.zoom);
-
-          if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-              pantY < altoP) {
-                bool atacando = (idx >= 0 && idx < 8) ? ataqueEnemigos[idx] : false;
-                bool permitirStandEnemigo = permitirStand;
-                if (e->tipo == TIPO_GUERRERO) {
-                  permitirStandEnemigo = permitirStandGuerrero;
+    for(int g=0; g<3; g++) {
+        Unidad *u = groups[g].base, *end = u + groups[g].cap;
+        for(; u < end; u++) {
+            if (u->y + TILE_SIZE >= yMin && u->y + TILE_SIZE < yMax) {
+                int px = (int)((u->x - cam.x) * cam.zoom), py = (int)((u->y - cam.y) * cam.zoom), sz = (int)(64 * cam.zoom);
+                if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
+                    int idx = groups[g].offsetIdx + (int)(u - groups[g].base);
+                    bool atk = (idx >= 0 && idx < 12) ? ataqueAliados[idx] : false;
+                    bool stand = (g==2) ? permitirStandGuerrero : permitirStand;
+                    
+                    if (groups[g].type == TIPO_CABALLERO_SIN_ESCUDO) SelectObject(hdcSprites, hCaballeroSinEscudoBmp[u->dir]);
+                    dibujarUnidadCombat(hdcBuffer, hdcSprites, u, cam, anchoP, altoP, stand, false, atk, frameAtaque);
+                    
+                    if (unidadBarraVisible(u)) dibujarBarraVida(hdcBuffer, px, py, u->vida, u->vidaMax, cam.zoom);
+                    if (u->seleccionado && unidadBarraVisible(u)) {
+                         HBRUSH nb = (HBRUSH)GetStockObject(NULL_BRUSH); HPEN p = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
+                         SelectObject(hdcBuffer, nb); SelectObject(hdcBuffer, p);
+                         Ellipse(hdcBuffer, px, py + sz - 10, px + sz, py + sz + 5); DeleteObject(p);
+                    }
                 }
-                dibujarUnidadCombat(hdcBuffer, hdcSprites, e, cam, anchoP, altoP,
-                  permitirStandEnemigo, true, atacando, frameAtaque);
-                bool hudVisible = unidadBarraVisible(e);
-                // Barra de vida enemiga (rojo)
-                if (hudVisible) {
-                  dibujarBarraVidaColor(hdcBuffer, pantX, pantY, e->vida, e->vidaMax, cam.zoom, RGB(200, 60, 60));
-                  HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-                  HPEN rojo = CreatePen(PS_SOLID, 2, RGB(200, 60, 60));
-                  SelectObject(hdcBuffer, nullBrush);
-                  SelectObject(hdcBuffer, rojo);
-                  Ellipse(hdcBuffer, pantX, pantY + tam - 10, pantX + tam,
-                    pantY + tam + 5);
-                  DeleteObject(rojo);
-                }
-          }
-        }
-      }
-    }
-
-    // E) DIBUJAR VACAS DINÁMICAS DE ESTA FILA (64x64)
-    // Usar el array dinámico gVacas en lugar de leer desde mapaObjetos
-    Vaca *baseVacas = gVacas;
-    for (Vaca *vaca = baseVacas; vaca < baseVacas + gNumVacas; vaca++) {
-      // La base de la vaca (pies) está en vaca->y + TILE_SIZE
-      float basePies = vaca->y + (float)TILE_SIZE;
-
-      // Si la base de la vaca cae en esta fila, dibujarla
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((vaca->x - cam.x) * cam.zoom);
-        int pantY = (int)((vaca->y - cam.y) * cam.zoom);
-        int tam = (int)(64 * cam.zoom);
-
-        // Verificar que la vaca esté visible en pantalla
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          // Seleccionar sprite según dirección de la vaca
-          SelectObject(hdcSprites, hVacaBmp[vaca->dir]);
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         64, 64, RGB(255, 255, 255));
-        }
-      }
-    }
-
-    // F) DIBUJAR BARCO SI ESTÁ ACTIVO (192x192)
-    if (pJugador->barco.activo) {
-      Barco *b = &pJugador->barco;
-      // El barco es 192px de alto, por lo que su base está en y + 192
-      float basePies = b->y + 192.0f;
-
-      // Debug temporal cada 60 frames aprox para no spamear
-      static int debugFrame = 0;
-      debugFrame++;
-
-      if (basePies >= (float)yMinFila && basePies < (float)yMaxFila) {
-        int pantX = (int)((b->x - cam.x) * cam.zoom);
-        int pantY = (int)((b->y - cam.y) * cam.zoom);
-        int tam = (int)(192 * cam.zoom);
-
-        if (pantX + tam > 0 && pantX < anchoP && pantY + tam > 0 &&
-            pantY < altoP) {
-          // Seleccionar sprite: destruido o construido según estado
-          if (b->construido) {
-            HBITMAP sprite = hBarcoBmp[b->dir];
-            if (!sprite) {
-                 sprite = hBarcoBmp[0]; 
             }
-            SelectObject(hdcSprites, sprite);
-          } else {
-            SelectObject(hdcSprites, hBarcoDestruidoBmp);
-          }
-          TransparentBlt(hdcBuffer, pantX, pantY, tam, tam, hdcSprites, 0, 0,
-                         192, 192, RGB(255, 255, 255));
         }
-      }
+    }
+
+    // --- 4. ENEMIGOS ---
+    if (enemigosActivos && enemigosActivosCount > 0) {
+         for (int i = 0; i < enemigosActivosCount; i++) {
+             Unidad *e = &enemigosActivos[i];
+             if (e->y + TILE_SIZE >= yMin && e->y + TILE_SIZE < yMax) {
+                 int px = (int)((e->x - cam.x) * cam.zoom), py = (int)((e->y - cam.y) * cam.zoom), sz = (int)(64 * cam.zoom);
+                 if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
+                     dibujarUnidadCombat(hdcBuffer, hdcSprites, e, cam, anchoP, altoP, (e->tipo == TIPO_GUERRERO ? permitirStandGuerrero : permitirStand), true, (i<8?ataqueEnemigos[i]:false), frameAtaque);
+                     if (unidadBarraVisible(e)) {
+                         dibujarBarraVidaColor(hdcBuffer, px, py, e->vida, e->vidaMax, cam.zoom, RGB(200, 60, 60));
+                         HBRUSH nb = (HBRUSH)GetStockObject(NULL_BRUSH); HPEN p = CreatePen(PS_SOLID, 2, RGB(200, 60, 60));
+                         SelectObject(hdcBuffer, nb); SelectObject(hdcBuffer, p);
+                         Ellipse(hdcBuffer, px, py + sz - 10, px + sz, py + sz + 5); DeleteObject(p);
+                     }
+                 }
+             }
+         }
+    }
+
+    // --- 5. VACAS ---
+    Vaca *baseVacas = gVacas;
+    for (Vaca *v = baseVacas; v < baseVacas + gNumVacas; v++) {
+        if (v->y + TILE_SIZE >= yMin && v->y + TILE_SIZE < yMax) {
+            int px = (int)((v->x - cam.x) * cam.zoom), py = (int)((v->y - cam.y) * cam.zoom), sz = (int)(64 * cam.zoom);
+            if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
+                SelectObject(hdcSprites, hVacaBmp[v->dir]);
+                TransparentBlt(hdcBuffer, px, py, sz, sz, hdcSprites, 0, 0, 64, 64, RGB(255, 255, 255));
+            }
+        }
+    }
+
+    // --- 6. BARCO ---
+    if (pJugador->barco.activo) {
+        Barco *b = &pJugador->barco;
+        if (b->y + 192.0f >= yMin && b->y + 192.0f < yMax) {
+             int px = (int)((b->x - cam.x) * cam.zoom), py = (int)((b->y - cam.y) * cam.zoom), sz = (int)(192 * cam.zoom);
+             if (px + sz > 0 && px < anchoP && py + sz > 0 && py < altoP) {
+                SelectObject(hdcSprites, b->construido ? (hBarcoBmp[b->dir] ? hBarcoBmp[b->dir] : hBarcoBmp[0]) : hBarcoDestruidoBmp);
+                TransparentBlt(hdcBuffer, px, py, sz, sz, hdcSprites, 0, 0, 192, 192, RGB(255, 255, 255));
+             }
+        }
     }
   }
 

@@ -100,7 +100,7 @@ static void guardadaAUnidad(const UnidadGuardada *src, Unidad *dst) {
   dst->recibiendoAtaque = false;
   if (dst->vida <= 0) {
     // Guardado: al restaurar una unidad muerta evitamos mostrar animaciones inesperadas
-    const ULONGLONG ahora = GetTickCount64();
+    const ULONGLONG ahora = (ULONGLONG)GetTickCount();
     const ULONGLONG desfase = 8000ULL;
     dst->tiempoMuerteMs = (ahora > desfase) ? (ahora - desfase) : 1ULL;
     dst->frameMuerte = 1;

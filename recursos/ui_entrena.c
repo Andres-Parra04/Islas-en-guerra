@@ -332,6 +332,35 @@ void menuEntrenamientoDibujar(HDC hdc, MenuEntrenamiento *menu,
   DeleteObject(brushFondo);
 }
 
+// Helper para procesar el entrenamiento de cualquier unidad
+typedef bool (*EntrenarFunc)(struct Jugador *, float, float);
+
+static void procesarEntrenamientoUnidad(MenuEntrenamiento *menu, struct Jugador *jugador, 
+                                      RECT btn, EntrenarFunc func,
+                                      int oro, int comida, int madera, int hierro,
+                                      const char *errorMax) {
+    if (jugador->Oro >= oro && jugador->Comida >= comida && 
+        jugador->Madera >= madera && jugador->Hierro >= hierro) {
+        if (func(jugador, 0, 0)) {
+            jugador->Oro -= oro;
+            jugador->Comida -= comida;
+            jugador->Madera -= madera;
+            jugador->Hierro -= hierro;
+        } else {
+            strcpy(menu->mensajeError, errorMax);
+            menu->tiempoError = 60;
+        }
+    } else {
+        strcpy(menu->mensajeError, "Recursos insuficientes!");
+        menu->tiempoError = 60;
+    }
+}
+
+// Helper para verificar clic en botón
+static bool isClicked(int x, int y, RECT r) {
+    return (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+}
+
 bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
                             int pantallaX, int pantallaY) {
   if (!menu->abierto)
@@ -344,118 +373,49 @@ bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
     return false;
   }
 
+  // Declaraciones extern para las funciones de recursos
+  extern bool entrenarObrero(struct Jugador * j, float x, float y);
+  extern bool entrenarCaballero(struct Jugador * j, float x, float y);
+  extern bool entrenarCaballeroSinEscudo(struct Jugador * j, float x, float y);
+  extern bool entrenarGuerrero(struct Jugador * j, float x, float y);
+
   // --- ENTRENAR OBRERO ---
-  if (pantallaX >= menu->botonObrero.left &&
-      pantallaX <= menu->botonObrero.right &&
-      pantallaY >= menu->botonObrero.top &&
-      pantallaY <= menu->botonObrero.bottom) {
-    // Aquí se llamará a la función de entrenamiento
-    // Por ahora solo validamos recursos
-    if (jugador->Oro >= COSTO_OBRERO_ORO &&
-        jugador->Comida >= COSTO_OBRERO_COMIDA) {
-      // La función entrenarObrero() se implementará en recursos.c
-      extern bool entrenarObrero(struct Jugador * j, float x, float y);
-      if (entrenarObrero(jugador, 0,
-                         0)) { // x,y se calculan dentro de la función
-        jugador->Oro -= COSTO_OBRERO_ORO;
-        jugador->Comida -= COSTO_OBRERO_COMIDA;
-      } else {
-        strcpy(menu->mensajeError, "No hay espacio para mas obreros!");
-        menu->tiempoError = 60;
-      }
-    } else {
-      strcpy(menu->mensajeError, "Recursos insuficientes!");
-      menu->tiempoError = 60;
-    }
-    return true;
+  if (isClicked(pantallaX, pantallaY, menu->botonObrero)) {
+      procesarEntrenamientoUnidad(menu, jugador, menu->botonObrero, entrenarObrero,
+                                COSTO_OBRERO_ORO, COSTO_OBRERO_COMIDA, 0, 0,
+                                "No hay espacio para mas obreros!");
+      return true;
   }
 
   // --- ENTRENAR CABALLERO CON ESCUDO ---
-  if (pantallaX >= menu->botonCaballero.left &&
-      pantallaX <= menu->botonCaballero.right &&
-      pantallaY >= menu->botonCaballero.top &&
-      pantallaY <= menu->botonCaballero.bottom) {
-    if (jugador->Oro >= COSTO_CABALLERO_ORO &&
-        jugador->Comida >= COSTO_CABALLERO_COMIDA &&
-        jugador->Madera >= COSTO_CABALLERO_MADERA &&
-        jugador->Hierro >= COSTO_CABALLERO_HIERRO) {
-      extern bool entrenarCaballero(struct Jugador * j, float x, float y);
-      if (entrenarCaballero(jugador, 0, 0)) {
-        jugador->Oro -= COSTO_CABALLERO_ORO;
-        jugador->Comida -= COSTO_CABALLERO_COMIDA;
-        jugador->Madera -= COSTO_CABALLERO_MADERA;
-        jugador->Hierro -= COSTO_CABALLERO_HIERRO;
-      } else {
-        strcpy(menu->mensajeError,
-               "\xA1No hay espacio para m\xE1s caballeros!");
-        menu->tiempoError = 60;
-      }
-    } else {
-      strcpy(menu->mensajeError, "\xA1Recursos insuficientes!");
-      menu->tiempoError = 60;
-    }
-    return true;
+  if (isClicked(pantallaX, pantallaY, menu->botonCaballero)) {
+      procesarEntrenamientoUnidad(menu, jugador, menu->botonCaballero, entrenarCaballero,
+                                COSTO_CABALLERO_ORO, COSTO_CABALLERO_COMIDA, 
+                                COSTO_CABALLERO_MADERA, COSTO_CABALLERO_HIERRO,
+                                "No hay espacio para mas caballeros!");
+      return true;
   }
 
   // --- ENTRENAR CABALLERO SIN ESCUDO ---
-  if (pantallaX >= menu->botonCaballeroSinEscudo.left &&
-      pantallaX <= menu->botonCaballeroSinEscudo.right &&
-      pantallaY >= menu->botonCaballeroSinEscudo.top &&
-      pantallaY <= menu->botonCaballeroSinEscudo.bottom) {
-    if (jugador->Oro >= COSTO_CABALLERO_SIN_ESCUDO_ORO &&
-        jugador->Comida >= COSTO_CABALLERO_SIN_ESCUDO_COMIDA &&
-        jugador->Madera >= COSTO_CABALLERO_SIN_ESCUDO_MADERA &&
-        jugador->Hierro >= COSTO_CABALLERO_SIN_ESCUDO_HIERRO) {
-      extern bool entrenarCaballeroSinEscudo(struct Jugador * j, float x,
-                                             float y);
-      if (entrenarCaballeroSinEscudo(jugador, 0, 0)) {
-        jugador->Oro -= COSTO_CABALLERO_SIN_ESCUDO_ORO;
-        jugador->Comida -= COSTO_CABALLERO_SIN_ESCUDO_COMIDA;
-        jugador->Madera -= COSTO_CABALLERO_SIN_ESCUDO_MADERA;
-        jugador->Hierro -= COSTO_CABALLERO_SIN_ESCUDO_HIERRO;
-      } else {
-        strcpy(menu->mensajeError,
-               "\xA1No hay espacio para m\xE1s caballeros!");
-        menu->tiempoError = 60;
-      }
-    } else {
-      strcpy(menu->mensajeError, "\xA1Recursos insuficientes!");
-      menu->tiempoError = 60;
-    }
-    return true;
+  if (isClicked(pantallaX, pantallaY, menu->botonCaballeroSinEscudo)) {
+      procesarEntrenamientoUnidad(menu, jugador, menu->botonCaballeroSinEscudo, entrenarCaballeroSinEscudo,
+                                COSTO_CABALLERO_SIN_ESCUDO_ORO, COSTO_CABALLERO_SIN_ESCUDO_COMIDA, 
+                                COSTO_CABALLERO_SIN_ESCUDO_MADERA, COSTO_CABALLERO_SIN_ESCUDO_HIERRO,
+                                "No hay espacio para mas caballeros!");
+      return true;
   }
 
   // --- ENTRENAR GUERRERO ---
-  if (pantallaX >= menu->botonGuerrero.left &&
-      pantallaX <= menu->botonGuerrero.right &&
-      pantallaY >= menu->botonGuerrero.top &&
-      pantallaY <= menu->botonGuerrero.bottom) {
-    if (jugador->Oro >= COSTO_GUERRERO_ORO &&
-        jugador->Comida >= COSTO_GUERRERO_COMIDA &&
-        jugador->Madera >= COSTO_GUERRERO_MADERA &&
-        jugador->Hierro >= COSTO_GUERRERO_HIERRO) {
-      extern bool entrenarGuerrero(struct Jugador * j, float x, float y);
-      if (entrenarGuerrero(jugador, 0, 0)) {
-        jugador->Oro -= COSTO_GUERRERO_ORO;
-        jugador->Comida -= COSTO_GUERRERO_COMIDA;
-        jugador->Madera -= COSTO_GUERRERO_MADERA;
-        jugador->Hierro -= COSTO_GUERRERO_HIERRO;
-      } else {
-        strcpy(menu->mensajeError, "No hay espacio para mas guerreros!");
-        menu->tiempoError = 60;
-      }
-    } else {
-      strcpy(menu->mensajeError, "Recursos insuficientes!");
-      menu->tiempoError = 60;
-    }
-    return true;
+  if (isClicked(pantallaX, pantallaY, menu->botonGuerrero)) {
+      procesarEntrenamientoUnidad(menu, jugador, menu->botonGuerrero, entrenarGuerrero,
+                                COSTO_GUERRERO_ORO, COSTO_GUERRERO_COMIDA, 
+                                COSTO_GUERRERO_MADERA, COSTO_GUERRERO_HIERRO,
+                                "No hay espacio para mas guerreros!");
+      return true;
   }
 
   // --- BARCO (CONSTRUIR o MEJORAR) ---
-  if (pantallaX >= menu->botonMejorarBarco.left &&
-      pantallaX <= menu->botonMejorarBarco.right &&
-      pantallaY >= menu->botonMejorarBarco.top &&
-      pantallaY <= menu->botonMejorarBarco.bottom) {
+  if (isClicked(pantallaX, pantallaY, menu->botonMejorarBarco)) {
     
     if (!jugador->barco.construido) {
       // Construir barco
@@ -485,10 +445,7 @@ bool menuEntrenamientoClick(MenuEntrenamiento *menu, struct Jugador *jugador,
   }
 
   // Cerrar
-  if (pantallaX >= menu->botonCerrar.left &&
-      pantallaX <= menu->botonCerrar.right &&
-      pantallaY >= menu->botonCerrar.top &&
-      pantallaY <= menu->botonCerrar.bottom) {
+  if (isClicked(pantallaX, pantallaY, menu->botonCerrar)) {
     menuEntrenamientoCerrar(menu);
     return true;
   }

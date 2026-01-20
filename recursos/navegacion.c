@@ -629,68 +629,43 @@ static int clampIntLocal(int v, int lo, int hi) {
 }
 
 // Función para contar unidades globales (incluyendo otras islas)
+static int contarEnArray(const Unidad *arr, int limit) {
+    int total = 0;
+    for(int i=0; i<limit; i++) if(arr[i].x >= 0 && arr[i].vida > 0) total++;
+    return total;
+}
+
 int navegacionContarUnidadesGlobal(const struct Jugador *j, TipoUnidad tipo) {
-  int total = 0;
-
-  // 1. Contar unidades ACTIVAS en la isla actual (j->obreros, etc)
-  int maxLimit = 0;
-  const Unidad *ptr = NULL;
-
-  switch(tipo) {
-    case TIPO_OBRERO: 
-        maxLimit = MAX_OBREROS; ptr = j->obreros; break;
-    case TIPO_CABALLERO: 
-        maxLimit = MAX_CABALLEROS; ptr = j->caballeros; break;
-    case TIPO_CABALLERO_SIN_ESCUDO: 
-        maxLimit = MAX_CABALLEROS_SIN_ESCUDO; ptr = j->caballerosSinEscudo; break;
-    case TIPO_GUERRERO: 
-        maxLimit = MAX_GUERREROS; ptr = j->guerreros; break;
-    default: return 0;
-  }
-
-  for (int i = 0; i < maxLimit; i++) {
-    if (ptr[i].x >= 0 && ptr[i].y >= 0 && ptr[i].vida > 0)
-      total++;
-  }
-
-  // 2. Sumar unidades de OTROS islas guardadas en sIslas
-  for (int k = 1; k <= 5; k++) {
-    if (k == j->islaActual) continue; // Ya contadas (o por guardar)
-    if (!sIslas[k].inicializado) continue;
-
-    const Unidad *ptrGuardado = NULL;
+    int total = 0;
+    const Unidad *ptr = NULL; int limit = 0;
+    
     switch(tipo) {
-        case TIPO_OBRERO: ptrGuardado = sIslas[k].obreros; break;
-        case TIPO_CABALLERO: ptrGuardado = sIslas[k].caballeros; break;
-        case TIPO_CABALLERO_SIN_ESCUDO: ptrGuardado = sIslas[k].caballerosSinEscudo; break;
-        case TIPO_GUERRERO: ptrGuardado = sIslas[k].guerreros; break;
+        case TIPO_OBRERO: ptr=j->obreros; limit=MAX_OBREROS; break;
+        case TIPO_CABALLERO: ptr=j->caballeros; limit=MAX_CABALLEROS; break;
+        case TIPO_CABALLERO_SIN_ESCUDO: ptr=j->caballerosSinEscudo; limit=MAX_CABALLEROS_SIN_ESCUDO; break;
+        case TIPO_GUERRERO: ptr=j->guerreros; limit=MAX_GUERREROS; break;
+        default: return 0;
     }
+    total += contarEnArray(ptr, limit);
 
-    if (ptrGuardado) {
-        for (int i = 0; i < maxLimit; i++) {
-          if (ptrGuardado[i].x >= 0 && ptrGuardado[i].y >= 0 && ptrGuardado[i].vida > 0)
-            total++;
+    for (int k = 1; k <= 5; k++) {
+        if (k == j->islaActual || !sIslas[k].inicializado) continue;
+        const Unidad *stored = NULL;
+        switch(tipo) {
+            case TIPO_OBRERO: stored=sIslas[k].obreros; break;
+            case TIPO_CABALLERO: stored=sIslas[k].caballeros; break;
+            case TIPO_CABALLERO_SIN_ESCUDO: stored=sIslas[k].caballerosSinEscudo; break;
+            case TIPO_GUERRERO: stored=sIslas[k].guerreros; break;
         }
+        if(stored) total += contarEnArray(stored, limit);
     }
-  }
-
-  // No necesitamos sumar las del barco explícitamente si ya se consideran "activas" o "fuera".
-  // Pero las del barco están en j->barco.tropas.
-  // IMPORTANTE: Cuando una unidad sube al barco, ¿sigue en j->obreros con coords validas?
-  // Normalmente se desactiva (x=-1000) o se mantiene hasta que viajas?
-  // Revisando ui_embarque.c (no visible), asumimos que al subir al barco desaparecen del mapa (x<0).
-  // Si es así, debemos sumarlas aquí.
-  
-  if (j->barco.numTropas > 0) {
-      for(int i=0; i<j->barco.numTropas; i++) {
-            if (j->barco.tropas[i] && j->barco.tropas[i]->tipo == tipo &&
-              j->barco.tropas[i]->vida > 0) {
-              total++;
-          }
-      }
-  }
-
-  return total;
+    
+    if (j->barco.numTropas > 0) {
+        for(int i=0; i<j->barco.numTropas; i++)
+            if (j->barco.tropas[i] && j->barco.tropas[i]->tipo == tipo && j->barco.tropas[i]->vida > 0)
+                total++;
+    }
+    return total;
 }
 
 static DWORD sStartMs = 0;
@@ -900,39 +875,17 @@ static void inicializarEstructurasIslaBase(struct Jugador *j,
 
 // Envía todas las unidades fuera del mapa (se usarán solo las del barco al
 // desembarcar)
+static void resetArray(Unidad *arr, int cant) {
+    for(int i=0; i<cant; i++) {
+        arr[i].x = -1000.0f; arr[i].y = -1000.0f; arr[i].moviendose = false;
+        arr[i].seleccionado = false; arr[i].celdaFila = -1; arr[i].celdaCol = -1;
+    }
+}
 static void vaciarUnidades(struct Jugador *j) {
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    j->obreros[i].x = -1000.0f;
-    j->obreros[i].y = -1000.0f;
-    j->obreros[i].moviendose = false;
-    j->obreros[i].seleccionado = false;
-    j->obreros[i].celdaFila = -1;
-    j->obreros[i].celdaCol = -1;
-  }
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    j->caballeros[i].x = -1000.0f;
-    j->caballeros[i].y = -1000.0f;
-    j->caballeros[i].moviendose = false;
-    j->caballeros[i].seleccionado = false;
-    j->caballeros[i].celdaFila = -1;
-    j->caballeros[i].celdaCol = -1;
-  }
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    j->caballerosSinEscudo[i].x = -1000.0f;
-    j->caballerosSinEscudo[i].y = -1000.0f;
-    j->caballerosSinEscudo[i].moviendose = false;
-    j->caballerosSinEscudo[i].seleccionado = false;
-    j->caballerosSinEscudo[i].celdaFila = -1;
-    j->caballerosSinEscudo[i].celdaCol = -1;
-  }
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    j->guerreros[i].x = -1000.0f;
-    j->guerreros[i].y = -1000.0f;
-    j->guerreros[i].moviendose = false;
-    j->guerreros[i].seleccionado = false;
-    j->guerreros[i].celdaFila = -1;
-    j->guerreros[i].celdaCol = -1;
-  }
+    resetArray(j->obreros, MAX_OBREROS);
+    resetArray(j->caballeros, MAX_CABALLEROS);
+    resetArray(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO);
+    resetArray(j->guerreros, MAX_GUERREROS);
 }
 
 // BATALLAS: Mantiene sincronizada la ocupación de la celda para evitar superposiciones
@@ -1023,25 +976,16 @@ static void guardarEstadoIslaJugador(struct Jugador *j) {
   if (estado->tieneCuartel)
     estado->cuartel = *((Edificio *)j->cuartel);
 
-  // Copiar unidades (posiciones actuales en esta isla)
-  for (int i = 0; i < MAX_OBREROS; i++)
-    estado->obreros[i] = j->obreros[i];
-  for (int i = 0; i < MAX_CABALLEROS; i++)
-    estado->caballeros[i] = j->caballeros[i];
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++)
-    estado->caballerosSinEscudo[i] = j->caballerosSinEscudo[i];
-  for (int i = 0; i < MAX_GUERREROS; i++)
-    estado->guerreros[i] = j->guerreros[i];
+  // Copiar unidades usando memcpy
+  memcpy(estado->obreros, j->obreros, sizeof(j->obreros));
+  memcpy(estado->caballeros, j->caballeros, sizeof(j->caballeros));
+  memcpy(estado->caballerosSinEscudo, j->caballerosSinEscudo, sizeof(j->caballerosSinEscudo));
+  memcpy(estado->guerreros, j->guerreros, sizeof(j->guerreros));
 
   estado->numEnemigos = sNumEnemigosActivos;
-  estado->enemigosGenerados =
-      sNumEnemigosActivos > 0 || estado->enemigosGenerados;
-  for (int i = 0; i < sNumEnemigosActivos && i < 8; i++) {
-    estado->enemigos[i] = sEnemigosActivos[i];
-  }
-
+  estado->enemigosGenerados = sNumEnemigosActivos > 0 || estado->enemigosGenerados;
+  for (int i = 0; i < sNumEnemigosActivos && i < 8; i++) estado->enemigos[i] = sEnemigosActivos[i];
   estado->inicializado = true;
-
 }
 
 void navegacionSincronizarIslaActual(struct Jugador *j) {
@@ -1073,40 +1017,26 @@ static void restaurarEstadoIslaJugador(struct Jugador *j, int isla) {
   j->mina = estado->tieneMina ? &estado->mina : NULL;
   j->cuartel = estado->tieneCuartel ? &estado->cuartel : NULL;
 
-  // Restaurar unidades de esta isla con saneamiento
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    j->obreros[i] = estado->obreros[i];
-    if (j->obreros[i].x < 1.0f && j->obreros[i].y < 1.0f) {
-        memset(&j->obreros[i], 0, sizeof(Unidad)); // Limpiar unidad fantasma en 0,0
-    } else if (j->obreros[i].vida <= 0 || j->obreros[i].tiempoMuerteMs > 0) {
-        memset(&j->obreros[i], 0, sizeof(Unidad)); // Remover cadáveres antiguos
-    }
+  // Restaurar unidades con memcpy y limpieza
+  // Helper local (moved out) defined below or we can just inline. 
+  // But wait, the previous edit inserted it INSIDE. 
+  // Let's assume restoreAndClean is defined ABOVE or we define it here if we want to inline it, 
+  // but to be clean, let's fix the structure.
+  
+  // Actually, I can't move it "out" easily with a single replace block if I don't see the outside context fully safe.
+  // I will just Inline it here to be safe and remove the function definition.
+  
+  Unidad *dsts[] = {j->obreros, j->caballeros, j->caballerosSinEscudo, j->guerreros};
+  const Unidad *srcs[] = {estado->obreros, estado->caballeros, estado->caballerosSinEscudo, estado->guerreros};
+  int counts[] = {MAX_OBREROS, MAX_CABALLEROS, MAX_CABALLEROS_SIN_ESCUDO, MAX_GUERREROS};
+  
+  for(int k=0; k<4; k++) {
+      memcpy(dsts[k], srcs[k], counts[k] * sizeof(Unidad));
+      for(int i=0; i<counts[k]; i++) {
+          if((dsts[k][i].x < 1 && dsts[k][i].y < 1) || dsts[k][i].vida <= 0 || dsts[k][i].tiempoMuerteMs > 0)
+             memset(&dsts[k][i], 0, sizeof(Unidad));
+      }
   }
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    j->caballeros[i] = estado->caballeros[i];
-    if (j->caballeros[i].x < 1.0f && j->caballeros[i].y < 1.0f) {
-        memset(&j->caballeros[i], 0, sizeof(Unidad));
-    } else if (j->caballeros[i].vida <= 0 || j->caballeros[i].tiempoMuerteMs > 0) {
-        memset(&j->caballeros[i], 0, sizeof(Unidad));
-    }
-  }
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    j->caballerosSinEscudo[i] = estado->caballerosSinEscudo[i];
-     if (j->caballerosSinEscudo[i].x < 1.0f && j->caballerosSinEscudo[i].y < 1.0f) {
-        memset(&j->caballerosSinEscudo[i], 0, sizeof(Unidad));
-    } else if (j->caballerosSinEscudo[i].vida <= 0 || j->caballerosSinEscudo[i].tiempoMuerteMs > 0) {
-        memset(&j->caballerosSinEscudo[i], 0, sizeof(Unidad));
-    }
-  }
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    j->guerreros[i] = estado->guerreros[i];
-    if (j->guerreros[i].x < 1.0f && j->guerreros[i].y < 1.0f) {
-        memset(&j->guerreros[i], 0, sizeof(Unidad));
-    } else if (j->guerreros[i].vida <= 0 || j->guerreros[i].tiempoMuerteMs > 0) {
-        memset(&j->guerreros[i], 0, sizeof(Unidad));
-    }
-  }
-
   if (estado->enemigosGenerados) {
     activarEnemigosDesdeEstado(estado);
   } 
@@ -1397,7 +1327,7 @@ bool viajarAIsla(struct Jugador *j, int islaDestino) {
     // Generar enemigos iniciales distribuidos aleatoriamente en la isla
     if (!estadoDestino->enemigosGenerados) {
       int maxEnemigos = 6; // base
-      int minutos = (int)(GetTickCount64() / 60000ULL);
+      int minutos = (int)((ULONGLONG)GetTickCount() / 60000ULL);
       if (minutos > 0)
         maxEnemigos += (minutos % 3); // ligera escala
       if (maxEnemigos > 8)

@@ -229,828 +229,233 @@ static bool pathfindSimple(int startF, int startC, int goalF, int goalC,
   return true;
 }
 
+static void initUnitArray(Unidad *arr, int count, int type, float baseX, float baseY) {
+    for(int i=0; i<count; i++) {
+        arr[i].x = (baseX >= 0) ? (baseX + (i * 64.0f)) : -1000.0f;
+        arr[i].y = (baseY >= 0) ? baseY : -1000.0f;
+        arr[i].destinoX = arr[i].x; arr[i].destinoY = arr[i].y;
+        arr[i].moviendose = false; arr[i].seleccionado = false;
+        arr[i].celdaFila = -1; arr[i].celdaCol = -1;
+        arr[i].rutaCeldas = NULL; arr[i].tipo = type;
+        arr[i].animActual = animPorDireccion(DIR_FRONT);
+        arr[i].recibiendoAtaque = false;
+        
+        if (type == TIPO_OBRERO) { arr[i].vidaMax = OBRERO_VIDA_MAX; arr[i].vida = OBRERO_VIDA_MAX; }
+        else if (type == TIPO_GUERRERO) { arr[i].vidaMax = 120; arr[i].vida = 120; } // Initial dummy values
+        else { arr[i].vidaMax = CABALLERO_VIDA; arr[i].vida = CABALLERO_VIDA; } 
+    }
+}
+
 void IniciacionRecursos(struct Jugador *j, const char *Nombre) {
   strcpy(j->Nombre, Nombre);
-  j->Comida = 200;
-  j->Oro = 0;
-  j->Madera = 150;
-  j->Piedra = 100;
-  j->Hierro = 100;
+  j->Comida = 200; j->Oro = 0; j->Madera = 150; j->Piedra = 100; j->Hierro = 100;
   j->CantidadEspadas = 0;
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    if (i < 6) {
-        j->obreros[i].x = 900.0f + (i * 64.0f);
-        j->obreros[i].y = 900.0f;
-    } else {
-        j->obreros[i].x = -1000.0f;
-        j->obreros[i].y = -1000.0f;
-    }
-    j->obreros[i].destinoX = j->obreros[i].x;
-    j->obreros[i].destinoY = j->obreros[i].y;
-    j->obreros[i].moviendose = false;
-    j->obreros[i].seleccionado = false;
-    j->obreros[i].celdaFila = -1;
-    j->obreros[i].celdaCol = -1;
-    j->obreros[i].rutaCeldas = NULL;
-    j->obreros[i].tipo = TIPO_OBRERO; // Asignar tipo
-    j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
-    // Inicializar vida para mostrar barra de salud desde el inicio
-    j->obreros[i].vidaMax = OBRERO_VIDA_MAX;
-    j->obreros[i].vida = OBRERO_VIDA_MAX;
-    j->obreros[i].recibiendoAtaque = false;
-  }
 
-  // No generar guerreros ni caballeros al inicio
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    j->caballeros[i].x = -1000.0f;
-    j->caballeros[i].y = -1000.0f;
-    j->caballeros[i].destinoX = j->caballeros[i].x;
-    j->caballeros[i].destinoY = j->caballeros[i].y;
-    j->caballeros[i].moviendose = false;
-    j->caballeros[i].seleccionado = false;
-    j->caballeros[i].celdaFila = -1;
-    j->caballeros[i].celdaCol = -1;
-    j->caballeros[i].rutaCeldas = NULL;
-    j->caballeros[i].tipo = TIPO_CABALLERO;
-    j->caballeros[i].recibiendoAtaque = false;
-  }
-
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    j->caballerosSinEscudo[i].x = -1000.0f;
-    j->caballerosSinEscudo[i].y = -1000.0f;
-    j->caballerosSinEscudo[i].destinoX = j->caballerosSinEscudo[i].x;
-    j->caballerosSinEscudo[i].destinoY = j->caballerosSinEscudo[i].y;
-    j->caballerosSinEscudo[i].moviendose = false;
-    j->caballerosSinEscudo[i].seleccionado = false;
-    j->caballerosSinEscudo[i].celdaFila = -1;
-    j->caballerosSinEscudo[i].celdaCol = -1;
-    j->caballerosSinEscudo[i].rutaCeldas = NULL;
-    j->caballerosSinEscudo[i].tipo = TIPO_CABALLERO_SIN_ESCUDO;
-    j->caballerosSinEscudo[i].recibiendoAtaque = false;
-  }
+  initUnitArray(j->obreros, MAX_OBREROS, TIPO_OBRERO, 900.0f, 900.0f);
+  // Ocultar obreros restantes (logic handles > 6 check inside init?)
+  // Actually the original code had distinct logic for first 6 obreros. 
+  // Let's just fix the positions manually for the first 6 after init or make init smarter.
+  // Re-doing Init simplified:
   
-  // Inicializar estado de conquista
+  for(int i=0; i<MAX_OBREROS; i++) {
+      if(i<6) { j->obreros[i].x = 900.0f + (i*64.0f); j->obreros[i].y = 900.0f; }
+      else { j->obreros[i].x = -1000.0f; j->obreros[i].y = -1000.0f; }
+      j->obreros[i].destinoX = j->obreros[i].x; j->obreros[i].destinoY = j->obreros[i].y;
+      j->obreros[i].moviendose = false; j->obreros[i].seleccionado = false;
+      j->obreros[i].celdaFila = -1; j->obreros[i].celdaCol = -1;
+      j->obreros[i].rutaCeldas = NULL; j->obreros[i].tipo = TIPO_OBRERO;
+      j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
+      j->obreros[i].vidaMax = OBRERO_VIDA_MAX; j->obreros[i].vida = OBRERO_VIDA_MAX;
+      j->obreros[i].recibiendoAtaque = false;
+  }
+
+  initUnitArray(j->caballeros, MAX_CABALLEROS, TIPO_CABALLERO, -1, -1);
+  initUnitArray(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, TIPO_CABALLERO_SIN_ESCUDO, -1, -1);
+  initUnitArray(j->guerreros, MAX_GUERREROS, TIPO_GUERRERO, -1, -1);
+
   for(int i=0; i<6; i++) j->islasConquistadas[i] = false;
 
-
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    j->guerreros[i].x = -1000.0f;
-    j->guerreros[i].y = -1000.0f;
-    j->guerreros[i].destinoX = j->guerreros[i].x;
-    j->guerreros[i].destinoY = j->guerreros[i].y;
-    j->guerreros[i].moviendose = false;
-    j->guerreros[i].seleccionado = false;
-    j->guerreros[i].celdaFila = -1;
-    j->guerreros[i].celdaCol = -1;
-    j->guerreros[i].rutaCeldas = NULL;
-    j->guerreros[i].tipo = TIPO_GUERRERO;
-    j->guerreros[i].recibiendoAtaque = false;
-  }
-
   // Inicializar barco
-  j->barco.activo = false;
-  j->barco.x = 0.0f;
-  j->barco.y = 0.0f;
-  j->barco.dir = DIR_FRONT;
-  j->barco.numTropas = 0;
-  j->barco.nivelMejora = 1;
-  j->barco.capacidadMaxima = 6;
-  j->barco.construido = false;
+  j->barco.activo = false; j->barco.x = j->barco.y = 0.0f; j->barco.dir = DIR_FRONT;
+  j->barco.numTropas = 0; j->barco.nivelMejora = 1; j->barco.capacidadMaxima = 6; j->barco.construido = false;
 
-  // Registrar objetos en mapaObjetos
+  // Registrar objetos init
+  for(int i=0; i<MAX_OBREROS; i++) if(j->obreros[i].x >= 0) mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
+  // Others are x=-1000 so no register needed
+}
 
-  // Registrar obreros
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    if (j->obreros[i].x >= 0) {
-        mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
+static void actualizarGrupoUnidades(Unidad *grupo, int count, int **col) {
+  const float vel = 5.0f; 
+  const float umbralLlegada = 8.0f;
+  
+  for (int i = 0; i < count; i++) {
+    Unidad *u = &grupo[i];
+    if (u->x < 0) continue; // Inactivo
+
+    if (u->celdaFila == -1) {
+      ocupacionActualizarUnidad(col, u, obreroFilaActual(u), obreroColActual(u));
     }
-  }
 
-  // Registrar caballeros sin escudo
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    if (j->caballerosSinEscudo[i].x >= 0 && j->caballerosSinEscudo[i].y >= 0) {
-      mapaRegistrarObjeto(j->caballerosSinEscudo[i].x,
-                          j->caballerosSinEscudo[i].y, SIMBOLO_CABALLERO);
+    if (!u->moviendose) continue;
+
+    int nextF, nextC;
+    if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
+      int targetCelda = u->rutaCeldas[u->rutaIdx];
+      nextF = targetCelda / GRID_SIZE;
+      nextC = targetCelda % GRID_SIZE;
+    } else {
+      u->moviendose = false;
+      continue;
     }
-  }
 
-  // Registrar guerreros
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    if (j->guerreros[i].x >= 0 && j->guerreros[i].y >= 0) {
-      mapaRegistrarObjeto(j->guerreros[i].x, j->guerreros[i].y,
-                          SIMBOLO_GUERRERO);
+    // Verificar colisiones
+    if (nextF >= GRID_SIZE || nextC >= GRID_SIZE) {
+       u->moviendose = false; obreroLiberarRuta(u); continue;
+    }
+    
+    int valor = *(*(col + nextF) + nextC);
+    if (valor == 1 || valor == 2) { // Bloqueado permanente
+       u->moviendose = false; obreroLiberarRuta(u); continue;
+    }
+    
+    // Bloqueo temporal (solo si es destino final)
+    if ((u->rutaIdx + 1 >= u->rutaLen) && valor == 3 && (nextF != u->celdaFila || nextC != u->celdaCol)) {
+       continue; // Esperar
+    }
+
+    // Movimiento
+    float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
+    float cx = u->x + (TILE_SIZE / 2), cy = u->y + (TILE_SIZE / 2);
+    float vx = tx - cx, vy = ty - cy;
+    float dist = sqrtf(vx * vx + vy * vy);
+
+    if (dist > 0.1f) {
+      if (fabsf(vx) > fabsf(vy)) u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
+      else u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
+      
+      u->animActual = animPorDireccion(u->dir);
+      u->animTick++;
+      if (u->animTick >= u->animActual->ticksPerFrame) {
+        u->animTick = 0;
+        u->frame = (u->frame + 1) % u->animActual->frameCount;
+      }
+    }
+
+    if (dist <= umbralLlegada) {
+      float viejoX = u->x, viejoY = u->y;
+      u->x = tx - (TILE_SIZE / 2); u->y = ty - (TILE_SIZE / 2);
+      u->rutaIdx++;
+      ocupacionActualizarUnidad(col, u, nextF, nextC);
+      mapaMoverObjeto(viejoX, viejoY, u->x, u->y, (char)(u->tipo == TIPO_OBRERO ? SIMBOLO_OBRERO : (u->tipo == TIPO_GUERRERO ? SIMBOLO_GUERRERO : SIMBOLO_CABALLERO)));
+      
+      if (u->rutaIdx >= u->rutaLen) {
+        u->moviendose = false;
+        obreroLiberarRuta(u);
+      }
+    } else {
+       float viejoX = u->x, viejoY = u->y;
+       float newX = u->x + (vx / dist) * vel;
+       float newY = u->y + (vy / dist) * vel;
+       // Clamp
+       if (newX < 0) newX = 0; 
+       if (newY < 0) newY = 0;
+       if (newX > (float)(MAPA_SIZE - 64)) newX = (float)(MAPA_SIZE - 64);
+       if (newY > (float)(MAPA_SIZE - 64)) newY = (float)(MAPA_SIZE - 64);
+       
+       u->x = newX; u->y = newY;
+       mapaMoverObjeto(viejoX, viejoY, u->x, u->y, (char)(u->tipo == TIPO_OBRERO ? SIMBOLO_OBRERO : (u->tipo == TIPO_GUERRERO ? SIMBOLO_GUERRERO : SIMBOLO_CABALLERO)));
     }
   }
 }
 
 void actualizarPersonajes(struct Jugador *j) {
-  const float vel = 5.0f; // Velocidad de movimiento en píxeles/frame
-  const float umbralLlegada =
-      8.0f; // Umbral para considerar que llegó a la celda (más fluido)
   int **col = mapaObtenerCollisionMap();
-  if (!col)
-    return;
-
-  // Obreros
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    Unidad *o = &j->obreros[i];
-
-    // 1. Sincronización inicial de la huella en la matriz (2x2 celdas)
-    if (o->celdaFila == -1) {
-      ocupacionActualizarUnidad(col, o, obreroFilaActual(o),
-                                obreroColActual(o));
-    }
-
-    if (!o->moviendose)
-      continue;
-
-    // 2. Obtener la siguiente celda de la ruta
-    int nextF, nextC;
-    if (o->rutaCeldas && o->rutaIdx < o->rutaLen) {
-      int targetCelda = o->rutaCeldas[o->rutaIdx];
-      nextF = targetCelda / GRID_SIZE;
-      nextC = targetCelda % GRID_SIZE;
-    } else {
-      o->moviendose = false;
-      continue;
-    }
-
-    // 3. VALIDACION DE CELDA DESTINO (1x1 - UNA SOLA CELDA)
-    // Revisamos si la celda destino esta libre
-    bool bloqueadoPermanente = false; // Agua/Arbol/Edificio (cancelar ruta)
-    bool bloqueadoTemporal = false;   // Otro personaje en celda FINAL (esperar)
-
-    // Verificar limites del mapa
-    if (nextF >= GRID_SIZE || nextC >= GRID_SIZE) {
-      bloqueadoPermanente = true;
-    } else {
-      // Aritmetica de punteros para obtener el valor de la celda
-      int valor = *(*(col + nextF) + nextC);
-
-      // Bloqueado PERMANENTEMENTE si es Agua/Arbol (1) o Edificio (2)
-      if (valor == 1 || valor == 2) {
-        bloqueadoPermanente = true;
-      }
-
-      // Bloqueo TEMPORAL: Solo si la celda es la ULTIMA de la ruta (destino
-      // final) y hay otro personaje (valor == 3). Permite pasar por al lado
-      // durante transito.
-      bool esUltimaCelda = (o->rutaIdx + 1 >= o->rutaLen);
-      if (esUltimaCelda && valor == 3 &&
-          (nextF != o->celdaFila || nextC != o->celdaCol)) {
-        bloqueadoTemporal = true;
-      }
-    }
-
-    // Si hay obstaculo PERMANENTE (agua/edificio), cancelar movimiento
-    if (bloqueadoPermanente) {
-      o->moviendose = false;
-      obreroLiberarRuta(o);
-      continue;
-    }
-
-    // Si hay otro personaje en la CELDA FINAL, ESPERAR sin cancelar ruta
-    // El personaje mantiene su ruta y volvera a intentar en el siguiente frame
-    if (bloqueadoTemporal) {
-      continue; // Esperar, NO cancelar la ruta
-    }
-
-    // 4. Cálculo de movimiento hacia el centro de la celda destino
-    float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
-    float cx = o->x + (TILE_SIZE / 2),
-          cy = o->y + (TILE_SIZE / 2); // Centro actual del obrero
-    float vx = tx - cx, vy = ty - cy;
-    float dist = sqrtf(vx * vx + vy * vy);
-
-    // 5. Animación y Dirección según el vector de movimiento
-    if (dist > 0.1f) {
-      if (fabsf(vx) > fabsf(vy))
-        o->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
-      else
-        o->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
-
-      o->animActual = animPorDireccion(o->dir);
-      o->animTick++;
-      if (o->animTick >= o->animActual->ticksPerFrame) {
-        o->animTick = 0;
-        o->frame = (o->frame + 1) % o->animActual->frameCount;
-      }
-    }
-
-    //  6. Aplicar desplazamiento o finalizar llegada a la celda
-    if (dist <= umbralLlegada) {
-      // Guarda posición anterior
-      float viejoX = o->x;
-      float viejoY = o->y;
-
-      // Llegó al centro de la celda: se posiciona y actualiza su ocupación en
-      // la matriz maestra
-      o->x = tx - (TILE_SIZE / 2);
-      o->y = ty - (TILE_SIZE / 2);
-      o->rutaIdx++;
-
-      // Actualizar la huella 2x2 en la matriz de colisiones
-      ocupacionActualizarUnidad(col, o, nextF, nextC);
-
-      // Actualizar mapaObjetos
-      mapaMoverObjeto(viejoX, viejoY, o->x, o->y, SIMBOLO_OBRERO);
-
-      if (o->rutaIdx >= o->rutaLen) {
-        o->moviendose = false;
-        obreroLiberarRuta(o);
-      }
-    } else {
-      // Guarda posición anterior
-      float viejoX = o->x;
-      float viejoY = o->y;
-
-      // Moverse suavemente hacia el objetivo
-      float newX = o->x + (vx / dist) * vel;
-      float newY = o->y + (vy / dist) * vel;
-
-      // Límites físicos de la isla (2048x2048)
-      if (newX < 0)
-        newX = 0;
-      if (newY < 0)
-        newY = 0;
-      if (newX > (float)(MAPA_SIZE - 64))
-        newX = (float)(MAPA_SIZE - 64);
-      if (newY > (float)(MAPA_SIZE - 64))
-        newY = (float)(MAPA_SIZE - 64);
-
-      o->x = newX;
-      o->y = newY;
-
-      // Actualizar mapaObjetos durante movimiento suave
-      mapaMoverObjeto(viejoX, viejoY, o->x, o->y, SIMBOLO_OBRERO);
-    }
-  }
-
-  // Actualizar caballeros
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    Unidad *u = &j->caballeros[i];
-
-    // Misma lógica que obreros
-    if (u->celdaFila == -1) {
-      ocupacionActualizarUnidad(col, u, obreroFilaActual(u),
-                                obreroColActual(u));
-    }
-
-    if (!u->moviendose)
-      continue;
-
-    int nextF, nextC;
-    if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
-      int targetCelda = u->rutaCeldas[u->rutaIdx];
-      nextF = targetCelda / GRID_SIZE;
-      nextC = targetCelda % GRID_SIZE;
-    } else {
-      u->moviendose = false;
-      continue;
-    }
-
-    bool bloqueadoPermanente = false;
-    bool bloqueadoTemporal = false;
-
-    // Verificar límites del mapa
-    if (nextF >= GRID_SIZE || nextC >= GRID_SIZE) {
-      bloqueadoPermanente = true;
-    } else {
-      int valor = *(*(col + nextF) + nextC);
-
-      if (valor == 1 || valor == 2) {
-        bloqueadoPermanente = true;
-      }
-
-      // Bloqueo TEMPORAL: Solo en la celda FINAL de la ruta (destino)
-      bool esUltimaCelda = (u->rutaIdx + 1 >= u->rutaLen);
-      if (esUltimaCelda && valor == 3 &&
-          (nextF != u->celdaFila || nextC != u->celdaCol)) {
-        bloqueadoTemporal = true;
-      }
-    }
-
-    if (bloqueadoPermanente) {
-      u->moviendose = false;
-      obreroLiberarRuta(u);
-      continue;
-    }
-
-    if (bloqueadoTemporal) {
-      continue;
-    }
-
-    float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
-    float cx = u->x + (TILE_SIZE / 2), cy = u->y + (TILE_SIZE / 2);
-    float vx = tx - cx, vy = ty - cy;
-    float dist = sqrtf(vx * vx + vy * vy);
-
-    if (dist > 0.1f) {
-      if (fabsf(vx) > fabsf(vy))
-        u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
-      else
-        u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
-
-      u->animActual = animPorDireccion(u->dir);
-      u->animTick++;
-      if (u->animTick >= u->animActual->ticksPerFrame) {
-        u->animTick = 0;
-        u->frame = (u->frame + 1) % u->animActual->frameCount;
-      }
-    }
-
-    if (dist <= umbralLlegada) {
-      float viejoX = u->x;
-      float viejoY = u->y;
-
-      u->x = tx - (TILE_SIZE / 2);
-      u->y = ty - (TILE_SIZE / 2);
-      u->rutaIdx++;
-
-      ocupacionActualizarUnidad(col, u, nextF, nextC);
-      mapaMoverObjeto(viejoX, viejoY, u->x, u->y, SIMBOLO_CABALLERO);
-
-      if (u->rutaIdx >= u->rutaLen) {
-        u->moviendose = false;
-        obreroLiberarRuta(u);
-      }
-    } else {
-      float viejoX = u->x;
-      float viejoY = u->y;
-
-      float newX = u->x + (vx / dist) * vel;
-      float newY = u->y + (vy / dist) * vel;
-
-      if (newX < 0)
-        newX = 0;
-      if (newY < 0)
-        newY = 0;
-      if (newX > (float)(MAPA_SIZE - 64))
-        newX = (float)(MAPA_SIZE - 64);
-      if (newY > (float)(MAPA_SIZE - 64))
-        newY = (float)(MAPA_SIZE - 64);
-
-      u->x = newX;
-      u->y = newY;
-      mapaMoverObjeto(viejoX, viejoY, u->x, u->y, SIMBOLO_CABALLERO);
-    }
-  }
-
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    Unidad *u = &j->caballerosSinEscudo[i];
-    if (u->x < 0)
-      continue;
-    if (u->celdaFila == -1)
-      ocupacionActualizarUnidad(col, u, obreroFilaActual(u),
-                                obreroColActual(u));
-    if (!u->moviendose)
-      continue;
-
-    if (!u->rutaCeldas || u->rutaIdx < 0 || u->rutaIdx >= u->rutaLen) {
-      // Batalla puede marcar moviendose sin path (persecucion manual)
-      u->moviendose = false;
-      continue;
-    }
-
-    int target = u->rutaCeldas[u->rutaIdx];
-    int nF = target / GRID_SIZE, nC = target % GRID_SIZE;
-
-    // Bloqueo TEMPORAL: Solo en la celda FINAL de la ruta (destino)
-    bool esUltimaCelda = (u->rutaIdx + 1 >= u->rutaLen);
-    int valorCelda = *(*(col + nF) + nC);
-    if (esUltimaCelda && valorCelda == 3 &&
-        (nF != u->celdaFila || nC != u->celdaCol)) {
-      continue; // Esperar, otro personaje ocupa la celda destino
-    }
-
-    float tx = celdaCentroPixel(nC), ty = celdaCentroPixel(nF);
-    float vx = tx - (u->x + 32), vy = ty - (u->y + 32);
-    float d = sqrtf(vx * vx + vy * vy);
-    if (d > 0.1f) {
-      if (fabsf(vx) > fabsf(vy))
-        u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
-      else
-        u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
-      u->animActual = animPorDireccion(u->dir);
-      u->animTick++;
-      if (u->animTick >= u->animActual->ticksPerFrame) {
-        u->animTick = 0;
-        u->frame = (u->frame + 1) % u->animActual->frameCount;
-      }
-      u->x += (vx / d) * vel;
-      u->y += (vy / d) * vel;
-      int nf = obreroFilaActual(u), nc = obreroColActual(u);
-      if (nf != u->celdaFila || nc != u->celdaCol)
-        ocupacionActualizarUnidad(col, u, nf, nc);
-      mapaMoverObjeto(u->x - (vx / d) * vel, u->y - (vy / d) * vel, u->x, u->y,
-                      SIMBOLO_CABALLERO);
-      if (d < umbralLlegada) {
-        u->rutaIdx++;
-        if (u->rutaIdx >= u->rutaLen) {
-          u->moviendose = false;
-          obreroLiberarRuta(u);
-        }
-      }
-    }
-  }
-
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    Unidad *u = &j->guerreros[i];
-
-    // Sincronización inicial
-    if (u->celdaFila == -1) {
-      ocupacionActualizarUnidad(col, u, obreroFilaActual(u),
-                                obreroColActual(u));
-    }
-    if (!u->moviendose)
-      continue;
-
-    int nextF, nextC;
-    if (u->rutaCeldas && u->rutaIdx < u->rutaLen) {
-      int targetCelda = u->rutaCeldas[u->rutaIdx];
-      nextF = targetCelda / GRID_SIZE;
-      nextC = targetCelda % GRID_SIZE;
-    } else {
-      u->moviendose = false;
-      continue;
-    }
-
-    bool bloqueadoPermanente = false;
-    bool bloqueadoTemporal = false;
-
-    // Verificar límites del mapa
-    if (nextF >= GRID_SIZE || nextC >= GRID_SIZE) {
-      bloqueadoPermanente = true;
-    } else {
-      int valor = *(*(col + nextF) + nextC);
-
-      if (valor == 1 || valor == 2) {
-        bloqueadoPermanente = true;
-      }
-
-      // Bloqueo TEMPORAL: Solo en la celda FINAL de la ruta (destino)
-      bool esUltimaCelda = (u->rutaIdx + 1 >= u->rutaLen);
-      if (esUltimaCelda && valor == 3 &&
-          (nextF != u->celdaFila || nextC != u->celdaCol)) {
-        bloqueadoTemporal = true;
-      }
-    }
-
-    if (bloqueadoPermanente) {
-      u->moviendose = false;
-      obreroLiberarRuta(u);
-      continue;
-    }
-
-    if (bloqueadoTemporal) {
-      continue;
-    }
-
-    float tx = celdaCentroPixel(nextC), ty = celdaCentroPixel(nextF);
-    float cx = u->x + (TILE_SIZE / 2), cy = u->y + (TILE_SIZE / 2);
-    float vx = tx - cx, vy = ty - cy;
-    float dist = sqrtf(vx * vx + vy * vy);
-
-    if (dist > 0.1f) {
-      if (fabsf(vx) > fabsf(vy))
-        u->dir = (vx > 0) ? DIR_RIGHT : DIR_LEFT;
-      else
-        u->dir = (vy > 0) ? DIR_FRONT : DIR_BACK;
-
-      u->animActual = animPorDireccion(u->dir);
-      u->animTick++;
-      if (u->animTick >= u->animActual->ticksPerFrame) {
-        u->animTick = 0;
-        u->frame = (u->frame + 1) % u->animActual->frameCount;
-      }
-    }
-
-    if (dist <= umbralLlegada) {
-      float viejoX = u->x;
-      float viejoY = u->y;
-
-      u->x = tx - (TILE_SIZE / 2);
-      u->y = ty - (TILE_SIZE / 2);
-      u->rutaIdx++;
-
-      ocupacionActualizarUnidad(col, u, nextF, nextC);
-      mapaMoverObjeto(viejoX, viejoY, u->x, u->y, SIMBOLO_GUERRERO);
-
-      if (u->rutaIdx >= u->rutaLen) {
-        u->moviendose = false;
-        obreroLiberarRuta(u);
-      }
-    } else {
-      float viejoX = u->x;
-      float viejoY = u->y;
-
-      float newX = u->x + (vx / dist) * vel;
-      float newY = u->y + (vy / dist) * vel;
-
-      if (newX < 0)
-        newX = 0;
-      if (newY < 0)
-        newY = 0;
-      if (newX > (float)(MAPA_SIZE - 64))
-        newX = (float)(MAPA_SIZE - 64);
-      if (newY > (float)(MAPA_SIZE - 64))
-        newY = (float)(MAPA_SIZE - 64);
-
-      u->x = newX;
-      u->y = newY;
-      mapaMoverObjeto(viejoX, viejoY, u->x, u->y, SIMBOLO_GUERRERO);
-    }
-  }
+  if (!col) return;
+  
+  actualizarGrupoUnidades(j->obreros, MAX_OBREROS, col);
+  actualizarGrupoUnidades(j->caballeros, MAX_CABALLEROS, col);
+  actualizarGrupoUnidades(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, col);
+  actualizarGrupoUnidades(j->guerreros, MAX_GUERREROS, col);
 
   sincronizarIslasConquistadas(j);
 }
 // Comandar movimiento RTS con separación de unidades
+static bool checkCeldaAsignada(int f, int c, int (*destinos)[2], int count) {
+    for (int i = 0; i < count; i++) {
+        if (destinos[i][0] == f && destinos[i][1] == c) return true;
+    }
+    return false;
+}
+
+static void rtsComandarGrupo(Unidad *array, int count, int gF, int gC, int **col, int (*destinos)[2], int *numDestinos) {
+    for (int i = 0; i < count; i++) {
+        Unidad *u = &array[i];
+        if (!u->seleccionado || u->x < 0 || u->vida <= 0) continue;
+
+        int destinoF = gF, destinoC = gC;
+
+        if (checkCeldaAsignada(destinoF, destinoC, destinos, *numDestinos) || (col[destinoF][destinoC] == 3)) {
+            bool encontrado = false;
+            for (int r = 1; r <= 3 && !encontrado; r++) {
+               for (int dy = -r; dy <= r && !encontrado; dy++) {
+                  for (int dx = -r; dx <= r && !encontrado; dx++) {
+                     int nf = gF + dy, nc = gC + dx;
+                     if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                        if (col[nf][nc] == 0 && !checkCeldaAsignada(nf, nc, destinos, *numDestinos)) {
+                           destinoF = nf; destinoC = nc; encontrado = true;
+                        }
+                     }
+                  }
+               }
+            }
+            if (!encontrado) continue; 
+        }
+
+        destinos[*numDestinos][0] = destinoF;
+        destinos[*numDestinos][1] = destinoC;
+        (*numDestinos)++;
+
+        int sF = obreroFilaActual(u), sC = obreroColActual(u);
+        if (sF == destinoF && sC == destinoC) continue;
+
+        int *ruta = NULL, len = 0;
+        if (pathfindSimple(sF, sC, destinoF, destinoC, col, &ruta, &len)) {
+            obreroLiberarRuta(u); u->rutaCeldas = ruta; u->rutaLen = len; u->rutaIdx = 0; u->moviendose = true;
+        }
+    }
+}
+
 void rtsComandarMovimiento(struct Jugador *j, float mundoX, float mundoY) {
   int **col = mapaObtenerCollisionMap();
-  if (!col)
-    return;
+  if (!col) return;
 
-
-
-  // Validar destino antes de pathfinding
   int gF = (int)(mundoY / TILE_SIZE);
   int gC = (int)(mundoX / TILE_SIZE);
+  if (gF < 0 || gF >= GRID_SIZE || gC < 0 || gC >= GRID_SIZE) return;
 
-
-  if (gF < 0 || gF >= GRID_SIZE || gC < 0 || gC >= GRID_SIZE) {
-    return; // Fuera de límites
-  }
-
-  // Validar celda destino - rechazar agua/obstáculos
-  bool destinoBloqueado = false;
-  int motivoBloqueo = -1;
-
-  int *fila_ptr = *(col + gF);
-  int valor = *(fila_ptr + gC);
-
-  // Si hay Agua/Árbol (1) o Edificio (2), intentar buscar una celda libre
-  // cercana para permitir interactuar o acercarse.
-  if (valor == 1 || valor == 2) {
-    
+  // Validar destino principal
+  if (col[gF][gC] == 1 || col[gF][gC] == 2) {
     bool encontrado = false;
     for (int r = 1; r <= 3 && !encontrado; r++) {
-      for (int dy = -r; dy <= r && !encontrado; dy++) {
-        for (int dx = -r; dx <= r && !encontrado; dx++) {
-          int nf = gF + dy;
-          int nc = gC + dx;
-          if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-            if (col[nf][nc] == 0) {
-              gF = nf;
-              gC = nc;
-              encontrado = true;
-            }
+       for (int dy = -r; dy <= r && !encontrado; dy++) {
+          for (int dx = -r; dx <= r && !encontrado; dx++) {
+             int nf = gF + dy, nc = gC + dx;
+             if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE && col[nf][nc] == 0) {
+                gF = nf; gC = nc; encontrado = true;
+             }
           }
-        }
-      }
+       }
     }
-
-    if (!encontrado) {
-      return;
-    }
+    if (!encontrado) return;
   }
 
-  // Separación de destinos: cada unidad recibe destino diferente
-  int destinosAsignados[18][2];
+  int destinosAsignados[MAX_OBREROS + MAX_CABALLEROS + MAX_CABALLEROS_SIN_ESCUDO + MAX_GUERREROS][2];
   int numDestinos = 0;
 
-// Función inline para verificar si una celda ya fue asignada
-#define CELDA_YA_ASIGNADA(f, c)                                                \
-  ({                                                                           \
-    int _asignada = 0;                                                         \
-    for (int _i = 0; _i < numDestinos; _i++) {                                 \
-      if (destinosAsignados[_i][0] == (f) &&                                   \
-          destinosAsignados[_i][1] == (c)) {                                   \
-        _asignada = 1;                                                         \
-        break;                                                                 \
-      }                                                                        \
-    }                                                                          \
-    _asignada;                                                                 \
-  })
-
-  // Puntero base al array de obreros (aritmética de punteros)
-  Unidad *base = j->obreros;
-
-  // Recorrer todas las unidades usando aritmética de punteros
-  for (Unidad *o = base; o < base + MAX_OBREROS; o++) {
-    int idx = (int)(o - base);
-
-    if (!o->seleccionado || o->vida <= 0)
-      continue;
-
-    // Buscar destino libre (el original o una celda adyacente)
-    int destinoF = gF;
-    int destinoC = gC;
-
-    // Si la celda destino ya fue asignada a otra unidad, buscar una adyacente
-    if (CELDA_YA_ASIGNADA(destinoF, destinoC) ||
-        (*(*(col + destinoF) + destinoC) == 3)) {
-      bool encontrado = false;
-      for (int r = 1; r <= 3 && !encontrado; r++) {
-        for (int dy = -r; dy <= r && !encontrado; dy++) {
-          for (int dx = -r; dx <= r && !encontrado; dx++) {
-            int nf = gF + dy;
-            int nc = gC + dx;
-            if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-              int valorCelda = *(*(col + nf) + nc);
-              // Solo aceptar celdas vacías (0) que no hayan sido asignadas
-              if (valorCelda == 0 && !CELDA_YA_ASIGNADA(nf, nc)) {
-                destinoF = nf;
-                destinoC = nc;
-                encontrado = true;
-              }
-            }
-          }
-        }
-      }
-      if (!encontrado)
-        continue; // No hay celda libre, saltar esta unidad
-    }
-
-    // Registrar este destino como asignado
-    destinosAsignados[numDestinos][0] = destinoF;
-    destinosAsignados[numDestinos][1] = destinoC;
-    numDestinos++;
-
-    // Obtener posición actual de la unidad
-    int sF = obreroFilaActual(o);
-    int sC = obreroColActual(o);
-
-    // Si ya estamos en el destino, no moverse
-    if (sF == destinoF && sC == destinoC)
-      continue;
-
-    // Calcular ruta con pathfinding simple (sin colas)
-    int *ruta = NULL;
-    int len = 0;
-
-    if (pathfindSimple(sF, sC, destinoF, destinoC, col, &ruta, &len)) {
-      // DEBUG: Primera celda de la ruta
-      if (len > 0) {
-        int primeraCelda = ruta[0];
-        int primeraF = primeraCelda / GRID_SIZE;
-        int primeraC = primeraCelda % GRID_SIZE;
-      }
-
-      // Liberar ruta anterior y asignar nueva
-      obreroLiberarRuta(o);
-      o->rutaCeldas = ruta;
-      o->rutaLen = len;
-      o->rutaIdx = 0;
-      o->moviendose = true;
-    }
-  }
-
-  // --- COMANDAR CABALLEROS ---
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    Unidad *u = &j->caballeros[i];
-    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
-      // Buscar destino libre
-      int destinoF = gF;
-      int destinoC = gC;
-
-      if (CELDA_YA_ASIGNADA(destinoF, destinoC) ||
-          (*(*(col + destinoF) + destinoC) == 3)) {
-        bool encontrado = false;
-        for (int r = 1; r <= 3 && !encontrado; r++) {
-          for (int dy = -r; dy <= r && !encontrado; dy++) {
-            for (int dx = -r; dx <= r && !encontrado; dx++) {
-              int nf = gF + dy;
-              int nc = gC + dx;
-              if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int valorCelda = *(*(col + nf) + nc);
-                if (valorCelda == 0 && !CELDA_YA_ASIGNADA(nf, nc)) {
-                  destinoF = nf;
-                  destinoC = nc;
-                  encontrado = true;
-                }
-              }
-            }
-          }
-        }
-        if (!encontrado)
-          continue;
-      }
-
-      destinosAsignados[numDestinos][0] = destinoF;
-      destinosAsignados[numDestinos][1] = destinoC;
-      numDestinos++;
-
-      int sF = obreroFilaActual(u), sC = obreroColActual(u);
-      int *path = NULL;
-      int len = 0;
-      if (pathfindSimple(sF, sC, destinoF, destinoC, col, &path, &len)) {
-        obreroLiberarRuta(u);
-        u->rutaCeldas = path;
-        u->rutaLen = len;
-        u->rutaIdx = 0;
-        u->moviendose = true;
-      }
-    }
-  }
-
-  // --- COMANDAR CABALLEROS SIN ESCUDO ---
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    Unidad *u = &j->caballerosSinEscudo[i];
-    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
-      // Buscar destino libre
-      int destinoF = gF;
-      int destinoC = gC;
-
-      if (CELDA_YA_ASIGNADA(destinoF, destinoC) ||
-          (*(*(col + destinoF) + destinoC) == 3)) {
-        bool encontrado = false;
-        for (int r = 1; r <= 3 && !encontrado; r++) {
-          for (int dy = -r; dy <= r && !encontrado; dy++) {
-            for (int dx = -r; dx <= r && !encontrado; dx++) {
-              int nf = gF + dy;
-              int nc = gC + dx;
-              if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int valorCelda = *(*(col + nf) + nc);
-                if (valorCelda == 0 && !CELDA_YA_ASIGNADA(nf, nc)) {
-                  destinoF = nf;
-                  destinoC = nc;
-                  encontrado = true;
-                }
-              }
-            }
-          }
-        }
-        if (!encontrado)
-          continue;
-      }
-
-      destinosAsignados[numDestinos][0] = destinoF;
-      destinosAsignados[numDestinos][1] = destinoC;
-      numDestinos++;
-
-      int sF = obreroFilaActual(u), sC = obreroColActual(u);
-      int *path = NULL;
-      int len = 0;
-      if (pathfindSimple(sF, sC, destinoF, destinoC, col, &path, &len)) {
-        obreroLiberarRuta(u);
-        u->rutaCeldas = path;
-        u->rutaLen = len;
-        u->rutaIdx = 0;
-        u->moviendose = true;
-      }
-    }
-  }
-
-  // --- COMANDAR GUERREROS ---
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    Unidad *u = &j->guerreros[i];
-    if (u->seleccionado && u->x >= 0 && u->vida > 0) {
-      // Buscar destino libre
-      int destinoF = gF;
-      int destinoC = gC;
-
-      if (CELDA_YA_ASIGNADA(destinoF, destinoC) ||
-          (*(*(col + destinoF) + destinoC) == 3)) {
-        bool encontrado = false;
-        for (int r = 1; r <= 3 && !encontrado; r++) {
-          for (int dy = -r; dy <= r && !encontrado; dy++) {
-            for (int dx = -r; dx <= r && !encontrado; dx++) {
-              int nf = gF + dy;
-              int nc = gC + dx;
-              if (nf >= 0 && nf < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int valorCelda = *(*(col + nf) + nc);
-                if (valorCelda == 0 && !CELDA_YA_ASIGNADA(nf, nc)) {
-                  destinoF = nf;
-                  destinoC = nc;
-                  encontrado = true;
-                }
-              }
-            }
-          }
-        }
-        if (!encontrado)
-          continue;
-      }
-
-      destinosAsignados[numDestinos][0] = destinoF;
-      destinosAsignados[numDestinos][1] = destinoC;
-      numDestinos++;
-
-      int sF = obreroFilaActual(u), sC = obreroColActual(u);
-      int *path = NULL;
-      int len = 0;
-      if (pathfindSimple(sF, sC, destinoF, destinoC, col, &path, &len)) {
-        obreroLiberarRuta(u);
-        u->rutaCeldas = path;
-        u->rutaLen = len;
-        u->rutaIdx = 0;
-        u->moviendose = true;
-      }
-    }
-  }
-
-#undef CELDA_YA_ASIGNADA
-
+  rtsComandarGrupo(j->obreros, MAX_OBREROS, gF, gC, col, destinosAsignados, &numDestinos);
+  rtsComandarGrupo(j->caballeros, MAX_CABALLEROS, gF, gC, col, destinosAsignados, &numDestinos);
+  rtsComandarGrupo(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, gF, gC, col, destinosAsignados, &numDestinos);
+  rtsComandarGrupo(j->guerreros, MAX_GUERREROS, gF, gC, col, destinosAsignados, &numDestinos);
 }
 
 
@@ -1066,295 +471,77 @@ void rtsLiberarMovimientoJugador(struct Jugador *j) {
 }
 
 // Funciones de entrenamiento de tropas
+static bool entrenarUnidadGenerico(struct Jugador *j, Unidad *array, int count, Edificio *cuartel, TipoUnidad tipo) {
+    if(!cuartel) return false;
+    
+    for(int i=0; i<count; i++) {
+        if(array[i].x >= 0) continue; // Ocupado
+
+        // Generar posición
+        float offsetX = (float)((i % 3) * 70);
+        float offsetY = (float)((i / 3) * 70);
+        float baseX = cuartel->x + offsetX;
+        float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
+        
+        array[i].x = baseX; array[i].y = baseY;
+
+        // Validar spawn
+        int **col = mapaObtenerCollisionMap();
+        if(col) {
+            int cX = (int)(array[i].x / (float)TILE_SIZE);
+            int cY = (int)(array[i].y / (float)TILE_SIZE);
+
+            if(cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE || col[cY][cX] != 0 || mapaObjetos[cY][cX] != 0) {
+                bool encontrado = false;
+                int centroCX = (int)((cuartel->x + 64)/TILE_SIZE);
+                int centroCY = (int)((cuartel->y + 64)/TILE_SIZE);
+                
+                for(int r=2; r<8 && !encontrado; r++) {
+                    for(int dy=-r; dy<=r && !encontrado; dy++) {
+                        for(int dx=-r; dx<=r; dx++) {
+                            int ny = centroCY + dy; int nx = centroCX + dx;
+                             if(ny>=0 && ny<GRID_SIZE && nx>=0 && nx<GRID_SIZE && col[ny][nx]==0 && mapaObjetos[ny][nx]==0) {
+                                array[i].x = nx*(float)TILE_SIZE;
+                                array[i].y = ny*(float)TILE_SIZE;
+                                col[ny][nx] = 3; 
+                                mapaRegistrarObjeto(array[i].x, array[i].y, (char)(tipo==TIPO_OBRERO?SIMBOLO_OBRERO:tipo==TIPO_GUERRERO?SIMBOLO_GUERRERO:SIMBOLO_CABALLERO));
+                                encontrado = true; break;
+                             }
+                        }
+                    }
+                }
+            } else {
+                col[cY][cX] = 3;
+                mapaRegistrarObjeto(array[i].x, array[i].y, (char)(tipo==TIPO_OBRERO?SIMBOLO_OBRERO:tipo==TIPO_GUERRERO?SIMBOLO_GUERRERO:SIMBOLO_CABALLERO));
+            }
+        }
+        
+        array[i].destinoX = array[i].x; array[i].destinoY = array[i].y;
+        array[i].moviendose = false; array[i].seleccionado = false;
+        array[i].dir = DIR_FRONT; array[i].frame = 0;
+        array[i].celdaFila = -1; array[i].celdaCol = -1;
+        array[i].rutaCeldas = NULL; array[i].tipo = tipo;
+        array[i].animActual = animPorDireccion(DIR_FRONT);
+        array[i].recibiendoAtaque = false; array[i].tiempoMuerteMs = 0; array[i].frameMuerte = 0;
+
+        if(tipo == TIPO_OBRERO) { array[i].vidaMax = OBRERO_VIDA_MAX; }
+        else if(tipo == TIPO_GUERRERO) { array[i].vidaMax = 120; array[i].damage = 30; array[i].critico = GUERRERO_CRITICO; array[i].defensa = 20; array[i].alcance = 64; }
+        else { array[i].vidaMax = CABALLERO_VIDA; } // Caballero
+        array[i].vida = array[i].vidaMax;
+
+        return true;
+    }
+    return false;
+}
+
 bool entrenarObrero(struct Jugador *j, float x, float y) {
-  // Buscar un espacio disponible en el array de obreros
-  for (int i = 0; i < MAX_OBREROS; i++) {
-    // Si el obrero está fuera de pantalla, está libre
-    if (j->obreros[i].x < 0) {
-      // Obtener la posición del cuartel
-      if (j->cuartel == NULL)
-        return false;
-
-      Edificio *cuartel = (Edificio *)j->cuartel;
-
-      // Generar posición cerca del cuartel (offset aleatorio pequeño)
-      // Generar posición base cerca del cuartel
-      float offsetX = (float)((i % 3) * 70);
-      float offsetY = (float)((i / 3) * 70);
-      float baseX = cuartel->x + offsetX;
-      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
-
-      j->obreros[i].x = baseX;
-      j->obreros[i].y = baseY;
-
-      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
-      int **col = mapaObtenerCollisionMap();
-      if (col) {
-        int cX = (int)(j->obreros[i].x / (float)TILE_SIZE);
-        int cY = (int)(j->obreros[i].y / (float)TILE_SIZE);
-
-        // Si la posición inicial es inválida, buscar vecino libre
-        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
-            col[cY][cX] != 0 || mapaObjetos[cY][cX] != 0) {
-          bool encontrado = false;
-          // Buscar en un radio creciente alrededor del cuartel
-          int centroCX = (int)((cuartel->x + 64) / (float)TILE_SIZE);
-          int centroCY = (int)((cuartel->y + 64) / (float)TILE_SIZE);
-
-          for (int r = 2; r < 8; r++) { // Radio 2 a 8 tiles
-            for (int dy = -r; dy <= r; dy++) {
-              for (int dx = -r; dx <= r; dx++) {
-                int ny = centroCY + dy;
-                int nx = centroCX + dx;
-                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
-                  // Verificar que esté libre en colisiones Y en objetos
-                  if (col[ny][nx] == 0 && mapaObjetos[ny][nx] == 0) {
-                    j->obreros[i].x = nx * (float)TILE_SIZE;
-                    j->obreros[i].y = ny * (float)TILE_SIZE;
-
-                    // Reservar posición inmediatamente
-                    col[ny][nx] = 3; // Ocupado por unidad
-                    mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y,
-                                        SIMBOLO_OBRERO);
-
-                    encontrado = true;
-                    break;
-                  }
-                }
-              }
-              if (encontrado)
-                break;
-            }
-            if (encontrado)
-              break;
-          }
-        } else {
-          // Si la posición inicial ya era válida, también reservarla
-          col[cY][cX] = 3;
-          mapaRegistrarObjeto(j->obreros[i].x, j->obreros[i].y, SIMBOLO_OBRERO);
-        }
-      }
-
-      j->obreros[i].destinoX = j->obreros[i].x;
-      j->obreros[i].destinoY = j->obreros[i].y;
-      j->obreros[i].moviendose = false;
-      j->obreros[i].seleccionado = false;
-      j->obreros[i].dir = DIR_FRONT;
-      j->obreros[i].frame = 0;
-      j->obreros[i].celdaFila = -1;
-      j->obreros[i].celdaCol = -1;
-      j->obreros[i].rutaCeldas = NULL;
-      j->obreros[i].tipo = TIPO_OBRERO;
-      j->obreros[i].animActual = animPorDireccion(DIR_FRONT);
-      j->obreros[i].vidaMax = OBRERO_VIDA_MAX;
-      j->obreros[i].vida = OBRERO_VIDA_MAX;
-      j->obreros[i].recibiendoAtaque = false;
-      // Guardado: mantener en cero los campos de muerte para que el snapshot los trate como vivos
-      j->obreros[i].tiempoMuerteMs = 0;
-      j->obreros[i].frameMuerte = 0;
-
-      return true;
-    }
-  }
-
-  // No hay espacio disponible
-  return false;
+    return entrenarUnidadGenerico(j, j->obreros, MAX_OBREROS, (Edificio*)j->cuartel, TIPO_OBRERO);
 }
-
 bool entrenarCaballero(struct Jugador *j, float x, float y) {
-  // Buscar un espacio disponible en el array de caballeros
-  for (int i = 0; i < MAX_CABALLEROS; i++) {
-    // Si el caballero está fuera de pantalla, está libre
-    if (j->caballeros[i].x < 0) {
-      // Obtener la posición del cuartel
-      if (j->cuartel == NULL)
-        return false;
-
-      Edificio *cuartel = (Edificio *)j->cuartel;
-
-      // Generar posición cerca del cuartel
-      float offsetX = (float)((i % 2) * 70);
-      float offsetY = (float)((i / 2) * 70);
-      float baseX = cuartel->x + offsetX;
-      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
-
-      j->caballeros[i].x = baseX;
-      j->caballeros[i].y = baseY;
-
-      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
-      int **col = mapaObtenerCollisionMap();
-      if (col) {
-        int cX = (int)(j->caballeros[i].x / (float)TILE_SIZE);
-        int cY = (int)(j->caballeros[i].y / (float)TILE_SIZE);
-
-        // Si la posición inicial es inválida, buscar vecino libre
-        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
-            col[cY][cX] != 0 || mapaObjetos[cY][cX] != 0) {
-          bool encontrado = false;
-          // Buscar en un radio creciente alrededor del cuartel
-          int centroCX = (int)((cuartel->x + 64) / (float)TILE_SIZE);
-          int centroCY = (int)((cuartel->y + 64) / (float)TILE_SIZE);
-
-          for (int r = 2; r < 8; r++) {
-            for (int dy = -r; dy <= r; dy++) {
-              for (int dx = -r; dx <= r; dx++) {
-                int ny = centroCY + dy;
-                int nx = centroCX + dx;
-                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
-                  // Verificar colisión Y ocupación visual
-                  if (col[ny][nx] == 0 && mapaObjetos[ny][nx] == 0) {
-                    j->caballeros[i].x = nx * (float)TILE_SIZE;
-                    j->caballeros[i].y = ny * (float)TILE_SIZE;
-
-                    // Reservar posición inmediatamente
-                    col[ny][nx] = 3;
-                    mapaRegistrarObjeto(j->caballeros[i].x, j->caballeros[i].y,
-                                        SIMBOLO_CABALLERO);
-
-                    encontrado = true;
-                    break;
-                  }
-                }
-              }
-              if (encontrado)
-                break;
-            }
-            if (encontrado)
-              break;
-          }
-        } else {
-          // Si la posición inicial ya era válida, también reservarla
-          col[cY][cX] = 3;
-          mapaRegistrarObjeto(j->caballeros[i].x, j->caballeros[i].y,
-                              SIMBOLO_CABALLERO);
-        }
-      }
-
-      j->caballeros[i].destinoX = j->caballeros[i].x;
-      j->caballeros[i].destinoY = j->caballeros[i].y;
-      j->caballeros[i].moviendose = false;
-      j->caballeros[i].seleccionado = false;
-      j->caballeros[i].dir = DIR_FRONT;
-      j->caballeros[i].frame = 0;
-      j->caballeros[i].celdaFila = -1;
-      j->caballeros[i].celdaCol = -1;
-      j->caballeros[i].rutaCeldas = NULL;
-      j->caballeros[i].tipo = TIPO_CABALLERO;
-      j->caballeros[i].animActual = animPorDireccion(DIR_FRONT);
-      j->caballeros[i].vidaMax = CABALLERO_VIDA;
-      j->caballeros[i].vida = CABALLERO_VIDA;
-      j->caballeros[i].recibiendoAtaque = false;
-      // Guardado: limpiar estado de muerte heredado de slots reutilizados
-      j->caballeros[i].tiempoMuerteMs = 0;
-      j->caballeros[i].frameMuerte = 0;
-
-      return true;
-    }
-  }
-
-  // No hay espacio disponible
-  return false;
+    return entrenarUnidadGenerico(j, j->caballeros, MAX_CABALLEROS, (Edificio*)j->cuartel, TIPO_CABALLERO);
 }
-
 bool entrenarGuerrero(struct Jugador *j, float x, float y) {
-  // Buscar un espacio disponible en el array de guerreros
-  for (int i = 0; i < MAX_GUERREROS; i++) {
-    // Si el guerrero está fuera de pantalla, está libre
-    if (j->guerreros[i].x < 0) {
-      // Obtener la posición del cuartel
-      if (j->cuartel == NULL)
-        return false;
-
-      Edificio *cuartel = (Edificio *)j->cuartel;
-
-      // Generar posición cerca del cuartel
-      float offsetX = (float)((i % 2) * 70);
-      float offsetY = (float)((i / 2) * 70);
-      float baseX = cuartel->x + offsetX;
-      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
-
-      j->guerreros[i].x = baseX;
-      j->guerreros[i].y = baseY;
-
-      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
-      int **col = mapaObtenerCollisionMap();
-      if (col) {
-        int cX = (int)(j->guerreros[i].x / (float)TILE_SIZE);
-        int cY = (int)(j->guerreros[i].y / (float)TILE_SIZE);
-
-        // Si la posición inicial es inválida, buscar vecino libre
-        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
-            col[cY][cX] != 0 || mapaObjetos[cY][cX] != 0) {
-          bool encontrado = false;
-          // Buscar en un radio creciente alrededor del cuartel
-          int centroCX = (int)((cuartel->x + 64) / (float)TILE_SIZE);
-          int centroCY = (int)((cuartel->y + 64) / (float)TILE_SIZE);
-
-          for (int r = 2; r < 8; r++) {
-            for (int dy = -r; dy <= r; dy++) {
-              for (int dx = -r; dx <= r; dx++) {
-                int ny = centroCY + dy;
-                int nx = centroCX + dx;
-                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
-                  // Verificar colisión Y ocupación visual
-                  if (col[ny][nx] == 0 && mapaObjetos[ny][nx] == 0) {
-                    j->guerreros[i].x = nx * (float)TILE_SIZE;
-                    j->guerreros[i].y = ny * (float)TILE_SIZE;
-
-                    // Reservar posición inmediatamente
-                    col[ny][nx] = 3;
-                    mapaRegistrarObjeto(j->guerreros[i].x, j->guerreros[i].y,
-                                        SIMBOLO_GUERRERO);
-
-                    encontrado = true;
-                    break;
-                  }
-                }
-              }
-              if (encontrado)
-                break;
-            }
-            if (encontrado)
-              break;
-          }
-        } else {
-          // Si la posición inicial ya era válida, también reservarla
-          col[cY][cX] = 3;
-          mapaRegistrarObjeto(j->guerreros[i].x, j->guerreros[i].y,
-                              SIMBOLO_GUERRERO);
-        }
-      }
-
-      j->guerreros[i].destinoX = j->guerreros[i].x;
-      j->guerreros[i].destinoY = j->guerreros[i].y;
-      j->guerreros[i].moviendose = false;
-      j->guerreros[i].seleccionado = false;
-      j->guerreros[i].dir = DIR_FRONT;
-      j->guerreros[i].frame = 0;
-      j->guerreros[i].celdaFila = -1;
-      j->guerreros[i].celdaCol = -1;
-      j->guerreros[i].rutaCeldas = NULL;
-      j->guerreros[i].tipo = TIPO_GUERRERO;
-      j->guerreros[i].animActual = animPorDireccion(DIR_FRONT);
-
-      // Stats Guerrero: Vida:120, Daño:30, Crítico:10%, Defensa:20
-      j->guerreros[i].vidaMax = 120;
-      j->guerreros[i].vida = 120;
-      j->guerreros[i].damage = 30;
-      j->guerreros[i].critico = GUERRERO_CRITICO;
-      j->guerreros[i].defensa = 20;
-      j->guerreros[i].alcance = 64; // Melee (1 tile)
-      j->guerreros[i].recibiendoAtaque = false;
-      // Guardado: igualar estado de muerte para nuevas tropas
-      j->guerreros[i].tiempoMuerteMs = 0;
-      j->guerreros[i].frameMuerte = 0;
-
-      return true;
-    }
-  }
-
-  // No hay espacio disponible
-  return false;
+    return entrenarUnidadGenerico(j, j->guerreros, MAX_GUERREROS, (Edificio*)j->cuartel, TIPO_GUERRERO);
 }
 
 bool recursosIntentarCazar(struct Jugador *j, float mundoX, float mundoY) {
@@ -1858,97 +1045,7 @@ bool recursosObreroCercaDePunto(struct Jugador *j, float x, float y,
 
 
 bool entrenarCaballeroSinEscudo(struct Jugador *j, float x, float y) {
-  // Buscar un espacio disponible en el array de caballeros sin escudo
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO; i++) {
-    if (j->caballerosSinEscudo[i].x < 0) {
-      if (j->cuartel == NULL)
-        return false;
-
-      Edificio *cuartel = (Edificio *)j->cuartel;
-
-      // Generar posición cerca del cuartel
-      float offsetX = (float)((i % 2) * 70);
-      float offsetY = (float)((i / 2) * 70);
-      float baseX = cuartel->x + offsetX;
-      float baseY = cuartel->y + cuartel->alto + 20 + offsetY;
-
-      j->caballerosSinEscudo[i].x = baseX;
-      j->caballerosSinEscudo[i].y = baseY;
-
-      // VALIDAR POSICIÓN DE SPAWN (Evitar mar/obstáculos)
-      int **col = mapaObtenerCollisionMap();
-      if (col) {
-        int cX = (int)(j->caballerosSinEscudo[i].x / (float)TILE_SIZE);
-        int cY = (int)(j->caballerosSinEscudo[i].y / (float)TILE_SIZE);
-
-        if (cY < 0 || cY >= GRID_SIZE || cX < 0 || cX >= GRID_SIZE ||
-            col[cY][cX] != 0 || mapaObjetos[cY][cX] != 0) {
-          bool encontrado = false;
-          int centroCX = (int)((cuartel->x + 64) / (float)TILE_SIZE);
-          int centroCY = (int)((cuartel->y + 64) / (float)TILE_SIZE);
-
-          for (int r = 2; r < 8; r++) {
-            for (int dy = -r; dy <= r; dy++) {
-              for (int dx = -r; dx <= r; dx++) {
-                int ny = centroCY + dy;
-                int nx = centroCX + dx;
-                if (ny >= 0 && ny < GRID_SIZE && nx >= 0 && nx < GRID_SIZE) {
-                  if (col[ny][nx] == 0 && mapaObjetos[ny][nx] == 0) {
-                    j->caballerosSinEscudo[i].x = nx * (float)TILE_SIZE;
-                    j->caballerosSinEscudo[i].y = ny * (float)TILE_SIZE;
-                    col[ny][nx] = 3;
-                    mapaRegistrarObjeto(j->caballerosSinEscudo[i].x,
-                                        j->caballerosSinEscudo[i].y,
-                                        SIMBOLO_CABALLERO);
-                    encontrado = true;
-                    break;
-                  }
-                }
-              }
-              if (encontrado)
-                break;
-            }
-            if (encontrado)
-              break;
-          }
-        } else {
-          col[cY][cX] = 3;
-          mapaRegistrarObjeto(j->caballerosSinEscudo[i].x,
-                              j->caballerosSinEscudo[i].y, SIMBOLO_CABALLERO);
-        }
-      }
-
-      j->caballerosSinEscudo[i].destinoX = j->caballerosSinEscudo[i].x;
-      j->caballerosSinEscudo[i].destinoY = j->caballerosSinEscudo[i].y;
-      j->caballerosSinEscudo[i].moviendose = false;
-      j->caballerosSinEscudo[i].seleccionado = false;
-      j->caballerosSinEscudo[i].dir = DIR_FRONT;
-      j->caballerosSinEscudo[i].frame = 0;
-      j->caballerosSinEscudo[i].celdaFila = -1;
-      j->caballerosSinEscudo[i].celdaCol = -1;
-      j->caballerosSinEscudo[i].rutaCeldas = NULL;
-      j->caballerosSinEscudo[i].tipo = TIPO_CABALLERO_SIN_ESCUDO;
-      j->caballerosSinEscudo[i].animActual = animPorDireccion(DIR_FRONT);
-      j->caballerosSinEscudo[i].vidaMax = CABALLERO_SIN_ESCUDO_VIDA;
-      j->caballerosSinEscudo[i].vida = CABALLERO_SIN_ESCUDO_VIDA;
-
-      // Stats para caballero sin escudo (Cuerpo a cuerpo)
-      j->caballerosSinEscudo[i].vida = CABALLERO_SIN_ESCUDO_VIDA;
-      j->caballerosSinEscudo[i].vidaMax = CABALLERO_SIN_ESCUDO_VIDA;
-      j->caballerosSinEscudo[i].damage = CABALLERO_SIN_ESCUDO_DANO;
-      j->caballerosSinEscudo[i].critico = CABALLERO_SIN_ESCUDO_CRITICO;
-      j->caballerosSinEscudo[i].defensa = CABALLERO_SIN_ESCUDO_DEFENSA;
-      j->caballerosSinEscudo[i].alcance = 64; // Cuerpo a cuerpo
-      j->caballerosSinEscudo[i].recibiendoAtaque = false;
-      // Guardado: asegurar que nuevas unidades reporten estado vivo
-      j->caballerosSinEscudo[i].tiempoMuerteMs = 0;
-      j->caballerosSinEscudo[i].frameMuerte = 0;
-
-      return true;
-    }
-  }
-
-  return false;
+    return entrenarUnidadGenerico(j, j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, (Edificio*)j->cuartel, TIPO_CABALLERO_SIN_ESCUDO);
 }
 
 // ============================================================================

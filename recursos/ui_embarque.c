@@ -598,59 +598,39 @@ bool menuEmbarqueClick(MenuEmbarque *menu, struct Jugador *j, int x, int y) {
   return true; // Click dentro del menú, consumir evento
 }
 
+// Helper genérico para embarcar un grupo de unidades
+static void embarcarGrupoUnidad(Unidad *array, int maxUnidades, int *cantidadEmbarcadaRef, int limiteSeleccion, Barco *barco) {
+  for (int i = 0; i < maxUnidades && *cantidadEmbarcadaRef < limiteSeleccion; i++) {
+    if (unidadListaParaEmbarcar(&array[i], barco) &&
+        barco->numTropas < barco->capacidadMaxima) {
+      // Guardar puntero en el barco
+      barco->tropas[barco->numTropas++] = &array[i];
+
+      // Ocultar unidad del mapa
+      array[i].x = -1000;
+      array[i].y = -1000;
+
+      (*cantidadEmbarcadaRef)++;
+    }
+  }
+}
+
 void menuEmbarqueEmbarcar(MenuEmbarque *menu, struct Jugador *j) {
   // Embarcar obreros
   int obrerosEmbarcados = 0;
-  for (int i = 0; i < MAX_OBREROS && obrerosEmbarcados < menu->obrerosSeleccionados;
-       i++) {
-    if (unidadListaParaEmbarcar(&j->obreros[i], &j->barco) &&
-        j->barco.numTropas < j->barco.capacidadMaxima) {
-      // Guardar puntero en el barco
-      j->barco.tropas[j->barco.numTropas++] = &j->obreros[i];
-
-      // Ocultar obrero del mapa (mover fuera del área visible)
-      j->obreros[i].x = -1000;
-      j->obreros[i].y = -1000;
-
-      obrerosEmbarcados++;
-    }
-  }
+  embarcarGrupoUnidad(j->obreros, MAX_OBREROS, &obrerosEmbarcados, menu->obrerosSeleccionados, &j->barco);
 
   // Embarcar caballeros (con y sin escudo)
   int caballerosEmbarcados = 0;
-  for (int i = 0; i < MAX_CABALLEROS && caballerosEmbarcados < menu->caballerosSeleccionados;
-       i++) {
-    if (unidadListaParaEmbarcar(&j->caballeros[i], &j->barco) &&
-        j->barco.numTropas < j->barco.capacidadMaxima) {
-      j->barco.tropas[j->barco.numTropas++] = &j->caballeros[i];
-      j->caballeros[i].x = -1000;
-      j->caballeros[i].y = -1000;
-      caballerosEmbarcados++;
-    }
-  }
-  for (int i = 0; i < MAX_CABALLEROS_SIN_ESCUDO && caballerosEmbarcados < menu->caballerosSeleccionados;
-       i++) {
-    if (unidadListaParaEmbarcar(&j->caballerosSinEscudo[i], &j->barco) &&
-        j->barco.numTropas < j->barco.capacidadMaxima) {
-      j->barco.tropas[j->barco.numTropas++] = &j->caballerosSinEscudo[i];
-      j->caballerosSinEscudo[i].x = -1000;
-      j->caballerosSinEscudo[i].y = -1000;
-      caballerosEmbarcados++;
-    }
-  }
+  embarcarGrupoUnidad(j->caballeros, MAX_CABALLEROS, &caballerosEmbarcados, menu->caballerosSeleccionados, &j->barco);
+  // Nota: Los caballeros sin escudo comparten el contador 'caballerosSeleccionados' con los normales en este menú?
+  // El código original usaba 'caballerosEmbarcados < menu->caballerosSeleccionados' para AMBOS bucles de forma secuencial.
+  // Así que si seleccionas 5 caballeros, llena con escudados primero y luego sin escudo si falta.
+  embarcarGrupoUnidad(j->caballerosSinEscudo, MAX_CABALLEROS_SIN_ESCUDO, &caballerosEmbarcados, menu->caballerosSeleccionados, &j->barco);
 
   // Embarcar guerreros
   int guerrerosEmbarcados = 0;
-  for (int i = 0; i < MAX_GUERREROS && guerrerosEmbarcados < menu->guerrerosSeleccionados;
-       i++) {
-    if (unidadListaParaEmbarcar(&j->guerreros[i], &j->barco) &&
-        j->barco.numTropas < j->barco.capacidadMaxima) {
-      j->barco.tropas[j->barco.numTropas++] = &j->guerreros[i];
-      j->guerreros[i].x = -1000;
-      j->guerreros[i].y = -1000;
-      guerrerosEmbarcados++;
-    }
-  }
+  embarcarGrupoUnidad(j->guerreros, MAX_GUERREROS, &guerrerosEmbarcados, menu->guerrerosSeleccionados, &j->barco);
 
   // Abrir selección de isla dentro del juego
   menu->eligiendoIsla = true;
