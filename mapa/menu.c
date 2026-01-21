@@ -345,7 +345,7 @@ void mostrarMenu() {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
-    if (hConsole) ShowWindow(hConsole, SW_SHOW);
+    // if (hConsole) ShowWindow(hConsole, SW_SHOW);
 }
 
 static void dibujarPreviewIsla(HDC hdc, RECT rc) {
