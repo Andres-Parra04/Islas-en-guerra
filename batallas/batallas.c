@@ -1,5 +1,5 @@
 #include "batallas.h"
-#include "../recursos/navegacion.h"
+#include "navegacion.h"
 #include "../mapa/mapa.h"
 #include <windows.h>
 #include <math.h>
@@ -7,7 +7,7 @@
 #define MAX_ALIADOS_EN_BATALLA (MAX_CABALLEROS + MAX_CABALLEROS_SIN_ESCUDO + MAX_GUERREROS)
 
 #include "batallas.h"
-#include "../recursos/navegacion.h"
+#include "navegacion.h"
 #include "../mapa/mapa.h"
 #include <windows.h>
 #include <math.h>

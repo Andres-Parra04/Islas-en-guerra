@@ -2,7 +2,7 @@
 #include "batallas/guardado/guardado.h"
 #include "mapa/mapa.h"
 #include "mapa/menu.h"
-#include "recursos/navegacion.h"
+#include "batallas/navegacion.h"
 #include "recursos/recursos.h"
 #include "recursos/ui_compra.h"
 #include "recursos/ui_embarque.h"

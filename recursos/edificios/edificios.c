@@ -1,7 +1,7 @@
 // edificios/edificios.c
 #include "edificios.h"
 #include "../../mapa/mapa.h"
-#include "../navegacion.h"
+#include "../../batallas/navegacion.h"
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>

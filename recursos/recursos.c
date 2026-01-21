@@ -1,5 +1,5 @@
 #include "recursos.h"
-#include "navegacion.h"
+#include "../batallas/navegacion.h"
 #include "edificios/edificios.h"
 #include "../mapa/mapa.h"
 #include "../mapa/menu.h"

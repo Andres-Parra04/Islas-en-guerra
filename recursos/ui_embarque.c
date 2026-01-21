@@ -1,6 +1,6 @@
 #include "ui_embarque.h"
 #include "../mapa/menu.h"
-#include "navegacion.h"
+#include "../batallas/navegacion.h"
 #include "recursos.h"
 #include <stdio.h>
 #include <windows.h>

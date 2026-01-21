@@ -1,5 +1,5 @@
 #include "navegacion.h"
-#include "edificios/edificios.h"
+#include "../recursos/edificios/edificios.h"
 #include "../mapa/mapa.h"
 #include <math.h>
 #include <stdbool.h>

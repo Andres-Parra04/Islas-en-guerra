@@ -1,7 +1,7 @@
 #include "mapa.h"
 #include "../recursos/edificios/edificios.h"
 #include "../batallas/guardado/guardado.h"
-#include "../recursos/navegacion.h"
+#include "../batallas/navegacion.h"
 #include "../recursos/recursos.h"
 #include "../recursos/ui_compra.h"
 #include "../recursos/ui_embarque.h"

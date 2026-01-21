@@ -6,7 +6,7 @@
 
 #include "../../recursos/edificios/edificios.h"
 #include "../../mapa/mapa.h"
-#include "../../recursos/navegacion.h"
+#include "../navegacion.h"
 #include "../../recursos/recursos.h"
 #include <stdbool.h>
 #include <windows.h>
